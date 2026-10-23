@@ -10,6 +10,8 @@
     <meta name="theme-color" content="#2383e2">
     
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <!-- 引入 PeerJS 用于实时点对点通信 -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
     <style>
         :root {
@@ -52,9 +54,11 @@
             transition: all 0.3s;
         }
         .sidebar-title { font-weight: 600; padding: 12px 8px; margin-bottom: 8px; font-size: 1.15em; display: flex; align-items: center; justify-content: space-between;}
-        .sync-controls { display: flex; gap: 8px; }
-        .btn-sync { cursor: pointer; color: var(--accent-color); font-size: 1em; padding: 4px; transition: transform 0.2s;}
-        .btn-sync:hover { transform: scale(1.2); }
+        .sync-controls { display: flex; gap: 8px; align-items: center;}
+        
+        /* P2P 连接状态指示灯 */
+        .p2p-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; transition: background 0.3s;}
+        .p2p-dot.connected { background: #27ae60; box-shadow: 0 0 5px #27ae60; }
         
         .nav-item { padding: 8px 12px; margin-bottom: 2px; border-radius: 4px; cursor: pointer; transition: all 0.1s; display: flex; align-items: center; gap: 8px; font-weight: 500; }
         .nav-item:hover { background-color: var(--hover-bg); transform: translateX(2px); }
@@ -348,8 +352,8 @@
         <div class="sidebar-title">
             🚀 我的工作台 
             <div class="sync-controls">
-                <span class="btn-sync" title="保存到本地文件夹 (触发微力同步)" onclick="manualSave()">💾</span>
-                <span class="btn-sync" title="从本地文件夹读取 (拉取微力同步数据)" onclick="manualLoad()">📂</span>
+                <!-- 显示连接状态的绿灯 -->
+                <div class="p2p-dot" id="p2p-indicator" title="未连接"></div>
             </div>
         </div>
         <div class="nav-item" data-target="year">📊 全年</div>
@@ -543,18 +547,34 @@
                 </div>
             </div>
 
-            <!-- 2. 微力同步/本地文件绑定 -->
-            <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px; border-color: #a5d6a7;">
+            <!-- 2. 实时局域网同步 -->
+            <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px; border-color: #ff9800;">
                 <div class="panel-content">
-                    <h2 style="color: #2e7d32;">🔗 本地文件绑定 (配合微力同步)</h2>
+                    <h2 style="color: #e65100;">📡 局域网点对点同步 (全自动)</h2>
                     <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em; line-height: 1.6;">
-                        请将微力同步的目标文件夹绑定到这里。<br>
-                        绑定后，你的任何操作都会实时写入文件夹；右上角的 💾 会强制保存，📂 会强制读取。
+                        要求手机和电脑连同一个 WiFi。<b>连接成功后，任何一端的修改都会自动同步到另一端，完全不需要点任何按钮！</b>
                     </p>
                     
-                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                        <button class="btn btn-primary" id="btn-bind-folder">选择数据文件夹</button>
-                        <span id="folder-status" style="font-size: 0.9em; color: var(--danger-color);">未绑定</span>
+                    <div style="display: flex; flex-direction: column; gap: 16px; max-width: 500px;">
+                        
+                        <!-- 主机模式 -->
+                        <div style="background: #fff3e0; padding: 12px; border-radius: 8px;">
+                            <h3 style="font-size: 0.95em; margin-bottom: 8px;">💻 我是主机 (电脑)</h3>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-weight: bold; font-size: 1.1em; color: #e65100; word-break: break-all;" id="my-peer-id">未生成</span>
+                                <button class="btn btn-sm btn-primary" onclick="initPeer(true)">生成连接码</button>
+                            </div>
+                        </div>
+
+                        <!-- 客户端模式 -->
+                        <div style="background: #e3f2fd; padding: 12px; border-radius: 8px;">
+                            <h3 style="font-size: 0.95em; margin-bottom: 8px;">📱 我是客户端 (手机)</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="target-peer-id" placeholder="输入电脑上的连接码">
+                                <button class="btn btn-sm btn-primary" onclick="connectToPeer()">连接</button>
+                            </div>
+                            <div id="p2p-status" style="font-size: 0.85em; color: #666; margin-top: 8px;">未连接</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -570,7 +590,7 @@
                 </div>
             </div>
 
-            <!-- 4. 手动备份 -->
+            <!-- 4. 本地备份 -->
             <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px;">
                 <div class="panel-content">
                     <h2>💾 手动备份</h2>
@@ -617,8 +637,12 @@
             viewMonth: new Date().getMonth(),
             viewWeekBaseDate: getTodayString() 
         };
-        let dirHandle = null;
-        let dataFileName = 'workspace_data.json';
+        
+        // P2P 变量
+        let peer = null;
+        let conn = null;
+        let isSyncing = false; // 防止死循环
+        const p2pIndicator = document.getElementById('p2p-indicator');
 
         function getTodayString() {
             const d = new Date();
@@ -642,93 +666,101 @@
             return false;
         }
 
-        // ================= 本地文件操作逻辑 (File System Access API) =================
-        
-        // 绑定文件夹
-        document.getElementById('btn-bind-folder').addEventListener('click', async () => {
-            try {
-                dirHandle = await window.showDirectoryPicker();
-                document.getElementById('folder-status').innerText = "✅ 已绑定: " + dirHandle.name;
-                document.getElementById('folder-status').style.color = "green";
-                
-                // 绑定成功后，立刻尝试读取一次文件，如果没有就保存一次
-                const loadSuccess = await loadDataFromFile();
-                if (!loadSuccess) {
-                    await saveDataToFile(appData);
-                    alert('文件夹绑定成功！已创建初始数据文件。');
-                } else {
-                    alert('文件夹绑定成功！已自动读取最新数据。');
-                }
-            } catch (err) { 
-                console.error(err);
-                alert('绑定失败或取消。'); 
-            }
-        });
+        // ================= P2P 实时同步逻辑 =================
+        window.initPeer = function(isHost) {
+            if (peer) peer.destroy();
+            // 优化：使用带 STUN 服务器的配置提升连接成功率
+            peer = new Peer({
+                config: {'iceServers': [
+                    { url: 'stun:stun.l.google.com:19302' },
+                    { url: 'stun:global.stun.twilio.com:3478' }
+                ]}
+            }); 
 
-        // 强制手动保存 (右上角 💾)
-        window.manualSave = async function() {
-            if (!dirHandle) {
-                alert('请先在设置中绑定本地数据文件夹！');
-                return;
-            }
-            await saveDataToFile(appData);
-            alert('✅ 数据已保存到本地文件夹！');
+            peer.on('open', function(id) {
+                if (isHost) document.getElementById('my-peer-id').innerText = id; 
+                document.getElementById('p2p-status').innerText = "✅ 等待连接...";
+                document.getElementById('p2p-status').style.color = "#f2994a";
+            });
+
+            peer.on('connection', function(c) {
+                conn = c;
+                setupConnection(conn, true);
+            });
+
+            peer.on('error', function(err) {
+                document.getElementById('p2p-status').innerText = "❌ 错误：" + err.type;
+                document.getElementById('p2p-status').style.color = "#eb5757";
+            });
         };
 
-        // 强制手动读取 (右上角 📂)
-        window.manualLoad = async function() {
-            if (!dirHandle) {
-                alert('请先在设置中绑定本地数据文件夹！');
-                return;
-            }
-            const success = await loadDataFromFile();
-            if (success) {
-                alert('✅ 已从本地文件夹读取最新数据！');
-            }
+        window.connectToPeer = function() {
+            const targetId = document.getElementById('target-peer-id').value.trim();
+            if (!targetId) { alert('请输入连接码'); return; }
+            
+            if (!peer) initPeer(false);
+            
+            document.getElementById('p2p-status').innerText = "正在连接...";
+            document.getElementById('p2p-status').style.color = "#f2994a";
+
+            conn = peer.connect(targetId);
+            setupConnection(conn, false);
         };
 
-        // 核心：保存数据到文件
-        async function saveDataToFile(data) {
-            if (!dirHandle) return;
-            try {
-                const fileHandle = await dirHandle.getFileHandle(dataFileName, { create: true });
-                const writable = await fileHandle.createWritable();
-                await writable.write(JSON.stringify(data, null, 2)); 
-                await writable.close();
-                console.log('数据已静默保存到本地。');
-            } catch (err) { 
-                console.error('保存失败', err); 
-            }
-        }
-
-        // 核心：从文件读取数据
-        async function loadDataFromFile() {
-            if (!dirHandle) return false;
-            try {
-                const fileHandle = await dirHandle.getFileHandle(dataFileName);
-                const file = await fileHandle.getFile();
-                const text = await file.text();
-                if (!text) return false;
+        function setupConnection(connection, isHost) {
+            connection.on('open', () => {
+                document.getElementById('p2p-status').innerText = "✅ 已连接！实时同步已开启。";
+                document.getElementById('p2p-status').style.color = "#27ae60";
+                p2pIndicator.classList.add('connected');
+                p2pIndicator.title = "已连接";
                 
-                const data = JSON.parse(text);
-                if (data && data.tasks) {
-                    appData = data;
+                // 连接成功后，主动把自己的数据发给对方，确保初始状态一致
+                connection.send({ type: 'SYNC_DATA', payload: appData });
+            });
+
+            connection.on('data', (data) => {
+                if (data.type === 'SYNC_DATA') {
+                    // 收到对方数据时，加上标志位，防止触发二次发送
+                    isSyncing = true;
+                    appData = data.payload;
                     if(appData.themeColor) changeTheme(appData.themeColor);
                     if(appData.fontSize) changeFontSize(appData.fontSize);
                     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
-                    return true;
+                    // 存入本地，防止刷新丢失
+                    saveLocalStorage();
+                    isSyncing = false;
                 }
-            } catch (err) {
-                console.log('读取文件失败或文件不存在', err);
-                return false;
+            });
+
+            connection.on('close', () => {
+                document.getElementById('p2p-status').innerText = "❌ 连接已断开";
+                document.getElementById('p2p-status').style.color = "#999";
+                p2pIndicator.classList.remove('connected');
+                p2pIndicator.title = "未连接";
+                conn = null;
+            });
+        }
+
+        // 核心：任何数据变动，立刻发送给对端
+        function saveDataToFile(data) {
+            saveLocalStorage(); // 先存本地
+            
+            // 如果已连接且不是由对方发来的数据触发，则发送过去
+            if (conn && conn.open && !isSyncing) {
+                conn.send({ type: 'SYNC_DATA', payload: data });
             }
+        }
+
+        // 仅存本地 LocalStorage，保证刷新不丢
+        function saveLocalStorage() {
+            localStorage.setItem('myWorkspaceAppData', JSON.stringify(appData));
         }
 
         // ================= 原有设置 & 存档逻辑 =================
         function changeTheme(color) {
             appData.themeColor = color;
             document.documentElement.style.setProperty('--accent-color', color);
-            saveDataToFile(appData); // 每次修改自动存本地
+            saveDataToFile(appData); 
         }
 
         function changeFontSize(sizeStr) {
@@ -1637,7 +1669,6 @@
             const dPct = calcPct(dayDone, dayTotal); document.getElementById('prog-day-text').innerText = dPct + '%'; document.getElementById('prog-day-fill').style.width = dPct + '%';
         }
 
-        // ================= 导入/导出/重置 =================
         window.exportData = function() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
             const downloadAnchorNode = document.createElement('a');
@@ -1669,7 +1700,12 @@
         };
 
         // ================= 初始化 =================
-        if (appData.tasks.length === 0) {
+        // 尝试从本地读取数据
+        const savedData = localStorage.getItem('myWorkspaceAppData');
+        if (savedData) {
+            try { appData = JSON.parse(savedData); } catch(e) {}
+        } else {
+            // 初始演示数据
             appData.tasks.push({ id: '1', text: '搭建个人应用框架', type: 'learning', date: 'pool', completed: false, subTasks: [{id: '1-1', text: '设计UI', completed: false}], deadline: '', pinned: false });
             appData.tasks.push({ id: '2', text: '看教程视频', type: 'learning', date: getTodayString(), completed: false, subTasks: [], deadline: '', target: 100, current: 10, pinned: false });
             appData.tasks.push({ id: '3', text: '复习考试', type: 'learning', date: getTodayString(), completed: false, subTasks: [{id: '3-1', text: '第一章', completed: false, target: 5, current: 0}, {id: '3-2', text: '第二章', completed: false, target: 5, current: 0}], deadline: '', pinned: false });
