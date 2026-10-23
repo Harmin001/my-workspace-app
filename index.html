@@ -50,7 +50,11 @@
             flex-shrink: 0;
             transition: all 0.3s;
         }
-        .sidebar-title { font-weight: 600; padding: 12px 8px; margin-bottom: 8px; font-size: 1.15em; display: flex; align-items: center; gap: 6px;}
+        .sidebar-title { font-weight: 600; padding: 12px 8px; margin-bottom: 8px; font-size: 1.15em; display: flex; align-items: center; justify-content: space-between;}
+        .sync-controls { display: flex; gap: 8px; }
+        .btn-sync { cursor: pointer; color: var(--accent-color); font-size: 1em; padding: 4px; transition: transform 0.2s;}
+        .btn-sync:hover { transform: scale(1.2); }
+        
         .nav-item { padding: 8px 12px; margin-bottom: 2px; border-radius: 4px; cursor: pointer; transition: all 0.1s; display: flex; align-items: center; gap: 8px; font-weight: 500; }
         .nav-item:hover { background-color: var(--hover-bg); transform: translateX(2px); }
         .nav-item.active { background-color: #e3e2e0; }
@@ -291,6 +295,7 @@
         @media (max-width: 768px) {
             body { flex-direction: column; }
             
+            /* 底部导航栏增加上传下载按钮 */
             .sidebar {
                 width: 100%; height: auto; order: 2;
                 border-right: none; border-top: 1px solid var(--border-color);
@@ -312,16 +317,25 @@
             .day-panels-grid { flex-direction: column; gap: 16px; }
             .section-box { width: 100% !important; height: auto !important; min-height: 250px; resize: none;}
             
+            /* 月历极简模式，防止溢出 */
             .calendar-wrapper { padding: 8px; margin-bottom: 12px; }
             .calendar-grid { gap: 2px; }
-            .day-box { padding: 4px; min-height: 60px; border-width: 1px;}
+            .day-box { padding: 4px; min-height: 70px; border-width: 1px;}
             .day-number { font-size: 0.9em; margin-bottom: 2px;}
-            .day-summary { font-size: 0.65em; gap: 2px; }
-            .mini-bar-row span:first-child { width: 28px; overflow: hidden; text-overflow: clip; }
-            .mini-bar-row span:last-child { width: 18px; }
+            .day-summary { gap: 2px; margin-top: auto;}
+            /* 隐藏文字，只保留彩色细条 */
+            .mini-bar-row span { display: none !important; }
+            .mini-bar-bg { height: 4px; margin-bottom: 2px; border-radius: 2px;}
+            .reflection-preview, .deadline-preview { display: none; } /* 手机上隐藏文字预览 */
             
+            /* 周计划单列，且限制高度，内部滚动 */
             .week-board { flex-direction: column; height: auto; gap: 12px; }
-            .week-column { min-height: 80px; padding: 8px; }
+            .week-column { 
+                min-height: 80px; 
+                max-height: 200px; /* 限制高度 */
+                overflow-y: auto; /* 超出滚动 */
+                padding: 8px; 
+            }
             .week-column-header { margin-bottom: 8px; }
             .todo-lists-container { flex-direction: column; }
 
@@ -334,15 +348,22 @@
 <body>
 
     <div class="sidebar">
-        <div class="sidebar-title">🚀 我的工作台</div>
+        <div class="sidebar-title">
+            🚀 我的工作台 
+            <div class="sync-controls">
+                <span class="btn-sync" title="上传至云端" onclick="manualUpload()">⬆️</span>
+                <span class="btn-sync" title="从云端下载" onclick="manualDownload()">⬇️</span>
+            </div>
+        </div>
         <div class="nav-item" data-target="year">📊 全年</div>
         <div class="nav-item active" data-target="month">📅 月计划</div>
         <div class="nav-item" data-target="week">🗓️ 周计划</div>
         <div class="nav-item" data-target="day">📝 日计划</div>
         <div class="nav-item" data-target="settings">⚙️ 设置</div>
         
-        <!-- 手动同步按钮 -->
-        <div class="nav-item" onclick="manualSync()" style="color: var(--accent-color);">🔄 同步</div>
+        <!-- 手机端会显示这个 -->
+        <div class="nav-item" onclick="manualUpload()" style="display:none;" id="mobile-upload-btn">⬆️ 上传</div>
+        <div class="nav-item" onclick="manualDownload()" style="display:none;" id="mobile-download-btn">⬇️ 下载</div>
 
         <div class="sidebar-footer">
             <div class="sidebar-goal-box">
@@ -589,6 +610,25 @@
     </div>
 
     <script>
+        // 媒体查询监听，切换同步按钮显示
+        const mobileUpBtn = document.getElementById('mobile-upload-btn');
+        const mobileDownBtn = document.getElementById('mobile-download-btn');
+        const desktopSyncControls = document.querySelector('.sync-controls');
+        
+        function updateSyncBtnDisplay() {
+            if (window.innerWidth <= 768) {
+                mobileUpBtn.style.display = 'flex';
+                mobileDownBtn.style.display = 'flex';
+                desktopSyncControls.style.display = 'none';
+            } else {
+                mobileUpBtn.style.display = 'none';
+                mobileDownBtn.style.display = 'none';
+                desktopSyncControls.style.display = 'flex';
+            }
+        }
+        window.addEventListener('resize', updateSyncBtnDisplay);
+        updateSyncBtnDisplay();
+
         // ================= 全局状态管理 =================
         let appData = {
             tasks: [], 
@@ -709,20 +749,24 @@
         };
 
         async function syncToGist() {
-            if (!gistConfig.token || !gistConfig.id) return;
+            if (!gistConfig.token || !gistConfig.id) return false;
             try {
-                await fetch(`https://api.github.com/gists/${gistConfig.id}`, {
+                const res = await fetch(`https://api.github.com/gists/${gistConfig.id}`, {
                     method: 'PATCH',
                     headers: { 'Authorization': `token ${gistConfig.token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify({ files: { 'workspace_data.json': { content: JSON.stringify(appData) } } })
                 });
-            } catch (err) { console.error('同步失败', err); }
+                return res.ok;
+            } catch (err) { 
+                console.error('上传失败', err); 
+                return false;
+            }
         }
 
         async function syncFromGist(showAlert = false) {
             if (!gistConfig.token || !gistConfig.id) {
                 if(showAlert) alert('请先在设置中配置同步信息。');
-                return;
+                return false;
             }
             try {
                 const res = await fetch(`https://api.github.com/gists/${gistConfig.id}`, {
@@ -738,27 +782,36 @@
                             if(appData.themeColor) changeTheme(appData.themeColor);
                             if(appData.fontSize) changeFontSize(appData.fontSize);
                             renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
-                            if(showAlert) alert('✅ 已从云端拉取最新数据！');
+                            if(showAlert) alert('✅ 已从云端下载最新数据！');
                         }
                     }
+                    return true;
                 }
             } catch (err) { 
-                console.error('拉取失败', err); 
-                if(showAlert) alert('拉取失败，请检查网络。');
+                console.error('下载失败', err); 
+                if(showAlert) alert('下载失败，请检查网络。');
+                return false;
             }
         }
 
-        // 手动触发同步
-        window.manualSync = async function() {
-            await syncFromGist(true);
+        // 手动触发上传
+        window.manualUpload = async function() {
+            if (!gistConfig.token || !gistConfig.id) {
+                alert('请先在设置中配置同步信息。');
+                return;
+            }
+            const success = await syncToGist();
+            if (success) {
+                alert('✅ 数据已成功上传至云端！');
+            } else {
+                alert('❌ 上传失败，请检查网络。');
+            }
         };
 
-        // 页面可见性变化（切回App自动拉取）
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                syncFromGist(false);
-            }
-        });
+        // 手动触发下载
+        window.manualDownload = async function() {
+            await syncFromGist(true);
+        };
 
         // ================= 设置 & 存档 =================
         function changeTheme(color) {
@@ -1694,7 +1747,8 @@
                     await writable.write(JSON.stringify(data, null, 2)); await writable.close();
                 } catch (err) { console.error('保存失败', err); }
             }
-            if (gistConfig.token && gistConfig.id) { syncToGist(); }
+            // 移除自动上传，改为纯手动
+            // if (gistConfig.token && gistConfig.id) { syncToGist(); }
         }
 
         window.exportData = function() {
@@ -1738,7 +1792,9 @@
         if(appData.fontSize) changeFontSize(appData.fontSize);
         
         renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); initDragAndDrop(); renderSnapshots();
-        syncFromGist();
+        
+        // 移除自动拉取，完全交由手动控制
+        // syncFromGist();
 
     </script>
 </body>
