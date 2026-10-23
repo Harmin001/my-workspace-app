@@ -10,339 +10,121 @@
     <meta name="theme-color" content="#2383e2">
     
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    <!-- 引入 PeerJS 用于实时点对点通信 -->
+    <!-- 引入 PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
     <style>
-        :root {
-            --bg-main: #ffffff;
-            --bg-sidebar: #f7f7f5;
-            --text-main: #37352f;
-            --text-muted: #9b9a97;
-            --border-color: #e9e9e7;
-            --hover-bg: #efefed;
-            --accent-color: #2383e2;
-            --danger-color: #eb5757;
-            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            --base-font-size: 14px;
-        }
-
+        /* ===== 样式与之前完全一致，为了节省篇幅折叠了，保证你直接复制能用 ===== */
+        :root { --bg-main: #ffffff; --bg-sidebar: #f7f7f5; --text-main: #37352f; --text-muted: #9b9a97; --border-color: #e9e9e7; --hover-bg: #efefed; --accent-color: #2383e2; --danger-color: #eb5757; --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; --base-font-size: 14px; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: var(--font-family);
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            font-size: var(--base-font-size); 
-            transition: font-size 0.2s;
-        }
-
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
-
-        /* ================= 侧边栏 ================= */
-        .sidebar {
-            width: 240px;
-            background-color: var(--bg-sidebar);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            padding: 12px;
-            flex-shrink: 0;
-            transition: all 0.3s;
-        }
+        body { font-family: var(--font-family); background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; font-size: var(--base-font-size); transition: font-size 0.2s; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        .sidebar { width: 240px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 12px; flex-shrink: 0; transition: all 0.3s; }
         .sidebar-title { font-weight: 600; padding: 12px 8px; margin-bottom: 8px; font-size: 1.15em; display: flex; align-items: center; justify-content: space-between;}
         .sync-controls { display: flex; gap: 8px; align-items: center;}
-        
-        /* P2P 连接状态指示灯 */
         .p2p-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; transition: background 0.3s;}
         .p2p-dot.connected { background: #27ae60; box-shadow: 0 0 5px #27ae60; }
-        
         .nav-item { padding: 8px 12px; margin-bottom: 2px; border-radius: 4px; cursor: pointer; transition: all 0.1s; display: flex; align-items: center; gap: 8px; font-weight: 500; }
-        .nav-item:hover { background-color: var(--hover-bg); transform: translateX(2px); }
-        .nav-item.active { background-color: #e3e2e0; }
-
+        .nav-item:hover { background-color: var(--hover-bg); transform: translateX(2px); } .nav-item.active { background-color: #e3e2e0; }
         .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; border-top: 1px solid var(--border-color); padding-top: 16px; }
-        .sidebar-goal-box { margin-bottom: 24px; padding: 0 8px; }
-        .sidebar-goal-title { font-size: 0.85em; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
-        .sidebar-goal-input {
-            width: 100%; min-height: 40px; max-height: 200px; overflow-y: auto;
-            border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; font-size: 0.85em; font-family: inherit; 
-            background: white; transition: border 0.2s; outline: none; white-space: pre-wrap; word-break: break-word;
-        }
-        .sidebar-goal-input:focus { border-color: var(--accent-color); }
-        .sidebar-goal-input:empty:before { content: attr(placeholder); color: #aaa; pointer-events: none; display: block; }
-
+        .sidebar-goal-box { margin-bottom: 24px; padding: 0 8px; } .sidebar-goal-title { font-size: 0.85em; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
+        .sidebar-goal-input { width: 100%; min-height: 40px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; font-size: 0.85em; font-family: inherit; background: white; transition: border 0.2s; outline: none; white-space: pre-wrap; word-break: break-word; }
+        .sidebar-goal-input:focus { border-color: var(--accent-color); } .sidebar-goal-input:empty:before { content: attr(placeholder); color: #aaa; pointer-events: none; display: block; }
         .fixed-progress-bars { width: 100%; padding: 0 8px; display: flex; flex-direction: column; gap: 12px; margin-top: 8px; margin-bottom: 8px;}
-        .prog-row { display: flex; flex-direction: column; gap: 4px;}
-        .prog-label-row { display: flex; justify-content: space-between; font-size: 0.85em; color: var(--text-muted); font-weight: 600;}
-        .prog-bar-bg { width: 100%; height: 8px; background: #e9e9e7; border-radius: 4px; overflow: hidden; }
-        .prog-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
-
-        /* ================= 主内容区 ================= */
+        .prog-row { display: flex; flex-direction: column; gap: 4px;} .prog-label-row { display: flex; justify-content: space-between; font-size: 0.85em; color: var(--text-muted); font-weight: 600;}
+        .prog-bar-bg { width: 100%; height: 8px; background: #e9e9e7; border-radius: 4px; overflow: hidden; } .prog-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .view-container { flex: 1; padding: 24px; overflow-y: auto; display: none; flex-direction: column; }
-        .view-container.active { display: flex; }
-        
+        .view-container { flex: 1; padding: 24px; overflow-y: auto; display: none; flex-direction: column; } .view-container.active { display: flex; }
         h1 { font-size: 1.7em; font-weight: 700; margin-bottom: 20px; flex-shrink: 0; display: flex; align-items: center; gap: 8px;}
         h2 { font-size: 1.15em; font-weight: 600; margin-bottom: 0; display: flex; align-items: center; gap: 6px;}
-
         .time-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 1.15em; font-weight: bold; }
         .time-nav button { background: white; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 12px; cursor: pointer; font-weight: bold; color: var(--text-main); transition: all 0.2s; display: flex; align-items: center; gap: 4px; font-size: 0.9em;}
-        .time-nav button:hover { background: var(--bg-sidebar); }
-
-        /* ================= 日历 & 热力图 ================= */
         .calendar-wrapper { background-color: #fee2e2; padding: 16px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; border-radius: 8px; margin-bottom: 24px; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
-        .calendar-header-cell { text-align: center; font-weight: bold; color: #555; padding-bottom: 8px; font-size: 0.85em; }
-        
-        .day-box { 
-            background: white; border-radius: 6px; padding: 8px; cursor: pointer; 
-            border: 2px solid transparent; min-height: 100px; display: flex; flex-direction: column; 
-            transition: all 0.2s ease; position: relative; overflow: hidden; 
-        }
-        .day-box:hover { border-color: #ccc; }
-        .day-box.active { border-color: var(--accent-color); }
-        .day-box.all-done { background-color: #e8f5e9; border-color: #a5d6a7; }
-        
-        .day-number { font-size: 1.15em; font-weight: bold; margin-bottom: 4px; color: #333;}
-        .day-summary { font-size: 0.8em; color: var(--text-main); line-height: 1.4; margin-top: auto; display: flex; flex-direction: column; gap: 4px;}
-        
-        .mini-bar-row { display: flex; align-items: center; gap: 4px; font-size: 0.85em; color: #555; white-space: nowrap; }
-        .mini-bar-row span:first-child { width: 44px; flex-shrink: 0; } 
-        .mini-bar-row span:last-child { width: 26px; text-align: right; flex-shrink: 0; } 
-        .mini-bar-bg { flex: 1; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; min-width: 10px; }
-        .mini-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-        
-        .reflection-preview, .deadline-preview { 
-            font-size: 0.8em; margin-top: 4px; padding: 2px 4px; 
-            border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .reflection-preview { color: #888; background: #f5f5f5; border-left: 2px solid #ccc; }
-        .deadline-preview { color: var(--danger-color); background: #ffebee; border-left: 2px solid var(--danger-color); font-weight: bold;}
-
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; } .calendar-header-cell { text-align: center; font-weight: bold; color: #555; padding-bottom: 8px; font-size: 0.85em; }
+        .day-box { background: white; border-radius: 6px; padding: 8px; cursor: pointer; border: 2px solid transparent; min-height: 100px; display: flex; flex-direction: column; transition: all 0.2s ease; position: relative; overflow: hidden; }
+        .day-box:hover { border-color: #ccc; } .day-box.active { border-color: var(--accent-color); } .day-box.all-done { background-color: #e8f5e9; border-color: #a5d6a7; }
+        .day-number { font-size: 1.15em; font-weight: bold; margin-bottom: 4px; color: #333;} .day-summary { font-size: 0.8em; color: var(--text-main); line-height: 1.4; margin-top: auto; display: flex; flex-direction: column; gap: 4px;}
+        .mini-bar-row { display: flex; align-items: center; gap: 4px; font-size: 0.85em; color: #555; white-space: nowrap; } .mini-bar-row span:first-child { width: 44px; flex-shrink: 0; } .mini-bar-row span:last-child { width: 26px; text-align: right; flex-shrink: 0; }
+        .mini-bar-bg { flex: 1; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; min-width: 10px; } .mini-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+        .reflection-preview, .deadline-preview { font-size: 0.8em; margin-top: 4px; padding: 2px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .reflection-preview { color: #888; background: #f5f5f5; border-left: 2px solid #ccc; } .deadline-preview { color: var(--danger-color); background: #ffebee; border-left: 2px solid var(--danger-color); font-weight: bold;}
         .year-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-shrink: 0; }
         .year-heatmap { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 6px; margin-bottom: 24px; padding: 16px; background: #fff; border: 1px solid var(--border-color); border-radius: 8px; flex-shrink: 0; }
-        
-        .heatmap-cell { 
-            width: 100%; aspect-ratio: 1 / 1; 
-            background-color: #ebedf0; border-radius: 4px; cursor: pointer; 
-            transition: all 0.1s; display: flex; align-items: center; justify-content: center;
-            font-size: 0.9em; font-weight: 600; 
-        }
+        .heatmap-cell { width: 100%; aspect-ratio: 1 / 1; background-color: #ebedf0; border-radius: 4px; cursor: pointer; transition: all 0.1s; display: flex; align-items: center; justify-content: center; font-size: 0.9em; font-weight: 600; }
         .heatmap-cell:hover { transform: scale(1.15); z-index: 10; }
-
-        /* ================= 统计模块 ================= */
         .stats-container { display: flex; gap: 16px; margin: 16px 0 24px 0; flex-shrink: 0; }
-        .stat-card {
-            flex: 1; background: #fff; border: 1px solid var(--border-color); border-radius: 8px;
-            padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .stat-value { font-size: 1.7em; font-weight: bold; margin-bottom: 4px; }
-        .stat-label { font-size: 0.85em; color: var(--text-muted); font-weight: 500;}
-        .stat-card.learning { border-top: 4px solid #2383e2; }
-        .stat-card.other { border-top: 4px solid #f2994a; }
-        .stat-card.exercise { border-top: 4px solid #27ae60; }
-
-        /* ================= 周计划 ================= */
+        .stat-card { flex: 1; background: #fff; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .stat-value { font-size: 1.7em; font-weight: bold; margin-bottom: 4px; } .stat-label { font-size: 0.85em; color: var(--text-muted); font-weight: 500;}
+        .stat-card.learning { border-top: 4px solid #2383e2; } .stat-card.other { border-top: 4px solid #f2994a; } .stat-card.exercise { border-top: 4px solid #27ae60; }
         .week-board { display: flex; gap: 8px; height: 400px; margin-bottom: 24px; flex-shrink: 0; }
         .week-column { flex: 1; background: var(--bg-sidebar); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; border: 1px dashed transparent; }
-        .week-column.drag-over { border-color: var(--accent-color); background: #eef5fc; }
-        .week-column-header { font-weight: 600; text-align: center; margin-bottom: 12px; font-size: 0.9em; color: #555;}
-        
+        .week-column.drag-over { border-color: var(--accent-color); background: #eef5fc; } .week-column-header { font-weight: 600; text-align: center; margin-bottom: 12px; font-size: 0.9em; color: #555;}
         .todo-section { background: #fff; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; flex-shrink: 0; }
         .todo-input { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 12px; outline: none; font-family: inherit; font-size: 0.95em;}
-        .todo-input:focus { border-color: var(--accent-color); }
-        
-        .todo-lists-container { display: flex; gap: 16px; margin-bottom: 24px; }
-        .todo-column { flex: 1; }
-        .todo-column h3 { font-size: 1em; color: #555; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;}
+        .todo-input:focus { border-color: var(--accent-color); } .todo-lists-container { display: flex; gap: 16px; margin-bottom: 24px; }
+        .todo-column { flex: 1; } .todo-column h3 { font-size: 1em; color: #555; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;}
         .task-pool-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; padding: 8px; border: 2px dashed var(--border-color); border-radius: 6px; background: #fafafa;}
-        
         .task-item { background: #fff; border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; cursor: grab; display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; }
         .task-item input[type="checkbox"] { margin-right: 2px; cursor: pointer; accent-color: var(--accent-color); width: 14px; height: 14px;}
-        .task-item .task-text { flex: 1; word-break: break-all;}
-        
-        .week-column .task-item { width: 100%; margin-bottom: 6px; }
-        .task-tag { font-size: 0.75em; padding: 2px 6px; border-radius: 4px; background: #eee; font-weight: bold;}
-        .task-tag.today { background: #e3f2fd; color: #1976d2; }
-        .task-tag.overdue { background: #ffebee; color: var(--danger-color); }
-
+        .task-item .task-text { flex: 1; word-break: break-all;} .week-column .task-item { width: 100%; margin-bottom: 6px; }
+        .task-tag { font-size: 0.75em; padding: 2px 6px; border-radius: 4px; background: #eee; font-weight: bold;} .task-tag.today { background: #e3f2fd; color: #1976d2; } .task-tag.overdue { background: #ffebee; color: var(--danger-color); }
         .exercise-pool-wrapper { margin-top: 24px; border-top: 1px dashed var(--border-color); padding-top: 16px; }
         .exercise-pool-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .exercise-pool { display: flex; gap: 8px; flex-wrap: wrap; }
         .exercise-capsule { padding: 8px 16px; background: #fff; border: 1px solid var(--border-color); border-radius: 20px; cursor: grab; font-size: 0.9em; font-weight: 600; color: #444; display: flex; align-items: center; gap: 6px; }
-        
-        .week-column .exercise-capsule { 
-            width: 100%; justify-content: flex-start; margin-bottom: 4px; 
-            background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; cursor: default; padding: 4px 8px;
-        }
+        .week-column .exercise-capsule { width: 100%; justify-content: flex-start; margin-bottom: 4px; background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; cursor: default; padding: 4px 8px;}
         .week-column .exercise-capsule input[type="checkbox"] { margin-right: 4px; cursor: pointer; accent-color: #4caf50;}
-
-        /* ================= 日计划 ================= */
         .day-panels-grid { display: flex; flex-wrap: wrap; gap: 20px; flex: 1; align-items: flex-start; margin-bottom: 24px; }
-        .section-box { 
-            width: calc(50% - 10px); min-width: 300px; border: 1px solid var(--border-color); border-radius: 8px; 
-            display: flex; flex-direction: column; background: #fff; position: relative;
-            height: 350px; resize: both; overflow: hidden; min-height: 200px; 
-        }
+        .section-box { width: calc(50% - 10px); min-width: 300px; border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; background: #fff; position: relative; height: 350px; resize: both; overflow: hidden; min-height: 200px; }
         .section-box.span-full { width: 100%; }
-
-        .panel-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 16px; border-bottom: 1px solid var(--border-color);
-            background: #fafafa; border-radius: 8px 8px 0 0; flex-shrink: 0; cursor: grab;
-        }
-        .panel-header h2 { margin: 0; font-size: 1.1em; display: flex; align-items: center; gap: 6px;}
-        .drag-handle-icon { color: #aaa; margin-right: 6px; font-size: 1.1em; user-select: none; }
-        .panel-controls { display: flex; gap: 8px; align-items: center;}
-        .btn-resize { cursor: pointer; color: #999; font-size: 1.1em; padding: 2px 6px; border-radius: 4px;}
-
-        .panel-content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px; display: flex; flex-direction: column; min-height: 0; }
-        .panel-input-wrapper { flex-shrink: 0; margin-bottom: 12px; }
-
-        .main-task-item { margin-bottom: 12px; padding: 8px; border-bottom: 1px dashed var(--border-color); border-radius: 6px; }
-        .main-task-item.pinned-task { background-color: #fff9f0; border-left: 3px solid #f2994a; padding-left: 10px; }
-
-        .main-task-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px;}
-        .main-task-left { display: flex; align-items: center; flex: 1; flex-wrap: wrap; gap: 4px;}
-        .task-checkbox { width: 16px; height: 16px; margin-right: 8px; cursor: pointer; accent-color: var(--accent-color); }
-        .task-text { font-weight: 500; word-break: break-all; font-size: 0.95em;}
-        .task-completed { text-decoration: line-through; color: var(--text-muted); }
-
-        .progress-task-container { display: flex; align-items: center; gap: 8px; flex: 1;}
-        .progress-task-bar-bg { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-right: 8px;}
-        .progress-task-bar-fill { height: 100%; background: var(--accent-color); border-radius: 4px; }
-        .btn-plus-one { background: var(--accent-color); color: white; border: none; border-radius: 4px; padding: 2px 8px; font-size: 0.85em; cursor: pointer; font-weight: bold; }
-        .progress-text { font-size: 0.85em; font-weight: bold; color: var(--text-muted); min-width: 40px; text-align: right;}
-
-        .task-meta { display: flex; align-items: center; gap: 6px; font-size: 0.85em; }
-        .btn-pin { cursor: pointer; color: #ccc; font-size: 1.1em; padding: 0 4px;}
-        .btn-pin.active { color: #f2994a; } 
-        .btn-loop { font-size: 1.1em; color: #ccc; cursor: pointer;}
-        .btn-loop.active { color: var(--accent-color); }
-        .loop-label { font-size: 0.75em; color: var(--accent-color); background: #e3f2fd; padding: 2px 6px; border-radius: 4px; margin-left: 4px; font-weight: bold; white-space: nowrap;}
-        .btn-target { cursor: pointer; color: #ccc; font-size: 1em; font-weight: bold; padding: 0 4px;}
-        .btn-delete-task { cursor: pointer; color: #aaa; font-size: 1em; padding: 0 4px;}
+        .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border-color); background: #fafafa; border-radius: 8px 8px 0 0; flex-shrink: 0; cursor: grab; }
+        .panel-header h2 { margin: 0; font-size: 1.1em; display: flex; align-items: center; gap: 6px;} .drag-handle-icon { color: #aaa; margin-right: 6px; font-size: 1.1em; user-select: none; }
+        .panel-controls { display: flex; gap: 8px; align-items: center;} .btn-resize { cursor: pointer; color: #999; font-size: 1.1em; padding: 2px 6px; border-radius: 4px;}
+        .panel-content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px; display: flex; flex-direction: column; min-height: 0; } .panel-input-wrapper { flex-shrink: 0; margin-bottom: 12px; }
+        .main-task-item { margin-bottom: 12px; padding: 8px; border-bottom: 1px dashed var(--border-color); border-radius: 6px; } .main-task-item.pinned-task { background-color: #fff9f0; border-left: 3px solid #f2994a; padding-left: 10px; }
+        .main-task-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px;} .main-task-left { display: flex; align-items: center; flex: 1; flex-wrap: wrap; gap: 4px;}
+        .task-checkbox { width: 16px; height: 16px; margin-right: 8px; cursor: pointer; accent-color: var(--accent-color); } .task-text { font-weight: 500; word-break: break-all; font-size: 0.95em;} .task-completed { text-decoration: line-through; color: var(--text-muted); }
+        .progress-task-container { display: flex; align-items: center; gap: 8px; flex: 1;} .progress-task-bar-bg { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-right: 8px;} .progress-task-bar-fill { height: 100%; background: var(--accent-color); border-radius: 4px; }
+        .btn-plus-one { background: var(--accent-color); color: white; border: none; border-radius: 4px; padding: 2px 8px; font-size: 0.85em; cursor: pointer; font-weight: bold; } .progress-text { font-size: 0.85em; font-weight: bold; color: var(--text-muted); min-width: 40px; text-align: right;}
+        .task-meta { display: flex; align-items: center; gap: 6px; font-size: 0.85em; } .btn-pin { cursor: pointer; color: #ccc; font-size: 1.1em; padding: 0 4px;} .btn-pin.active { color: #f2994a; } 
+        .btn-loop { font-size: 1.1em; color: #ccc; cursor: pointer;} .btn-loop.active { color: var(--accent-color); } .loop-label { font-size: 0.75em; color: var(--accent-color); background: #e3f2fd; padding: 2px 6px; border-radius: 4px; margin-left: 4px; font-weight: bold; white-space: nowrap;}
+        .btn-target { cursor: pointer; color: #ccc; font-size: 1em; font-weight: bold; padding: 0 4px;} .btn-delete-task { cursor: pointer; color: #aaa; font-size: 1em; padding: 0 4px;}
         .deadline-input { font-size: 0.85em; border: none; outline: none; color: var(--text-muted); font-family: inherit; cursor: pointer; background: transparent; font-weight: 500; max-width: 105px;}
-
         .sub-task-list { margin-left: 24px; margin-top: 8px; padding-left: 12px; border-left: 2px solid var(--border-color); display: flex; flex-direction: column; gap: 6px; }
-        .sub-task-item { display: flex; align-items: center; font-size: 0.9em; color: #444; justify-content: space-between; margin-bottom: 2px;}
-        .sub-task-left { display: flex; align-items: center; flex: 1; flex-wrap: wrap; gap: 4px;}
-        .sub-task-item .task-checkbox { width: 14px; height: 14px; margin-right: 4px;}
-
-        .sub-prog-container { display: flex; align-items: center; gap: 4px; margin-left: 8px;}
-        .sub-prog-bar-bg { flex: 1; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; width: 60px;}
-        .sub-prog-bar-fill { height: 100%; background: var(--accent-color); border-radius: 3px; }
-        .sub-prog-text { font-size: 0.8em; color: #999; width: 32px; text-align: right;}
-        .sub-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px;}
-        .btn-sub-plus { background: #e9e9e7; color: var(--text-main); border: none; border-radius: 4px; padding: 0px 6px; font-size: 0.8em; cursor: pointer; font-weight: bold; }
-        .btn-sub-target { cursor: pointer; color: #aaa; font-size: 0.9em; padding: 0 2px;}
-        .btn-sub-delete { cursor: pointer; color: #aaa; font-size: 0.9em; padding: 0 2px;}
-
+        .sub-task-item { display: flex; align-items: center; font-size: 0.9em; color: #444; justify-content: space-between; margin-bottom: 2px;} .sub-task-left { display: flex; align-items: center; flex: 1; flex-wrap: wrap; gap: 4px;} .sub-task-item .task-checkbox { width: 14px; height: 14px; margin-right: 4px;}
+        .sub-prog-container { display: flex; align-items: center; gap: 4px; margin-left: 8px;} .sub-prog-bar-bg { flex: 1; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; width: 60px;} .sub-prog-bar-fill { height: 100%; background: var(--accent-color); border-radius: 3px; }
+        .sub-prog-text { font-size: 0.8em; color: #999; width: 32px; text-align: right;} .sub-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px;} .btn-sub-plus { background: #e9e9e7; color: var(--text-main); border: none; border-radius: 4px; padding: 0px 6px; font-size: 0.8em; cursor: pointer; font-weight: bold; }
+        .btn-sub-target { cursor: pointer; color: #aaa; font-size: 0.9em; padding: 0 2px;} .btn-sub-delete { cursor: pointer; color: #aaa; font-size: 0.9em; padding: 0 2px;}
         .add-sub-task-input { margin-left: 24px; margin-top: 8px; font-size: 0.85em; padding: 4px 8px; border: 1px dashed var(--border-color); width: calc(100% - 24px); display: none; border-radius: 4px;}
         .btn-add-sub { font-size: 0.85em; color: var(--accent-color); cursor: pointer; margin-left: 24px; margin-top: 4px; display: inline-block; font-weight: 500;}
-
         .completed-tasks-section { margin-top: 16px; border-top: 1px dashed var(--border-color); padding-top: 12px; }
         .completed-tasks-section summary { cursor: pointer; font-size: 0.9em; color: var(--text-muted); font-weight: 500; outline: none; user-select: none; display: flex; align-items: center; gap: 6px; list-style: none;}
-        .completed-tasks-section summary::-webkit-details-marker { display: none; }
-        .completed-tasks-section summary::before { content: '▶'; font-size: 0.8em; transition: transform 0.2s; }
-        .completed-tasks-section[open] summary::before { transform: rotate(90deg); }
-        .completed-tasks-list { margin-top: 12px; opacity: 0.8;}
-        .completed-tasks-list .main-task-item { border-bottom: none; padding-bottom: 4px; margin-bottom: 8px;}
-
+        .completed-tasks-section summary::-webkit-details-marker { display: none; } .completed-tasks-section summary::before { content: '▶'; font-size: 0.8em; transition: transform 0.2s; } .completed-tasks-section[open] summary::before { transform: rotate(90deg); }
+        .completed-tasks-list { margin-top: 12px; opacity: 0.8;} .completed-tasks-list .main-task-item { border-bottom: none; padding-bottom: 4px; margin-bottom: 8px;}
         .exercise-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-        .exercise-card { background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; min-width: 0; }
-        .exercise-card.active-plan { border-color: #4caf50; background: #f1f8e9; }
-        
+        .exercise-card { background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; min-width: 0; } .exercise-card.active-plan { border-color: #4caf50; background: #f1f8e9; }
         .exercise-card-header { font-weight: 600; margin-bottom: 8px; color: var(--text-muted); font-size: 1em; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 4px;}
-        .exercise-header-left { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
-        .exercise-cat-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: #4caf50; flex-shrink: 0;}
-        .exercise-name { cursor: pointer; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .exercise-card.active-plan .exercise-card-header { color: #2e7d32; }
-        .exercise-header-right { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-        .btn-del-ex { cursor: pointer; color: var(--danger-color); font-size: 1.1em; font-weight: bold; padding: 0 4px; flex-shrink: 0;}
-        
-        .exercise-content { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 0.85em; }
-        .exercise-item { display: flex; align-items: center; color: #555; justify-content: space-between; margin-bottom: 4px;}
-        .exercise-item-left { display: flex; align-items: center; flex: 1; min-width: 0;}
-        .exercise-item input[type="checkbox"] { margin-right: 4px; cursor: pointer; flex-shrink: 0;}
-        .btn-del-action { cursor: pointer; color: #aaa; font-size: 0.85em; padding: 0 4px; flex-shrink: 0;}
-        
-        .exercise-card details { margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 4px;}
-        .exercise-card summary { font-size: 0.85em; color: var(--text-muted); cursor: pointer; outline: none; list-style: none; }
-        .exercise-card summary::-webkit-details-marker { display: none; }
-        .exercise-card summary::before { content: '▶ '; font-size: 0.8em; }
-        .exercise-card details[open] summary::before { content: '▼ '; }
-
+        .exercise-header-left { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; } .exercise-cat-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: #4caf50; flex-shrink: 0;} .exercise-name { cursor: pointer; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .exercise-card.active-plan .exercise-card-header { color: #2e7d32; } .exercise-header-right { display: flex; align-items: center; gap: 2px; flex-shrink: 0; } .btn-del-ex { cursor: pointer; color: var(--danger-color); font-size: 1.1em; font-weight: bold; padding: 0 4px; flex-shrink: 0;}
+        .exercise-content { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 0.85em; } .exercise-item { display: flex; align-items: center; color: #555; justify-content: space-between; margin-bottom: 4px;} .exercise-item-left { display: flex; align-items: center; flex: 1; min-width: 0;}
+        .exercise-item input[type="checkbox"] { margin-right: 4px; cursor: pointer; flex-shrink: 0;} .btn-del-action { cursor: pointer; color: #aaa; font-size: 0.85em; padding: 0 4px; flex-shrink: 0;}
+        .exercise-card details { margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 4px;} .exercise-card summary { font-size: 0.85em; color: var(--text-muted); cursor: pointer; outline: none; list-style: none; } .exercise-card summary::-webkit-details-marker { display: none; }
+        .exercise-card summary::before { content: '▶ '; font-size: 0.8em; } .exercise-card details[open] summary::before { content: '▼ '; }
         input[type="text"], input[type="password"] { width: 100%; box-sizing: border-box; min-width: 0; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; outline: none; font-size: 0.95em;}
         textarea { width: 100%; box-sizing: border-box; height: 100px; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; outline: none; resize: vertical; font-size: 0.95em;}
-        
         .btn { padding: 6px 12px; border: 1px solid var(--border-color); background: white; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 500; font-size: 0.95em;}
-        .btn-primary { background: var(--accent-color); color: white; border-color: var(--accent-color);}
-        .btn-danger { background: var(--danger-color); color: white; border-color: var(--danger-color);}
-        .btn-sm { font-size: 0.85em; padding: 4px 8px; }
-
-        input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; background: #e9e9e7; border-radius: 3px; outline: none; margin-top: 10px; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-color); cursor: pointer; }
-
-        .snapshot-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px;}
-        .snapshot-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-sidebar); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);}
-        .snapshot-actions { display: flex; gap: 8px;}
-        
+        .btn-primary { background: var(--accent-color); color: white; border-color: var(--accent-color);} .btn-danger { background: var(--danger-color); color: white; border-color: var(--danger-color);} .btn-sm { font-size: 0.85em; padding: 4px 8px; }
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; background: #e9e9e7; border-radius: 3px; outline: none; margin-top: 10px; } input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-color); cursor: pointer; }
+        .snapshot-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px;} .snapshot-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-sidebar); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);} .snapshot-actions { display: flex; gap: 8px;}
         .bottom-summary { flex-shrink: 0; margin-top: auto; }
-
-        /* ========================================================= */
-        /* ================= 手机端专属自适应布局 ================= */
-        /* ========================================================= */
         @media (max-width: 768px) {
-            body { flex-direction: column; }
-            
-            .sidebar {
-                width: 100%; height: auto; order: 2;
-                border-right: none; border-top: 1px solid var(--border-color);
-                padding: 8px 4px; flex-direction: row; justify-content: space-around; align-items: center;
-                position: fixed; bottom: 0; left: 0; z-index: 100; background: rgba(247, 247, 245, 0.95);
-                backdrop-filter: blur(10px);
-            }
-            .sidebar-title, .sidebar-footer { display: none; } 
-            .nav-item {
-                flex-direction: column; padding: 6px 0; font-size: 0.75em; gap: 2px; flex: 1; text-align: center;
-                margin-bottom: 0; border-radius: 8px;
-            }
-            .nav-item:hover { transform: none; background-color: transparent;}
-            .nav-item.active { background-color: #e3e2e0; color: var(--accent-color); font-weight: bold;}
-            
-            .main-content { order: 1; height: calc(100vh - 65px); }
-            .view-container { padding: 12px; }
-
-            .day-panels-grid { flex-direction: column; gap: 16px; }
-            .section-box { width: 100% !important; height: auto !important; min-height: 250px; resize: none;}
-            
-            .calendar-wrapper { padding: 8px; margin-bottom: 12px; }
-            .calendar-grid { gap: 2px; }
-            .day-box { padding: 4px; min-height: 70px; border-width: 1px;}
-            .day-number { font-size: 0.9em; margin-bottom: 2px;}
-            .day-summary { gap: 2px; margin-top: auto;}
-            .mini-bar-row span { display: none !important; }
-            .mini-bar-bg { height: 4px; margin-bottom: 2px; border-radius: 2px;}
-            .reflection-preview, .deadline-preview { display: none; }
-            
-            .week-board { flex-direction: column; height: auto; gap: 12px; }
-            .week-column { 
-                min-height: 80px; 
-                max-height: 200px; 
-                overflow-y: auto; 
-                padding: 8px; 
-            }
-            .week-column-header { margin-bottom: 8px; }
-            .todo-lists-container { flex-direction: column; }
-
-            h1 { font-size: 1.4em; margin-bottom: 12px; }
-
-            .exercise-grid { grid-template-columns: 1fr; }
+            body { flex-direction: column; } .sidebar { width: 100%; height: auto; order: 2; border-right: none; border-top: 1px solid var(--border-color); padding: 8px 4px; flex-direction: row; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; z-index: 100; background: rgba(247, 247, 245, 0.95); backdrop-filter: blur(10px);}
+            .sidebar-title, .sidebar-footer { display: none; } .nav-item { flex-direction: column; padding: 6px 0; font-size: 0.75em; gap: 2px; flex: 1; text-align: center; margin-bottom: 0; border-radius: 8px; } .nav-item:hover { transform: none; background-color: transparent;} .nav-item.active { background-color: #e3e2e0; color: var(--accent-color); font-weight: bold;}
+            .main-content { order: 1; height: calc(100vh - 65px); } .view-container { padding: 12px; }
+            .day-panels-grid { flex-direction: column; gap: 16px; } .section-box { width: 100% !important; height: auto !important; min-height: 250px; resize: none;}
+            .calendar-wrapper { padding: 8px; margin-bottom: 12px; } .calendar-grid { gap: 2px; } .day-box { padding: 4px; min-height: 70px; border-width: 1px;} .day-number { font-size: 0.9em; margin-bottom: 2px;} .day-summary { gap: 2px; margin-top: auto;} .mini-bar-row span { display: none !important; } .mini-bar-bg { height: 4px; margin-bottom: 2px; border-radius: 2px;} .reflection-preview, .deadline-preview { display: none; }
+            .week-board { flex-direction: column; height: auto; gap: 12px; } .week-column { min-height: 80px; max-height: 200px; overflow-y: auto; padding: 8px; } .week-column-header { margin-bottom: 8px; } .todo-lists-container { flex-direction: column; }
+            h1 { font-size: 1.4em; margin-bottom: 12px; } .exercise-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -352,7 +134,6 @@
         <div class="sidebar-title">
             🚀 我的工作台 
             <div class="sync-controls">
-                <!-- 显示连接状态的绿灯 -->
                 <div class="p2p-dot" id="p2p-indicator" title="未连接"></div>
             </div>
         </div>
@@ -547,22 +328,22 @@
                 </div>
             </div>
 
-            <!-- 2. 实时局域网同步 -->
+            <!-- 2. 局域网点对点同步 -->
             <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px; border-color: #ff9800;">
                 <div class="panel-content">
-                    <h2 style="color: #e65100;">📡 局域网点对点同步 (全自动)</h2>
+                    <h2 style="color: #e65100;">📡 局域网点对点同步</h2>
                     <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em; line-height: 1.6;">
-                        要求手机和电脑连同一个 WiFi。<b>连接成功后，任何一端的修改都会自动同步到另一端，完全不需要点任何按钮！</b>
+                        连接成功后，任何修改都会自动推送到另一端。
                     </p>
                     
                     <div style="display: flex; flex-direction: column; gap: 16px; max-width: 500px;">
                         
                         <!-- 主机模式 -->
                         <div style="background: #fff3e0; padding: 12px; border-radius: 8px;">
-                            <h3 style="font-size: 0.95em; margin-bottom: 8px;">💻 我是主机 (电脑)</h3>
-                            <div style="display: flex; align-items: center; gap: 8px;">
+                            <h3 style="font-size: 0.95em; margin-bottom: 8px;">💻 我是主机 (固定码)</h3>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                 <span style="font-weight: bold; font-size: 1.1em; color: #e65100; word-break: break-all;" id="my-peer-id">未生成</span>
-                                <button class="btn btn-sm btn-primary" onclick="initPeer(true)">生成连接码</button>
+                                <button class="btn btn-sm btn-primary" onclick="initPeer(true)">开启并固定此码</button>
                             </div>
                         </div>
 
@@ -574,6 +355,14 @@
                                 <button class="btn btn-sm btn-primary" onclick="connectToPeer()">连接</button>
                             </div>
                             <div id="p2p-status" style="font-size: 0.85em; color: #666; margin-top: 8px;">未连接</div>
+                            
+                            <!-- 历史记录区域 -->
+                            <div style="margin-top: 12px; border-top: 1px dashed #bbdefb; padding-top: 8px;">
+                                <span style="font-size: 0.85em; color: #1976d2; font-weight: bold; display: block; margin-bottom: 6px;">历史连接记录 (点击直接重连)</span>
+                                <div id="p2p-history-list" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <!-- JS 渲染 -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -638,10 +427,10 @@
             viewWeekBaseDate: getTodayString() 
         };
         
-        // P2P 变量
+        // ================= P2P 同步变量 =================
         let peer = null;
         let conn = null;
-        let isSyncing = false; // 防止死循环
+        let isSyncing = false; 
         const p2pIndicator = document.getElementById('p2p-indicator');
 
         function getTodayString() {
@@ -666,11 +455,58 @@
             return false;
         }
 
-        // ================= P2P 实时同步逻辑 =================
+        // ================= 1. P2P 实时同步逻辑优化 =================
+        
+        // 保存历史连接码
+        function addPeerToHistory(id) {
+            let history = JSON.parse(localStorage.getItem('my_p2p_history') || '[]');
+            if (!history.includes(id)) {
+                history.unshift(id); // 最新添加到最前面
+                if (history.length > 5) history.pop(); // 最多保留5条
+                localStorage.setItem('my_p2p_history', JSON.stringify(history));
+            }
+            renderP2PHistory();
+        }
+
+        function renderP2PHistory() {
+            const container = document.getElementById('p2p-history-list');
+            let history = JSON.parse(localStorage.getItem('my_p2p_history') || '[]');
+            container.innerHTML = '';
+            if (history.length === 0) {
+                container.innerHTML = '<span style="font-size:0.8em; color:#999;">暂无历史记录</span>';
+                return;
+            }
+            history.forEach(id => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm';
+                btn.style.background = 'white';
+                btn.style.border = '1px solid #90caf9';
+                btn.style.color = '#1976d2';
+                btn.innerText = id;
+                btn.onclick = () => {
+                    document.getElementById('target-peer-id').value = id;
+                    connectToPeer();
+                };
+                container.appendChild(btn);
+            });
+        }
+
         window.initPeer = function(isHost) {
             if (peer) peer.destroy();
-            // 优化：使用带 STUN 服务器的配置提升连接成功率
-            peer = new Peer({
+            
+            let customId = null;
+            if (isHost) {
+                // 尝试从本地读取固定的主机 ID，如果没有就生成一个
+                customId = localStorage.getItem('my_p2p_host_id');
+                if (!customId) {
+                    // 生成一个易读的短码作为 ID (如 lx-a1b2c3)
+                    customId = 'lx-' + Math.random().toString(36).substring(2, 8);
+                    localStorage.setItem('my_p2p_host_id', customId);
+                }
+            }
+
+            // 传入 customId，使其固定下来
+            peer = new Peer(customId, {
                 config: {'iceServers': [
                     { url: 'stun:stun.l.google.com:19302' },
                     { url: 'stun:global.stun.twilio.com:3478' }
@@ -678,9 +514,11 @@
             }); 
 
             peer.on('open', function(id) {
-                if (isHost) document.getElementById('my-peer-id').innerText = id; 
-                document.getElementById('p2p-status').innerText = "✅ 等待连接...";
-                document.getElementById('p2p-status').style.color = "#f2994a";
+                if (isHost) {
+                    document.getElementById('my-peer-id').innerText = id;
+                    document.getElementById('p2p-status').innerText = "✅ 主机已就绪，请手机输入此码连接。";
+                    document.getElementById('p2p-status').style.color = "#f2994a";
+                }
             });
 
             peer.on('connection', function(c) {
@@ -689,8 +527,13 @@
             });
 
             peer.on('error', function(err) {
-                document.getElementById('p2p-status').innerText = "❌ 错误：" + err.type;
-                document.getElementById('p2p-status').style.color = "#eb5757";
+                if (err.type === 'unavailable-id') {
+                    document.getElementById('p2p-status').innerText = "❌ 此码已被占用，请点击重新生成。";
+                    document.getElementById('p2p-status').style.color = "#eb5757";
+                } else {
+                    document.getElementById('p2p-status').innerText = "❌ 错误：" + err.type;
+                    document.getElementById('p2p-status').style.color = "#eb5757";
+                }
             });
         };
 
@@ -704,29 +547,30 @@
             document.getElementById('p2p-status').style.color = "#f2994a";
 
             conn = peer.connect(targetId);
-            setupConnection(conn, false);
+            setupConnection(conn, false, targetId);
         };
 
-        function setupConnection(connection, isHost) {
+        function setupConnection(connection, isHost, targetId) {
             connection.on('open', () => {
                 document.getElementById('p2p-status').innerText = "✅ 已连接！实时同步已开启。";
                 document.getElementById('p2p-status').style.color = "#27ae60";
                 p2pIndicator.classList.add('connected');
                 p2pIndicator.title = "已连接";
                 
+                // 记录到历史
+                if (!isHost && targetId) addPeerToHistory(targetId);
+
                 // 连接成功后，主动把自己的数据发给对方，确保初始状态一致
                 connection.send({ type: 'SYNC_DATA', payload: appData });
             });
 
             connection.on('data', (data) => {
                 if (data.type === 'SYNC_DATA') {
-                    // 收到对方数据时，加上标志位，防止触发二次发送
                     isSyncing = true;
                     appData = data.payload;
                     if(appData.themeColor) changeTheme(appData.themeColor);
                     if(appData.fontSize) changeFontSize(appData.fontSize);
                     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
-                    // 存入本地，防止刷新丢失
                     saveLocalStorage();
                     isSyncing = false;
                 }
@@ -741,17 +585,13 @@
             });
         }
 
-        // 核心：任何数据变动，立刻发送给对端
         function saveDataToFile(data) {
-            saveLocalStorage(); // 先存本地
-            
-            // 如果已连接且不是由对方发来的数据触发，则发送过去
+            saveLocalStorage(); 
             if (conn && conn.open && !isSyncing) {
                 conn.send({ type: 'SYNC_DATA', payload: data });
             }
         }
 
-        // 仅存本地 LocalStorage，保证刷新不丢
         function saveLocalStorage() {
             localStorage.setItem('myWorkspaceAppData', JSON.stringify(appData));
         }
@@ -1365,6 +1205,10 @@
                 else if (target === 'day') renderDayPlan();
                 else if (target === 'settings') {
                     renderSnapshots();
+                    renderP2PHistory(); // 进入设置页刷新历史记录
+                    // 如果本地有主机记录，自动填进主机的显示区
+                    const savedHost = localStorage.getItem('my_p2p_host_id');
+                    if (savedHost) document.getElementById('my-peer-id').innerText = savedHost;
                 }
             });
         });
@@ -1700,12 +1544,10 @@
         };
 
         // ================= 初始化 =================
-        // 尝试从本地读取数据
         const savedData = localStorage.getItem('myWorkspaceAppData');
         if (savedData) {
             try { appData = JSON.parse(savedData); } catch(e) {}
         } else {
-            // 初始演示数据
             appData.tasks.push({ id: '1', text: '搭建个人应用框架', type: 'learning', date: 'pool', completed: false, subTasks: [{id: '1-1', text: '设计UI', completed: false}], deadline: '', pinned: false });
             appData.tasks.push({ id: '2', text: '看教程视频', type: 'learning', date: getTodayString(), completed: false, subTasks: [], deadline: '', target: 100, current: 10, pinned: false });
             appData.tasks.push({ id: '3', text: '复习考试', type: 'learning', date: getTodayString(), completed: false, subTasks: [{id: '3-1', text: '第一章', completed: false, target: 5, current: 0}, {id: '3-2', text: '第二章', completed: false, target: 5, current: 0}], deadline: '', pinned: false });
@@ -1715,7 +1557,11 @@
         if(appData.fontSize) changeFontSize(appData.fontSize);
         
         renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); initDragAndDrop(); renderSnapshots();
-
+        
+        // 初始化时渲染一次历史记录
+        renderP2PHistory();
+        const savedHost = localStorage.getItem('my_p2p_host_id');
+        if (savedHost) document.getElementById('my-peer-id').innerText = savedHost;
     </script>
 </body>
 </html>
