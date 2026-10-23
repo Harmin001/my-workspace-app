@@ -10,7 +10,6 @@
     <meta name="theme-color" content="#2383e2">
     
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
     <style>
         :root {
@@ -349,8 +348,8 @@
         <div class="sidebar-title">
             🚀 我的工作台 
             <div class="sync-controls">
-                <span class="btn-sync" title="上传至云端" onclick="manualUpload()">⬆️</span>
-                <span class="btn-sync" title="从云端下载" onclick="manualDownload()">⬇️</span>
+                <span class="btn-sync" title="保存到本地文件夹 (触发微力同步)" onclick="manualSave()">💾</span>
+                <span class="btn-sync" title="从本地文件夹读取 (拉取微力同步数据)" onclick="manualLoad()">📂</span>
             </div>
         </div>
         <div class="nav-item" data-target="year">📊 全年</div>
@@ -358,9 +357,6 @@
         <div class="nav-item" data-target="week">🗓️ 周计划</div>
         <div class="nav-item" data-target="day">📝 日计划</div>
         <div class="nav-item" data-target="settings">⚙️ 设置</div>
-        
-        <div class="nav-item" onclick="manualUpload()" style="display:none;" id="mobile-upload-btn">⬆️ 上传</div>
-        <div class="nav-item" onclick="manualDownload()" style="display:none;" id="mobile-download-btn">⬇️ 下载</div>
 
         <div class="sidebar-footer">
             <div class="sidebar-goal-box">
@@ -547,59 +543,23 @@
                 </div>
             </div>
 
-            <!-- 2. WebDAV 云同步 -->
-            <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px; border-color: #90caf9;">
+            <!-- 2. 微力同步/本地文件绑定 -->
+            <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px; border-color: #a5d6a7;">
                 <div class="panel-content">
-                    <h2 style="color: #1976d2;">☁️ WebDAV 云同步 (推荐坚果云)</h2>
-                    <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em;">
-                        国内网络直接访问，无限制、免费。填入坚果云等 WebDAV 账号即可同步。
+                    <h2 style="color: #2e7d32;">🔗 本地文件绑定 (配合微力同步)</h2>
+                    <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em; line-height: 1.6;">
+                        请将微力同步的目标文件夹绑定到这里。<br>
+                        绑定后，你的任何操作都会实时写入文件夹；右上角的 💾 会强制保存，📂 会强制读取。
                     </p>
                     
-                    <div style="display: flex; flex-direction: column; gap: 12px; max-width: 500px;">
-                        <input type="text" id="webdav-url" placeholder="服务器地址 (如: https://dav.jianguoyun.com/dav/)">
-                        <input type="text" id="webdav-user" placeholder="账号 (坚果云登录邮箱)">
-                        <input type="password" id="webdav-pass" placeholder="应用密码 (不是登录密码)">
-                        <div style="display: flex; gap: 12px; align-items: center;">
-                            <button class="btn btn-primary" onclick="saveWebDAVConfig()">保存配置</button>
-                            <span id="webdav-status" style="font-size: 0.9em; color: #999;">未配置</span>
-                        </div>
+                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <button class="btn btn-primary" id="btn-bind-folder">选择数据文件夹</button>
+                        <span id="folder-status" style="font-size: 0.9em; color: var(--danger-color);">未绑定</span>
                     </div>
                 </div>
             </div>
 
-            <!-- 3. P2P 局域网直连同步 -->
-            <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px; border-color: #ff9800;">
-                <div class="panel-content">
-                    <h2 style="color: #e65100;">📡 P2P 局域网直连 (备选)</h2>
-                    <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em;">
-                        不经过服务器直接传数据，要求双方在同一 WiFi，且网页必须是 HTTPS 环境（如 GitHub Pages）。
-                    </p>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 16px; max-width: 500px;">
-                        
-                        <!-- 主机模式 -->
-                        <div style="background: #fff3e0; padding: 12px; border-radius: 8px;">
-                            <h3 style="font-size: 0.95em; margin-bottom: 8px;">💻 我是主机 (电脑)</h3>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-weight: bold; font-size: 1em; color: #e65100; word-break: break-all;" id="my-peer-id">未生成</span>
-                                <button class="btn btn-sm btn-primary" onclick="initPeer(true)">生成连接码</button>
-                            </div>
-                        </div>
-
-                        <!-- 客户端模式 -->
-                        <div style="background: #e3f2fd; padding: 12px; border-radius: 8px;">
-                            <h3 style="font-size: 0.95em; margin-bottom: 8px;">📱 我是客户端 (手机)</h3>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="text" id="target-peer-id" placeholder="输入电脑上的连接码">
-                                <button class="btn btn-sm btn-primary" onclick="connectToPeer()">连接</button>
-                            </div>
-                            <div id="p2p-status" style="font-size: 0.85em; color: #666; margin-top: 8px;">未连接</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. 存档点管理 -->
+            <!-- 3. 存档点管理 -->
             <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px; border-color: #a5d6a7;">
                 <div class="panel-content">
                     <h2 style="color: #2e7d32;">⏱️ 存档点</h2>
@@ -610,14 +570,11 @@
                 </div>
             </div>
 
-            <!-- 5. 本地文件管理 -->
+            <!-- 4. 手动备份 -->
             <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px;">
                 <div class="panel-content">
-                    <h2>💾 本地备份</h2>
-                    <button class="btn btn-primary" id="btn-bind-folder">🔗 绑定本地文件夹</button>
-                    <span id="folder-status" style="margin-left: 12px; font-size: 0.9em; color: var(--danger-color);">未绑定</span>
-                    <hr style="border: none; border-top: 1px dashed var(--border-color); margin: 16px 0;">
-                    <div style="display: flex; gap: 12px;">
+                    <h2>💾 手动备份</h2>
+                    <div style="display: flex; gap: 12px; margin-top: 16px;">
                         <button class="btn" onclick="exportData()">📤 导出 JSON</button>
                         <label class="btn" style="cursor: pointer;">
                             📥 导入 JSON
@@ -627,7 +584,7 @@
                 </div>
             </div>
 
-            <!-- 6. 危险操作 -->
+            <!-- 5. 危险操作 -->
             <div class="section-box" style="height: auto; width: 100%; resize: none; border-color: #ffcccc;">
                 <div class="panel-content">
                     <h2 style="color: var(--danger-color);">⚠️ 危险操作</h2>
@@ -640,25 +597,6 @@
     </div>
 
     <script>
-        // 媒体查询监听
-        const mobileUpBtn = document.getElementById('mobile-upload-btn');
-        const mobileDownBtn = document.getElementById('mobile-download-btn');
-        const desktopSyncControls = document.querySelector('.sync-controls');
-        
-        function updateSyncBtnDisplay() {
-            if (window.innerWidth <= 768) {
-                mobileUpBtn.style.display = 'flex';
-                mobileDownBtn.style.display = 'flex';
-                desktopSyncControls.style.display = 'none';
-            } else {
-                mobileUpBtn.style.display = 'none';
-                mobileDownBtn.style.display = 'none';
-                desktopSyncControls.style.display = 'flex';
-            }
-        }
-        window.addEventListener('resize', updateSyncBtnDisplay);
-        updateSyncBtnDisplay();
-
         // ================= 全局状态管理 =================
         let appData = {
             tasks: [], 
@@ -680,17 +618,7 @@
             viewWeekBaseDate: getTodayString() 
         };
         let dirHandle = null;
-
-        // WebDAV 配置
-        let webdavConfig = {
-            url: localStorage.getItem('webdav_url') || '',
-            user: localStorage.getItem('webdav_user') || '',
-            pass: localStorage.getItem('webdav_pass') || ''
-        };
-
-        // P2P 配置
-        let peer = null;
-        let conn = null;
+        let dataFileName = 'workspace_data.json';
 
         function getTodayString() {
             const d = new Date();
@@ -714,201 +642,93 @@
             return false;
         }
 
-        // ================= 1. WebDAV 云同步逻辑 =================
-        window.saveWebDAVConfig = function() {
-            const url = document.getElementById('webdav-url').value.trim();
-            const user = document.getElementById('webdav-user').value.trim();
-            const pass = document.getElementById('webdav-pass').value.trim();
+        // ================= 本地文件操作逻辑 (File System Access API) =================
+        
+        // 绑定文件夹
+        document.getElementById('btn-bind-folder').addEventListener('click', async () => {
+            try {
+                dirHandle = await window.showDirectoryPicker();
+                document.getElementById('folder-status').innerText = "✅ 已绑定: " + dirHandle.name;
+                document.getElementById('folder-status').style.color = "green";
+                
+                // 绑定成功后，立刻尝试读取一次文件，如果没有就保存一次
+                const loadSuccess = await loadDataFromFile();
+                if (!loadSuccess) {
+                    await saveDataToFile(appData);
+                    alert('文件夹绑定成功！已创建初始数据文件。');
+                } else {
+                    alert('文件夹绑定成功！已自动读取最新数据。');
+                }
+            } catch (err) { 
+                console.error(err);
+                alert('绑定失败或取消。'); 
+            }
+        });
 
-            if (!url || !user || !pass) {
-                alert('请填写完整的 WebDAV 配置信息');
+        // 强制手动保存 (右上角 💾)
+        window.manualSave = async function() {
+            if (!dirHandle) {
+                alert('请先在设置中绑定本地数据文件夹！');
                 return;
             }
-
-            localStorage.setItem('webdav_url', url);
-            localStorage.setItem('webdav_user', user);
-            localStorage.setItem('webdav_pass', pass);
-            webdavConfig = { url, user, pass };
-            
-            document.getElementById('webdav-status').innerText = "✅ 已配置";
-            document.getElementById('webdav-status').style.color = "#27ae60";
-            alert('WebDAV 配置已保存！你现在可以使用左上角的 ⬆️ 或 ⬇️ 同步了。');
+            await saveDataToFile(appData);
+            alert('✅ 数据已保存到本地文件夹！');
         };
 
-        async function syncToWebDAV() {
-            if (!webdavConfig.url) return false;
-            
-            let finalUrl = webdavConfig.url;
-            if (!finalUrl.endsWith('.json')) {
-                if (!finalUrl.endsWith('/')) finalUrl += '/';
-                finalUrl += 'my_workspace_data.json';
+        // 强制手动读取 (右上角 📂)
+        window.manualLoad = async function() {
+            if (!dirHandle) {
+                alert('请先在设置中绑定本地数据文件夹！');
+                return;
             }
+            const success = await loadDataFromFile();
+            if (success) {
+                alert('✅ 已从本地文件夹读取最新数据！');
+            }
+        };
 
+        // 核心：保存数据到文件
+        async function saveDataToFile(data) {
+            if (!dirHandle) return;
             try {
-                const res = await fetch(finalUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': 'Basic ' + btoa(webdavConfig.user + ':' + webdavConfig.pass),
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(appData)
-                });
-                
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status} - 请检查账号密码或路径`);
-                }
-                return true;
-            } catch (err) {
-                console.error('上传失败:', err);
-                alert(`WebDAV 上传失败: ${err.message}\n\n请检查：\n1. 账号是否是坚果云邮箱\n2. 密码是否是“应用密码”\n3. 路径是否正确`);
-                return false;
+                const fileHandle = await dirHandle.getFileHandle(dataFileName, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(JSON.stringify(data, null, 2)); 
+                await writable.close();
+                console.log('数据已静默保存到本地。');
+            } catch (err) { 
+                console.error('保存失败', err); 
             }
         }
 
-        async function syncFromWebDAV(showAlert = false) {
-            if (!webdavConfig.url) {
-                if(showAlert) alert('请先在设置中配置 WebDAV 信息。');
-                return false;
-            }
-
-            let finalUrl = webdavConfig.url;
-            if (!finalUrl.endsWith('.json')) {
-                if (!finalUrl.endsWith('/')) finalUrl += '/';
-                finalUrl += 'my_workspace_data.json';
-            }
-
+        // 核心：从文件读取数据
+        async function loadDataFromFile() {
+            if (!dirHandle) return false;
             try {
-                const res = await fetch(finalUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'Basic ' + btoa(webdavConfig.user + ':' + webdavConfig.pass)
-                    }
-                });
-                
-                if (res.status === 404) {
-                    if(showAlert) alert('云端暂无数据文件，请先点击上传。');
-                    return false;
-                }
-                
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                
-                const text = await res.text();
+                const fileHandle = await dirHandle.getFileHandle(dataFileName);
+                const file = await fileHandle.getFile();
+                const text = await file.text();
                 if (!text) return false;
-
+                
                 const data = JSON.parse(text);
                 if (data && data.tasks) {
                     appData = data;
                     if(appData.themeColor) changeTheme(appData.themeColor);
                     if(appData.fontSize) changeFontSize(appData.fontSize);
                     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
-                    if(showAlert) alert('✅ 已从 WebDAV 下载最新数据！');
                     return true;
                 }
-            } catch (err) { 
-                console.error('下载失败', err); 
-                if(showAlert) alert(`下载失败: ${err.message}`);
+            } catch (err) {
+                console.log('读取文件失败或文件不存在', err);
                 return false;
             }
-        }
-
-        // 统一的按钮调用（兼容 WebDAV 和 P2P）
-        window.manualUpload = async function() {
-            // 如果连接了 P2P，优先用 P2P
-            if (conn && conn.open) {
-                if (confirm('检测到 P2P 连接，是否推送到对端？')) {
-                    conn.send({ type: 'SYNC_DATA', payload: appData });
-                    return;
-                }
-            }
-            // 否则用 WebDAV
-            if (!webdavConfig.url) { alert('请先在设置中配置云同步或 P2P 连接。'); return; }
-            const success = await syncToWebDAV();
-            if (success) alert('✅ 数据已成功上传至 WebDAV！');
-        };
-
-        window.manualDownload = async function() {
-            if (conn && conn.open) {
-                if (confirm('检测到 P2P 连接，是否拉取对端数据？')) {
-                    conn.send({ type: 'REQUEST_DATA' });
-                    return;
-                }
-            }
-            if (!webdavConfig.url) { alert('请先在设置中配置云同步或 P2P 连接。'); return; }
-            await syncFromWebDAV(true);
-        };
-
-        // ================= 2. P2P 点对点同步逻辑 =================
-        window.initPeer = function(isHost) {
-            if (peer) peer.destroy();
-            
-            peer = new Peer(); 
-
-            peer.on('open', function(id) {
-                if (isHost) {
-                    document.getElementById('my-peer-id').innerText = id; 
-                }
-                document.getElementById('p2p-status').innerText = "✅ 已就绪";
-                document.getElementById('p2p-status').style.color = "#27ae60";
-            });
-
-            peer.on('connection', function(c) {
-                conn = c;
-                setupConnection(conn, true);
-            });
-
-            peer.on('error', function(err) {
-                console.error(err);
-                document.getElementById('p2p-status').innerText = "❌ 连接错误：" + err.type;
-                document.getElementById('p2p-status').style.color = "#eb5757";
-            });
-        };
-
-        window.connectToPeer = function() {
-            const targetId = document.getElementById('target-peer-id').value.trim();
-            if (!targetId) { alert('请输入连接码'); return; }
-            
-            if (!peer) initPeer(false);
-            
-            document.getElementById('p2p-status').innerText = "正在连接...";
-            document.getElementById('p2p-status').style.color = "#f2994a";
-
-            conn = peer.connect(targetId);
-            setupConnection(conn, false);
-        };
-
-        function setupConnection(connection, isHost) {
-            connection.on('open', () => {
-                document.getElementById('p2p-status').innerText = "✅ 已连接！可以使用左上角按钮同步。";
-                document.getElementById('p2p-status').style.color = "#27ae60";
-            });
-
-            connection.on('data', (data) => {
-                if (data.type === 'REQUEST_DATA' && isHost) {
-                    connection.send({ type: 'SYNC_DATA', payload: appData });
-                } else if (data.type === 'SYNC_DATA') {
-                    if (confirm('收到来自对端的数据，是否覆盖当前本地数据？')) {
-                        appData = data.payload;
-                        if(appData.themeColor) changeTheme(appData.themeColor);
-                        if(appData.fontSize) changeFontSize(appData.fontSize);
-                        renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
-                        saveDataToFile(appData);
-                        alert('✅ 数据已同步！');
-                    }
-                }
-            });
-
-            connection.on('close', () => {
-                document.getElementById('p2p-status').innerText = "连接已断开";
-                document.getElementById('p2p-status').style.color = "#999";
-                conn = null;
-            });
         }
 
         // ================= 原有设置 & 存档逻辑 =================
         function changeTheme(color) {
             appData.themeColor = color;
             document.documentElement.style.setProperty('--accent-color', color);
-            saveDataToFile(appData);
+            saveDataToFile(appData); // 每次修改自动存本地
         }
 
         function changeFontSize(sizeStr) {
@@ -1512,10 +1332,6 @@
                 else if (target === 'week') { renderWeekBoard(); renderTaskPool(); renderExercisePool(); }
                 else if (target === 'day') renderDayPlan();
                 else if (target === 'settings') {
-                    document.getElementById('webdav-url').value = webdavConfig.url;
-                    document.getElementById('webdav-user').value = webdavConfig.user;
-                    document.getElementById('webdav-pass').value = webdavConfig.pass;
-                    if (webdavConfig.url) { document.getElementById('webdav-status').innerText = "✅ 已配置"; document.getElementById('webdav-status').style.color = "#27ae60"; }
                     renderSnapshots();
                 }
             });
@@ -1821,26 +1637,7 @@
             const dPct = calcPct(dayDone, dayTotal); document.getElementById('prog-day-text').innerText = dPct + '%'; document.getElementById('prog-day-fill').style.width = dPct + '%';
         }
 
-        document.getElementById('btn-bind-folder').addEventListener('click', async () => {
-            try {
-                dirHandle = await window.showDirectoryPicker();
-                document.getElementById('folder-status').innerText = "已绑定: " + dirHandle.name;
-                document.getElementById('folder-status').style.color = "green";
-                await saveDataToFile(appData);
-                alert('文件夹绑定成功！');
-            } catch (err) { alert('绑定失败'); }
-        });
-
-        async function saveDataToFile(data) {
-            if (dirHandle) {
-                try {
-                    const fileHandle = await dirHandle.getFileHandle('data.json', { create: true });
-                    const writable = await fileHandle.createWritable();
-                    await writable.write(JSON.stringify(data, null, 2)); await writable.close();
-                } catch (err) { console.error('保存失败', err); }
-            }
-        }
-
+        // ================= 导入/导出/重置 =================
         window.exportData = function() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
             const downloadAnchorNode = document.createElement('a');
