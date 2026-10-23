@@ -117,6 +117,28 @@
         input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; background: #e9e9e7; border-radius: 3px; outline: none; margin-top: 10px; } input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-color); cursor: pointer; }
         .snapshot-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px;} .snapshot-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-sidebar); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);} .snapshot-actions { display: flex; gap: 8px;}
         .bottom-summary { flex-shrink: 0; margin-top: auto; }
+
+        /* ====== 设置界面两列布局 ====== */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: stretch;
+            margin-bottom: 24px;
+        }
+        .settings-grid > .section-box {
+            width: 100% !important;
+            height: auto !important;
+            resize: none !important;
+            margin-bottom: 0 !important;
+        }
+        .settings-grid > .section-box.span-full {
+            grid-column: 1 / -1;
+        }
+        @media (max-width: 900px) {
+            .settings-grid { grid-template-columns: 1fr; gap: 16px; }
+        }
+
         @media (max-width: 768px) {
             body { flex-direction: column; } .sidebar { width: 100%; height: auto; order: 2; border-right: none; border-top: 1px solid var(--border-color); padding: 8px 4px; flex-direction: row; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; z-index: 100; background: rgba(247, 247, 245, 0.95); backdrop-filter: blur(10px);}
             .sidebar-title, .sidebar-footer { display: none; } .nav-item { flex-direction: column; padding: 6px 0; font-size: 0.75em; gap: 2px; flex: 1; text-align: center; margin-bottom: 0; border-radius: 8px; } .nav-item:hover { transform: none; background-color: transparent;} .nav-item.active { background-color: #e3e2e0; color: var(--accent-color); font-weight: bold;}
@@ -305,103 +327,104 @@
         <!-- 视图：设置 -->
         <div class="view-container" id="view-settings">
             <h1>⚙️ 设置</h1>
-            
-            <!-- 1. 个性化 -->
-            <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px;">
-                <div class="panel-content">
-                    <h2>🎨 主题与字体</h2>
-                    <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
-                        <button class="btn" onclick="changeTheme('#2383e2')">经典蓝</button>
-                        <button class="btn" onclick="changeTheme('#f2994a')">活力橙</button>
-                        <button class="btn" onclick="changeTheme('#27ae60')">护眼绿</button>
-                        <button class="btn" onclick="changeTheme('#9b51e0')">浪漫紫</button>
-                    </div>
-                    
-                    <hr style="border: none; border-top: 1px dashed var(--border-color); margin: 20px 0;">
-                    
-                    <h2 style="font-size: 1.1em; margin-bottom: 8px;">字体大小 (<span id="font-size-val">14</span>px)</h2>
-                    <div style="display: flex; align-items: center; gap: 12px; width: 100%; max-width: 400px;">
-                        <span style="font-size:12px; color:#999;">小</span>
-                        <input type="range" id="font-size-slider" min="12" max="22" step="1" value="14" oninput="changeFontSize(this.value + 'px')">
-                        <span style="font-size:18px; color:#999;">大</span>
+
+            <div class="settings-grid">
+
+                <!-- 1. 个性化 -->
+                <div class="section-box">
+                    <div class="panel-content">
+                        <h2>🎨 主题与字体</h2>
+                        <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
+                            <button class="btn" onclick="changeTheme('#2383e2')">经典蓝</button>
+                            <button class="btn" onclick="changeTheme('#f2994a')">活力橙</button>
+                            <button class="btn" onclick="changeTheme('#27ae60')">护眼绿</button>
+                            <button class="btn" onclick="changeTheme('#9b51e0')">浪漫紫</button>
+                        </div>
+                        <hr style="border: none; border-top: 1px dashed var(--border-color); margin: 20px 0;">
+                        <h2 style="font-size: 1.1em; margin-bottom: 8px;">字体大小 (<span id="font-size-val">14</span>px)</h2>
+                        <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                            <span style="font-size:12px; color:#999;">小</span>
+                            <input type="range" id="font-size-slider" min="12" max="22" step="1" value="14" oninput="changeFontSize(this.value + 'px')">
+                            <span style="font-size:18px; color:#999;">大</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 2. 局域网点对点同步 -->
-            <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px; border-color: #ff9800;">
-                <div class="panel-content">
-                    <h2 style="color: #e65100;">📡 局域网点对点同步</h2>
-                    <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em; line-height: 1.6;">
-                        连接成功后，任何修改都会自动推送到另一端。
-                    </p>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 16px; max-width: 500px;">
-                        
-                        <!-- 主机模式 -->
-                        <div style="background: #fff3e0; padding: 12px; border-radius: 8px;">
-                            <h3 style="font-size: 0.95em; margin-bottom: 8px;">💻 我是主机 (固定码)</h3>
-                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <span style="font-weight: bold; font-size: 1.1em; color: #e65100; word-break: break-all; font-family: ui-monospace, Menlo, Consolas, monospace;" id="my-peer-id">未生成</span>
-                                <button class="btn btn-sm btn-primary" onclick="initPeer(true)">开启并固定此码</button>
-                                <button class="btn btn-sm" onclick="copyHostId()">📋 复制</button>
-                                <button class="btn btn-sm btn-danger" onclick="resetHostId()">🔄 重置码</button>
-                            </div>
+                <!-- 3. 存档点管理 -->
+                <div class="section-box" style="border-color: #a5d6a7;">
+                    <div class="panel-content">
+                        <h2 style="color: #2e7d32;">⏱️ 存档点</h2>
+                        <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em;">重大修改前，创建一个快照备份。</p>
+                        <button class="btn btn-primary" style="background: #4caf50; border-color: #4caf50;" onclick="createSnapshot()">📸 创建存档</button>
+                        <div class="snapshot-list" id="snapshot-list"></div>
+                    </div>
+                </div>
+
+                <!-- 4. 本地备份 -->
+                <div class="section-box">
+                    <div class="panel-content">
+                        <h2>💾 手动备份</h2>
+                        <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+                            <button class="btn" onclick="exportData()">📤 导出 JSON</button>
+                            <label class="btn" style="cursor: pointer;">
+                                📥 导入 JSON
+                                <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
+                            </label>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- 客户端模式 -->
-                        <div style="background: #e3f2fd; padding: 12px; border-radius: 8px;">
-                            <h3 style="font-size: 0.95em; margin-bottom: 8px;">📱 我是客户端 (手机)</h3>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="text" id="target-peer-id" placeholder="粘贴电脑上的连接码">
-                                <button class="btn btn-sm btn-primary" onclick="connectToPeer()">连接</button>
-                            </div>
-                            <div id="p2p-status" style="font-size: 0.85em; color: #666; margin-top: 8px;">未连接</div>
+                <!-- 5. 危险操作 -->
+                <div class="section-box" style="border-color: #ffcccc;">
+                    <div class="panel-content">
+                        <h2 style="color: var(--danger-color);">⚠️ 危险操作</h2>
+                        <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em;">清空后将无法恢复！</p>
+                        <button class="btn btn-danger" onclick="resetAllData()">🚨 清空数据</button>
+                    </div>
+                </div>
+
+                <!-- 2. 局域网点对点同步（全宽） -->
+                <div class="section-box span-full" style="border-color: #ff9800;">
+                    <div class="panel-content">
+                        <h2 style="color: #e65100;">📡 局域网点对点同步</h2>
+                        <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em; line-height: 1.6;">
+                            连接成功后，任何修改都会自动推送到另一端。
+                        </p>
+                        
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
                             
-                            <!-- 历史记录区域 -->
-                            <div style="margin-top: 12px; border-top: 1px dashed #bbdefb; padding-top: 8px;">
-                                <span style="font-size: 0.85em; color: #1976d2; font-weight: bold; display: block; margin-bottom: 6px;">历史连接记录</span>
-                                <div id="p2p-history-list" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <!-- JS 渲染 -->
+                            <!-- 主机模式 -->
+                            <div style="flex: 1; min-width: 300px; background: #fff3e0; padding: 12px; border-radius: 8px;">
+                                <h3 style="font-size: 0.95em; margin-bottom: 8px;">💻 我是主机 (固定码)</h3>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span style="font-weight: bold; font-size: 1.1em; color: #e65100; word-break: break-all; font-family: ui-monospace, Menlo, Consolas, monospace;" id="my-peer-id">未生成</span>
+                                    <button class="btn btn-sm btn-primary" onclick="initPeer(true)">开启并固定此码</button>
+                                    <button class="btn btn-sm" onclick="copyHostId()">📋 复制</button>
+                                    <button class="btn btn-sm btn-danger" onclick="resetHostId()">🔄 重置码</button>
+                                </div>
+                            </div>
+
+                            <!-- 客户端模式 -->
+                            <div style="flex: 1; min-width: 300px; background: #e3f2fd; padding: 12px; border-radius: 8px;">
+                                <h3 style="font-size: 0.95em; margin-bottom: 8px;">📱 我是客户端 (手机)</h3>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="target-peer-id" placeholder="粘贴电脑上的连接码">
+                                    <button class="btn btn-sm btn-primary" onclick="connectToPeer()">连接</button>
+                                </div>
+                                <div id="p2p-status" style="font-size: 0.85em; color: #666; margin-top: 8px;">未连接</div>
+                                
+                                <!-- 历史记录区域 -->
+                                <div style="margin-top: 12px; border-top: 1px dashed #bbdefb; padding-top: 8px;">
+                                    <span style="font-size: 0.85em; color: #1976d2; font-weight: bold; display: block; margin-bottom: 6px;">历史连接记录</span>
+                                    <div id="p2p-history-list" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <!-- JS 渲染 -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 3. 存档点管理 -->
-            <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px; border-color: #a5d6a7;">
-                <div class="panel-content">
-                    <h2 style="color: #2e7d32;">⏱️ 存档点</h2>
-                    <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em;">重大修改前，创建一个快照备份。</p>
-                    <button class="btn btn-primary" style="background: #4caf50; border-color: #4caf50;" onclick="createSnapshot()">📸 创建存档</button>
-                    
-                    <div class="snapshot-list" id="snapshot-list"></div>
-                </div>
-            </div>
-
-            <!-- 4. 本地备份 -->
-            <div class="section-box" style="height: auto; width: 100%; resize: none; margin-bottom: 24px;">
-                <div class="panel-content">
-                    <h2>💾 手动备份</h2>
-                    <div style="display: flex; gap: 12px; margin-top: 16px;">
-                        <button class="btn" onclick="exportData()">📤 导出 JSON</button>
-                        <label class="btn" style="cursor: pointer;">
-                            📥 导入 JSON
-                            <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 5. 危险操作 -->
-            <div class="section-box" style="height: auto; width: 100%; resize: none; border-color: #ffcccc;">
-                <div class="panel-content">
-                    <h2 style="color: var(--danger-color);">⚠️ 危险操作</h2>
-                    <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em;">清空后将无法恢复！</p>
-                    <button class="btn btn-danger" onclick="resetAllData()">🚨 清空数据</button>
-                </div>
             </div>
         </div>
 
@@ -434,10 +457,10 @@
         let conn = null;
         let isSyncing = false; 
         let isAutoReconnecting = false; 
-        let isConnecting = false;              // 防止重复发起连接
-        let connectTimer = null;                // 连接超时兜底
-        let syncDebounceTimer = null;           // 数据同步节流
-        let currentTargetPeer = null;           // 当前目标连接码
+        let isConnecting = false;
+        let connectTimer = null;
+        let syncDebounceTimer = null;
+        let currentTargetPeer = null;
         const p2pIndicator = document.getElementById('p2p-indicator');
         const isMobileDevice = window.innerWidth <= 768;
 
@@ -449,27 +472,12 @@
             return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         }
 
-        // ================= 通用复制工具（兼容非 HTTPS / 局域网 http 访问） =================
-        function generateUUID() {
-            if (window.crypto && typeof crypto.randomUUID === 'function') {
-                return crypto.randomUUID();
-            }
-            if (window.crypto && crypto.getRandomValues) {
-                const b = new Uint8Array(16);
-                crypto.getRandomValues(b);
-                b[6] = (b[6] & 0x0f) | 0x40;
-                b[8] = (b[8] & 0x3f) | 0x80;
-                const h = Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
-                return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
-            }
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-                const r = Math.random() * 16 | 0;
-                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-            });
-        }
-
-        function isUUID(str) {
-            return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str || '');
+        // ================= 通用工具 =================
+        function generatePeerId() {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let s = 'ws-';
+            for (let i = 0; i < 32; i++) s += chars[Math.floor(Math.random() * chars.length)];
+            return s;
         }
 
         function fallbackCopy(text) {
@@ -514,7 +522,6 @@
         }
 
         // ================= 1. P2P 实时同步逻辑 =================
-        
         window.copyHostId = function() {
             const idText = document.getElementById('my-peer-id').innerText.trim();
             if (!idText || idText === '未生成') { alert('请先点击“开启并固定此码”'); return; }
@@ -591,7 +598,6 @@
             let history = JSON.parse(localStorage.getItem('my_p2p_history') || '[]');
             history = history.filter(item => item !== id);
             localStorage.setItem('my_p2p_history', JSON.stringify(history));
-            
             if (localStorage.getItem('last_connected_peer') === id) {
                 localStorage.removeItem('last_connected_peer');
                 isAutoReconnecting = false; 
@@ -610,8 +616,7 @@
         };
 
         window.initPeer = function(isHost, isAutoConnect = false) {
-            // 主机模式下如果已有可用 Peer 实例，直接复用，避免断开已有连接
-            if (isHost && peer && !peer.destroyed && peer.open) {
+            if (isHost && peer && !peer.destroyed && peer.open && !peer.disconnected) {
                 document.getElementById('my-peer-id').innerText = peer.id;
                 document.getElementById('p2p-status').innerText = "✅ 主机已就绪，请复制连接码给手机。";
                 document.getElementById('p2p-status').style.color = "#f2994a";
@@ -626,13 +631,13 @@
             let customId = null;
             if (isHost) {
                 customId = localStorage.getItem('my_p2p_host_id');
-                if (!customId || !isUUID(customId)) {
-                    customId = generateUUID();
+                if (!customId) {
+                    customId = generatePeerId();
                     localStorage.setItem('my_p2p_host_id', customId);
                 }
+                document.getElementById('my-peer-id').innerText = customId;
             }
 
-            // 精简 STUN，去掉易超时的 twilio，增加 Cloudflare STUN
             peer = new Peer(customId, {
                 debug: 1,
                 config: {
@@ -644,7 +649,7 @@
                     iceCandidatePoolSize: 10
                 },
                 pingInterval: 3000
-            }); 
+            });
 
             peer.on('open', function(id) {
                 if (isHost) {
@@ -658,18 +663,16 @@
             });
 
             peer.on('connection', function(c) {
-                // 客户端重连时会建立新连接，关闭旧连接，保留新连接
-                if (conn && conn !== c) {
+                if (conn && conn !== c && conn.open) {
                     try { conn.close(); } catch(e){}
                 }
                 conn = c;
                 setupConnection(conn, true, c.peer);
             });
 
-            // 信令服务器断开时自动重连，不重建 Peer 实例，避免连接码变化
             peer.on('disconnected', function() {
                 if (peer && !peer.destroyed) {
-                    console.log('信令服务器断开，尝试重连...');
+                    console.log('信令服务器断开，尝试 reconnect...');
                     try { peer.reconnect(); } catch(e){}
                 }
             });
@@ -678,26 +681,24 @@
                 console.log("Peer Error:", err.type, err);
                 if (err.type === 'unavailable-id') {
                     if (isHost) {
-                        // 主机码冲突（概率极低），自动换一个 UUID 重试
                         localStorage.removeItem('my_p2p_host_id');
                         setTimeout(() => initPeer(true), 500);
                     } else {
-                        document.getElementById('p2p-status').innerText = "❌ 码冲突，请点重置。";
+                        document.getElementById('p2p-status').innerText = "❌ 码冲突，请重置。";
                         document.getElementById('p2p-status').style.color = "#eb5757";
                     }
                 } else if (err.type === 'peer-unavailable') {
-                    // 客户端连接的目标主机不在线
                     if (!isHost) {
-                        document.getElementById('p2p-status').innerText = "⏳ 主机未在线，正在重试...";
-                        document.getElementById('p2p-status').style.color = "#f2994a";
                         isConnecting = false;
                         clearTimeout(connectTimer);
+                        document.getElementById('p2p-status').innerText = "⏳ 主机不在线，请确认连接码正确";
+                        document.getElementById('p2p-status').style.color = "#eb5757";
+                        p2pIndicator.className = 'p2p-dot';
                         if (isAutoReconnecting) {
-                            setTimeout(() => startAutoConnectLoop(), 1000);
+                            setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 3000);
                         }
                     }
                 } else if (err.type === 'network') {
-                    // PeerJS 内部会自动重连信令，这里不重建 Peer
                     console.log("信令网络异常，等待自动重连...");
                 }
             });
@@ -709,10 +710,20 @@
             if (!lastPeer) { isAutoReconnecting = false; return; }
 
             if (conn && conn.open) { isAutoReconnecting = false; isConnecting = false; return; }
-            if (isConnecting) return; // 已有连接正在尝试，等待结果
+            if (isConnecting) return;
 
-            if (!peer || peer.destroyed || !peer.open) {
-                setTimeout(() => startAutoConnectLoop(), 500);
+            if (!peer || peer.destroyed) {
+                initPeer(false);
+                setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 300);
+                return;
+            }
+            if (peer.disconnected) {
+                try { peer.reconnect(); } catch(e){}
+                setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 500);
+                return;
+            }
+            if (!peer.open) {
+                setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 300);
                 return;
             }
 
@@ -723,17 +734,22 @@
 
             if (conn) { try { conn.close(); } catch(e){} conn = null; }
             currentTargetPeer = lastPeer;
-            conn = peer.connect(lastPeer, { reliable: true });
+            try {
+                conn = peer.connect(lastPeer, { reliable: true });
+            } catch (e) {
+                isConnecting = false;
+                setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 1000);
+                return;
+            }
             setupConnection(conn, false, lastPeer);
 
-            // 7 秒超时兜底，比 PeerJS 默认的 10 秒更快暴露失败
             clearTimeout(connectTimer);
             connectTimer = setTimeout(() => {
                 if (isConnecting && (!conn || !conn.open)) {
                     isConnecting = false;
                     if (conn) { try { conn.close(); } catch(e){} conn = null; }
                     if (isAutoReconnecting) {
-                        setTimeout(() => startAutoConnectLoop(), 500);
+                        setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 1000);
                     }
                 }
             }, 7000);
@@ -752,15 +768,35 @@
             p2pIndicator.className = 'p2p-dot connecting';
 
             const doConnect = () => {
+                if (!peer || peer.destroyed) {
+                    initPeer(false);
+                    setTimeout(doConnect, 500);
+                    return;
+                }
+                if (peer.disconnected) {
+                    try { peer.reconnect(); } catch(e){}
+                    setTimeout(doConnect, 500);
+                    return;
+                }
+                if (!peer.open) {
+                    setTimeout(doConnect, 300);
+                    return;
+                }
                 if (conn) { try { conn.close(); } catch(e){} conn = null; }
                 currentTargetPeer = idToConnect;
-                conn = peer.connect(idToConnect, { reliable: true });
+                try {
+                    conn = peer.connect(idToConnect, { reliable: true });
+                } catch (e) {
+                    document.getElementById('p2p-status').innerText = "❌ 连接失败：" + e.message;
+                    document.getElementById('p2p-status').style.color = "#eb5757";
+                    return;
+                }
                 setupConnection(conn, false, idToConnect);
 
                 clearTimeout(connectTimer);
                 connectTimer = setTimeout(() => {
                     if (conn && !conn.open) {
-                        document.getElementById('p2p-status').innerText = "❌ 连接超时，请重试";
+                        document.getElementById('p2p-status').innerText = "❌ 连接超时，请检查主机是否在线";
                         document.getElementById('p2p-status').style.color = "#eb5757";
                         p2pIndicator.className = 'p2p-dot';
                         try { conn.close(); } catch(e){}
@@ -768,18 +804,12 @@
                 }, 7000);
             };
 
-            if (!peer || peer.destroyed) {
-                initPeer(false);
-                peer.once('open', doConnect);
-            } else if (peer.open) {
-                doConnect();
-            } else {
-                peer.once('open', doConnect);
-            }
+            doConnect();
         };
 
         function setupConnection(connection, isHost, targetId) {
             connection.on('open', () => {
+                if (conn !== connection) return;
                 isAutoReconnecting = false; 
                 isConnecting = false;
                 clearTimeout(connectTimer);
@@ -799,15 +829,15 @@
                     renderP2PHistory();
                 }
 
-                // 延迟 150ms 发送，等数据通道完全就绪，减少大包阻塞
                 setTimeout(() => {
-                    if (connection.open) {
+                    if (connection.open && conn === connection) {
                         try { connection.send({ type: 'SYNC_DATA', payload: appData }); } catch(e){}
                     }
                 }, 150);
             });
 
             connection.on('data', (data) => {
+                if (conn !== connection) return;
                 if (data.type === 'SYNC_DATA') {
                     isSyncing = true;
                     appData = data.payload;
@@ -820,26 +850,27 @@
             });
 
             connection.on('close', () => {
+                if (conn !== connection) return;
                 isConnecting = false;
                 clearTimeout(connectTimer);
                 p2pIndicator.className = 'p2p-dot';
                 p2pIndicator.title = "未连接";
-                if (conn === connection) conn = null;
+                conn = null;
                 
                 if (!isAutoReconnecting) {
                     document.getElementById('p2p-status').innerText = "❌ 连接已断开";
                     document.getElementById('p2p-status').style.color = "#999";
                 } else {
-                    setTimeout(() => startAutoConnectLoop(), 500);
+                    setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 1000);
                 }
             });
             
             connection.on('error', (err) => {
+                if (conn !== connection) return;
                 console.log("Connection Error:", err);
             });
         }
 
-        // 数据同步节流：200ms 内多次修改只发送最后一次，避免连续 +1 时通道拥塞
         function saveDataToFile(data) {
             saveLocalStorage(); 
             if (conn && conn.open && !isSyncing) {
@@ -1289,6 +1320,52 @@
             });
         }
 
+        // ===== 内联编辑：双击任务文本即可修改 =====
+        window.enableTaskEdit = function(spanEl, taskId, subId) {
+            if (spanEl.dataset.editing === '1') return;
+            spanEl.dataset.editing = '1';
+            const originalText = spanEl.innerText;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = originalText;
+            input.style.cssText = 'font: inherit; padding: 2px 6px; border: 1px solid var(--accent-color); border-radius: 4px; width: 100%; max-width: 360px; background: #fff; outline: none;';
+            spanEl.style.display = 'none';
+            spanEl.parentNode.insertBefore(input, spanEl.nextSibling);
+            input.focus();
+            input.select();
+
+            let finished = false;
+            const finish = (save) => {
+                if (finished) return;
+                finished = true;
+                const newText = input.value.trim();
+                if (save && newText && newText !== originalText) {
+                    if (subId) {
+                        const task = appData.tasks.find(t => t.id === taskId);
+                        const sub = task && task.subTasks.find(s => s.id === subId);
+                        if (sub) sub.text = newText;
+                    } else {
+                        const task = appData.tasks.find(t => t.id === taskId);
+                        if (task) task.text = newText;
+                    }
+                    // 删除 input，交给重新渲染
+                    if (input.parentNode) input.parentNode.removeChild(input);
+                    renderDayPlan(); renderTaskPool(); renderWeekBoard();
+                    saveDataToFile(appData);
+                    return;
+                }
+                if (input.parentNode) input.parentNode.removeChild(input);
+                spanEl.style.display = '';
+                spanEl.dataset.editing = '';
+            };
+
+            input.addEventListener('blur', () => finish(true));
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+                else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+            });
+        };
+
         function generateTaskDOM(task, todayStr) {
             const taskDiv = document.createElement('div');
             taskDiv.className = `main-task-item ${task.pinned ? 'pinned-task' : ''}`; 
@@ -1305,20 +1382,21 @@
             
             let headerLeftHtml = '';
             const mainCb = `<input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleMainTask('${task.id}')">`;
+            const editableText = `<span class="task-text ${task.completed ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor: text;">${task.text}</span>`;
 
             if (task.target || isCombinedProgress) {
                 const pct = Math.min(100, Math.round((mainProg.done / mainProg.total) * 100));
                 headerLeftHtml = `
                     <div class="progress-task-container">
                         ${mainCb}
-                        <span class="task-text ${task.completed ? 'task-completed' : ''}">${task.text}</span>
+                        ${editableText}
                         ${loopLabel}
                         <div class="progress-task-bar-bg" style="width: 80px; margin-left:8px;"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div>
                         <span class="progress-text">${mainProg.done}/${mainProg.total}</span>
                         ${!task.completed && !isCombinedProgress ? `<button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}
                     </div>`;
             } else {
-                headerLeftHtml = `${mainCb}<span class="task-text ${task.completed ? 'task-completed' : ''}">${task.text}</span>${loopLabel}`;
+                headerLeftHtml = `${mainCb}${editableText}${loopLabel}`;
             }
 
             let html = `
@@ -1342,7 +1420,7 @@
                     const pct = isSubCount ? Math.min(100, Math.round((subProg.done / subProg.total) * 100)) : 0;
                     html += `
                         <div class="sub-task-item">
-                            <div class="sub-task-left"><input type="checkbox" class="task-checkbox" ${sub.completed ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')"><span class="${sub.completed ? 'task-completed' : ''}">${sub.text}</span></div>
+                            <div class="sub-task-left"><input type="checkbox" class="task-checkbox" ${sub.completed ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')"><span class="${sub.completed ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor: text;">${sub.text}</span></div>
                             <div class="sub-actions">
                                 ${isSubCount ? `<div class="sub-prog-container"><div class="sub-prog-bar-bg"><div class="sub-prog-bar-fill" style="width:${pct}%;"></div></div><span class="sub-prog-text">${subProg.done}/${subProg.total}</span>${!sub.completed ? `<button class="btn-sub-plus" onclick="incrementSubTaskProgress('${task.id}', '${sub.id}')">+1</button>` : ''}</div>` : ''}
                                 <span class="btn-sub-target" title="次数" onclick="setSubTaskTarget('${task.id}', '${sub.id}')">#</span>
