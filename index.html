@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>我的专属工作台</title>
     
-    <!-- PWA 配置 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#2383e2">
@@ -40,7 +39,7 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
 
-        /* ================= 侧边栏 (电脑版) ================= */
+        /* ================= 侧边栏 ================= */
         .sidebar {
             width: 240px;
             background-color: var(--bg-sidebar);
@@ -292,7 +291,6 @@
         @media (max-width: 768px) {
             body { flex-direction: column; }
             
-            /* 侧边栏变成底部导航栏 */
             .sidebar {
                 width: 100%; height: auto; order: 2;
                 border-right: none; border-top: 1px solid var(--border-color);
@@ -300,7 +298,7 @@
                 position: fixed; bottom: 0; left: 0; z-index: 100; background: rgba(247, 247, 245, 0.95);
                 backdrop-filter: blur(10px);
             }
-            .sidebar-title, .sidebar-footer { display: none; } /* 隐藏多余内容 */
+            .sidebar-title, .sidebar-footer { display: none; } 
             .nav-item {
                 flex-direction: column; padding: 6px 0; font-size: 0.75em; gap: 2px; flex: 1; text-align: center;
                 margin-bottom: 0; border-radius: 8px;
@@ -308,15 +306,12 @@
             .nav-item:hover { transform: none; background-color: transparent;}
             .nav-item.active { background-color: #e3e2e0; color: var(--accent-color); font-weight: bold;}
             
-            /* 主内容区留出底部空间 */
             .main-content { order: 1; height: calc(100vh - 65px); }
             .view-container { padding: 12px; }
 
-            /* 日计划强制单列 */
             .day-panels-grid { flex-direction: column; gap: 16px; }
             .section-box { width: 100% !important; height: auto !important; min-height: 250px; resize: none;}
             
-            /* 日历紧凑模式 */
             .calendar-wrapper { padding: 8px; margin-bottom: 12px; }
             .calendar-grid { gap: 2px; }
             .day-box { padding: 4px; min-height: 60px; border-width: 1px;}
@@ -325,16 +320,13 @@
             .mini-bar-row span:first-child { width: 28px; overflow: hidden; text-overflow: clip; }
             .mini-bar-row span:last-child { width: 18px; }
             
-            /* 周计划垂直排列 */
             .week-board { flex-direction: column; height: auto; gap: 12px; }
             .week-column { min-height: 80px; padding: 8px; }
             .week-column-header { margin-bottom: 8px; }
             .todo-lists-container { flex-direction: column; }
 
-            /* 标题略缩小 */
             h1 { font-size: 1.4em; margin-bottom: 12px; }
 
-            /* 锻炼网格变一行 */
             .exercise-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -348,6 +340,9 @@
         <div class="nav-item" data-target="week">🗓️ 周计划</div>
         <div class="nav-item" data-target="day">📝 日计划</div>
         <div class="nav-item" data-target="settings">⚙️ 设置</div>
+        
+        <!-- 手动同步按钮 -->
+        <div class="nav-item" onclick="manualSync()" style="color: var(--accent-color);">🔄 同步</div>
 
         <div class="sidebar-footer">
             <div class="sidebar-goal-box">
@@ -724,8 +719,11 @@
             } catch (err) { console.error('同步失败', err); }
         }
 
-        async function syncFromGist() {
-            if (!gistConfig.token || !gistConfig.id) return;
+        async function syncFromGist(showAlert = false) {
+            if (!gistConfig.token || !gistConfig.id) {
+                if(showAlert) alert('请先在设置中配置同步信息。');
+                return;
+            }
             try {
                 const res = await fetch(`https://api.github.com/gists/${gistConfig.id}`, {
                     headers: { 'Authorization': `token ${gistConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
@@ -740,11 +738,27 @@
                             if(appData.themeColor) changeTheme(appData.themeColor);
                             if(appData.fontSize) changeFontSize(appData.fontSize);
                             renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
+                            if(showAlert) alert('✅ 已从云端拉取最新数据！');
                         }
                     }
                 }
-            } catch (err) { console.error('拉取失败', err); }
+            } catch (err) { 
+                console.error('拉取失败', err); 
+                if(showAlert) alert('拉取失败，请检查网络。');
+            }
         }
+
+        // 手动触发同步
+        window.manualSync = async function() {
+            await syncFromGist(true);
+        };
+
+        // 页面可见性变化（切回App自动拉取）
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                syncFromGist(false);
+            }
+        });
 
         // ================= 设置 & 存档 =================
         function changeTheme(color) {
@@ -1341,7 +1355,7 @@
         }
 
         // ================= 4. 交互事件 =================
-        document.querySelectorAll('.nav-item').forEach(item => {
+        document.querySelectorAll('.nav-item[data-target]').forEach(item => {
             item.addEventListener('click', () => {
                 document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
                 document.querySelectorAll('.view-container').forEach(view => view.classList.remove('active'));
