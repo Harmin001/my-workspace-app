@@ -342,7 +342,7 @@
                         <div style="background: #fff3e0; padding: 12px; border-radius: 8px;">
                             <h3 style="font-size: 0.95em; margin-bottom: 8px;">💻 我是主机 (固定码)</h3>
                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <span style="font-weight: bold; font-size: 1.1em; color: #e65100; word-break: break-all;" id="my-peer-id">未生成</span>
+                                <span style="font-weight: bold; font-size: 1.1em; color: #e65100; word-break: break-all; font-family: ui-monospace, Menlo, Consolas, monospace;" id="my-peer-id">未生成</span>
                                 <button class="btn btn-sm btn-primary" onclick="initPeer(true)">开启并固定此码</button>
                                 <button class="btn btn-sm" onclick="copyHostId()">📋 复制</button>
                                 <button class="btn btn-sm btn-danger" onclick="resetHostId()">🔄 重置码</button>
@@ -445,6 +445,59 @@
             return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         }
 
+        // ================= 通用复制工具（兼容非 HTTPS / 局域网 http 访问） =================
+        function generateUUID() {
+            // 优先使用浏览器原生 UUID（128 位真随机，撞码概率极低）
+            if (window.crypto && typeof crypto.randomUUID === 'function') {
+                return crypto.randomUUID();
+            }
+            if (window.crypto && crypto.getRandomValues) {
+                const b = new Uint8Array(16);
+                crypto.getRandomValues(b);
+                b[6] = (b[6] & 0x0f) | 0x40; // version 4
+                b[8] = (b[8] & 0x3f) | 0x80; // variant
+                const h = Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+                return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+            }
+            // 最后兜底
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        }
+
+        function isUUID(str) {
+            return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str || '');
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+            document.body.appendChild(ta);
+            ta.select();
+            ta.setSelectionRange(0, ta.value.length);
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+            document.body.removeChild(ta);
+            return ok;
+        }
+
+        function copyTextToClipboard(text, successMsg) {
+            const done = () => { if (successMsg) alert(successMsg); };
+            // navigator.clipboard 只在 HTTPS 或 localhost 下可用
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done).catch(() => {
+                    if (fallbackCopy(text)) done();
+                    else alert('复制失败，请手动长按/选中文字复制。');
+                });
+                return;
+            }
+            if (fallbackCopy(text)) done();
+            else alert('复制失败，请手动长按/选中文字复制。');
+        }
+
         function isRecurringMatch(type, dateStr) {
             if (!type) return false;
             if (type === '每日') return true;
@@ -463,14 +516,9 @@
         
         // 复制主机码
         window.copyHostId = function() {
-            const idText = document.getElementById('my-peer-id').innerText;
-            if (idText === '未生成') { alert('请先点击开启主机'); return; }
-            
-            navigator.clipboard.writeText(idText).then(() => {
-                alert('✅ 连接码已复制到剪贴板！\n可以直接发送到手机上粘贴。');
-            }).catch(err => {
-                alert('复制失败，请手动选择复制。');
-            });
+            const idText = document.getElementById('my-peer-id').innerText.trim();
+            if (!idText || idText === '未生成') { alert('请先点击“开启并固定此码”'); return; }
+            copyTextToClipboard(idText, '✅ 连接码已复制！\n可以直接粘贴到手机上。');
         };
 
         function renderP2PHistory() {
@@ -504,6 +552,21 @@
                     connectToPeer();
                 };
 
+                // 复制按钮
+                const copyBtn = document.createElement('div');
+                copyBtn.style.padding = '4px 8px';
+                copyBtn.style.background = '#e3f2fd';
+                copyBtn.style.color = '#1976d2';
+                copyBtn.style.fontSize = '0.85em';
+                copyBtn.style.cursor = 'pointer';
+                copyBtn.style.borderLeft = '1px solid #90caf9';
+                copyBtn.innerText = '📋';
+                copyBtn.title = '复制完整连接码';
+                copyBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    copyTextToClipboard(id, '✅ 已复制：\n' + id);
+                };
+
                 const deleteBtn = document.createElement('div');
                 deleteBtn.style.padding = '4px 8px';
                 deleteBtn.style.background = '#ffebee';
@@ -519,6 +582,7 @@
                 };
 
                 wrapper.appendChild(connectBtn);
+                wrapper.appendChild(copyBtn);
                 wrapper.appendChild(deleteBtn);
                 container.appendChild(wrapper);
             });
@@ -552,9 +616,9 @@
             let customId = null;
             if (isHost) {
                 customId = localStorage.getItem('my_p2p_host_id');
-                if (!customId) {
-                    // 生成极长的随机 ID (如 ws-a1b2c3d4e5f6g7h8i9j0)
-                    customId = 'ws-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                // 旧的短码自动升级为 UUID 格式，避免与别人撞码导致连接失败 / 缓慢
+                if (!customId || !isUUID(customId)) {
+                    customId = generateUUID();
                     localStorage.setItem('my_p2p_host_id', customId);
                 }
             }
