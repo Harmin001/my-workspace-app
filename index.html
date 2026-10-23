@@ -434,6 +434,10 @@
         let conn = null;
         let isSyncing = false; 
         let isAutoReconnecting = false; 
+        let isConnecting = false;              // 防止重复发起连接
+        let connectTimer = null;                // 连接超时兜底
+        let syncDebounceTimer = null;           // 数据同步节流
+        let currentTargetPeer = null;           // 当前目标连接码
         const p2pIndicator = document.getElementById('p2p-indicator');
         const isMobileDevice = window.innerWidth <= 768;
 
@@ -447,19 +451,17 @@
 
         // ================= 通用复制工具（兼容非 HTTPS / 局域网 http 访问） =================
         function generateUUID() {
-            // 优先使用浏览器原生 UUID（128 位真随机，撞码概率极低）
             if (window.crypto && typeof crypto.randomUUID === 'function') {
                 return crypto.randomUUID();
             }
             if (window.crypto && crypto.getRandomValues) {
                 const b = new Uint8Array(16);
                 crypto.getRandomValues(b);
-                b[6] = (b[6] & 0x0f) | 0x40; // version 4
-                b[8] = (b[8] & 0x3f) | 0x80; // variant
+                b[6] = (b[6] & 0x0f) | 0x40;
+                b[8] = (b[8] & 0x3f) | 0x80;
                 const h = Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
                 return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
             }
-            // 最后兜底
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
                 const r = Math.random() * 16 | 0;
                 return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
@@ -486,7 +488,6 @@
 
         function copyTextToClipboard(text, successMsg) {
             const done = () => { if (successMsg) alert(successMsg); };
-            // navigator.clipboard 只在 HTTPS 或 localhost 下可用
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text).then(done).catch(() => {
                     if (fallbackCopy(text)) done();
@@ -514,7 +515,6 @@
 
         // ================= 1. P2P 实时同步逻辑 =================
         
-        // 复制主机码
         window.copyHostId = function() {
             const idText = document.getElementById('my-peer-id').innerText.trim();
             if (!idText || idText === '未生成') { alert('请先点击“开启并固定此码”'); return; }
@@ -543,7 +543,6 @@
                 connectBtn.style.color = '#1976d2';
                 connectBtn.style.fontSize = '0.85em';
                 connectBtn.style.cursor = 'pointer';
-                // 因为 ID 太长了，截取前 12 位展示
                 connectBtn.innerText = id.substring(0, 12) + '...';
                 connectBtn.title = "点击连接: " + id;
                 connectBtn.onclick = () => {
@@ -552,7 +551,6 @@
                     connectToPeer();
                 };
 
-                // 复制按钮
                 const copyBtn = document.createElement('div');
                 copyBtn.style.padding = '4px 8px';
                 copyBtn.style.background = '#e3f2fd';
@@ -604,35 +602,48 @@
         window.resetHostId = function() {
             if (confirm('确定要重置同步码吗？重置后，手机需要重新连接新码。')) {
                 localStorage.removeItem('my_p2p_host_id');
-                if (peer) peer.destroy();
+                if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+                if (conn) { try { conn.close(); } catch(e){} conn = null; }
                 document.getElementById('my-peer-id').innerText = '未生成';
                 initPeer(true);
             }
         };
 
         window.initPeer = function(isHost, isAutoConnect = false) {
-            if (peer) peer.destroy();
-            
+            // 主机模式下如果已有可用 Peer 实例，直接复用，避免断开已有连接
+            if (isHost && peer && !peer.destroyed && peer.open) {
+                document.getElementById('my-peer-id').innerText = peer.id;
+                document.getElementById('p2p-status').innerText = "✅ 主机已就绪，请复制连接码给手机。";
+                document.getElementById('p2p-status').style.color = "#f2994a";
+                return;
+            }
+
+            if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+            if (conn) { try { conn.close(); } catch(e){} conn = null; }
+            isConnecting = false;
+            clearTimeout(connectTimer);
+
             let customId = null;
             if (isHost) {
                 customId = localStorage.getItem('my_p2p_host_id');
-                // 旧的短码自动升级为 UUID 格式，避免与别人撞码导致连接失败 / 缓慢
                 if (!customId || !isUUID(customId)) {
                     customId = generateUUID();
                     localStorage.setItem('my_p2p_host_id', customId);
                 }
             }
 
-            // 增加大量免费 STUN 服务器，强行提高连通率
+            // 精简 STUN，去掉易超时的 twilio，增加 Cloudflare STUN
             peer = new Peer(customId, {
-                config: {'iceServers': [
-                    { url: 'stun:stun.l.google.com:19302' },
-                    { url: 'stun:stun1.l.google.com:19302' },
-                    { url: 'stun:stun2.l.google.com:19302' },
-                    { url: 'stun:stun3.l.google.com:19302' },
-                    { url: 'stun:stun4.l.google.com:19302' },
-                    { url: 'stun:global.stun.twilio.com:3478' }
-                ]}
+                debug: 1,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun.cloudflare.com:3478' }
+                    ],
+                    iceCandidatePoolSize: 10
+                },
+                pingInterval: 3000
             }); 
 
             peer.on('open', function(id) {
@@ -647,22 +658,47 @@
             });
 
             peer.on('connection', function(c) {
+                // 客户端重连时会建立新连接，关闭旧连接，保留新连接
+                if (conn && conn !== c) {
+                    try { conn.close(); } catch(e){}
+                }
                 conn = c;
-                setupConnection(conn, true);
+                setupConnection(conn, true, c.peer);
+            });
+
+            // 信令服务器断开时自动重连，不重建 Peer 实例，避免连接码变化
+            peer.on('disconnected', function() {
+                if (peer && !peer.destroyed) {
+                    console.log('信令服务器断开，尝试重连...');
+                    try { peer.reconnect(); } catch(e){}
+                }
             });
 
             peer.on('error', function(err) {
+                console.log("Peer Error:", err.type, err);
                 if (err.type === 'unavailable-id') {
-                    document.getElementById('p2p-status').innerText = "❌ 码冲突，请点重置。";
-                    document.getElementById('p2p-status').style.color = "#eb5757";
-                } else if (err.type === 'network') {
-                    // 信令服务器断网重连
-                    console.log("信令服务器断开，正在重连...");
-                    if (isAutoReconnecting) {
-                        setTimeout(() => initPeer(false, true), 2000);
+                    if (isHost) {
+                        // 主机码冲突（概率极低），自动换一个 UUID 重试
+                        localStorage.removeItem('my_p2p_host_id');
+                        setTimeout(() => initPeer(true), 500);
+                    } else {
+                        document.getElementById('p2p-status').innerText = "❌ 码冲突，请点重置。";
+                        document.getElementById('p2p-status').style.color = "#eb5757";
                     }
-                } else {
-                    console.log("Peer Error:", err);
+                } else if (err.type === 'peer-unavailable') {
+                    // 客户端连接的目标主机不在线
+                    if (!isHost) {
+                        document.getElementById('p2p-status').innerText = "⏳ 主机未在线，正在重试...";
+                        document.getElementById('p2p-status').style.color = "#f2994a";
+                        isConnecting = false;
+                        clearTimeout(connectTimer);
+                        if (isAutoReconnecting) {
+                            setTimeout(() => startAutoConnectLoop(), 1000);
+                        }
+                    }
+                } else if (err.type === 'network') {
+                    // PeerJS 内部会自动重连信令，这里不重建 Peer
+                    console.log("信令网络异常，等待自动重连...");
                 }
             });
         };
@@ -672,48 +708,81 @@
             const lastPeer = localStorage.getItem('last_connected_peer');
             if (!lastPeer) { isAutoReconnecting = false; return; }
 
-            if (conn && conn.open) {
-                isAutoReconnecting = false;
+            if (conn && conn.open) { isAutoReconnecting = false; isConnecting = false; return; }
+            if (isConnecting) return; // 已有连接正在尝试，等待结果
+
+            if (!peer || peer.destroyed || !peer.open) {
+                setTimeout(() => startAutoConnectLoop(), 500);
                 return;
             }
 
+            isConnecting = true;
             document.getElementById('p2p-status').innerText = "🔄 正在自动寻找主机...";
             document.getElementById('p2p-status').style.color = "#f2994a";
-            p2pIndicator.className = 'p2p-dot connecting'; 
+            p2pIndicator.className = 'p2p-dot connecting';
 
-            if (!conn || (conn && !conn.open)) {
-                if (conn) { conn.close(); }
-                conn = peer.connect(lastPeer);
-                setupConnection(conn, false, lastPeer);
-            }
+            if (conn) { try { conn.close(); } catch(e){} conn = null; }
+            currentTargetPeer = lastPeer;
+            conn = peer.connect(lastPeer, { reliable: true });
+            setupConnection(conn, false, lastPeer);
 
-            // 优化：2秒没连上就立刻重试
-            setTimeout(() => {
-                if (isAutoReconnecting && (!conn || !conn.open)) {
-                    startAutoConnectLoop();
+            // 7 秒超时兜底，比 PeerJS 默认的 10 秒更快暴露失败
+            clearTimeout(connectTimer);
+            connectTimer = setTimeout(() => {
+                if (isConnecting && (!conn || !conn.open)) {
+                    isConnecting = false;
+                    if (conn) { try { conn.close(); } catch(e){} conn = null; }
+                    if (isAutoReconnecting) {
+                        setTimeout(() => startAutoConnectLoop(), 500);
+                    }
                 }
-            }, 2000);
+            }, 7000);
         }
 
         window.connectToPeer = function(targetId = null) {
-            isAutoReconnecting = false; 
+            isAutoReconnecting = false;
+            isConnecting = false;
+            clearTimeout(connectTimer);
+
             const idToConnect = targetId || document.getElementById('target-peer-id').value.trim();
             if (!idToConnect) { alert('请输入连接码'); return; }
-            
-            if (!peer) initPeer(false);
-            
+
             document.getElementById('p2p-status').innerText = "正在连接...";
             document.getElementById('p2p-status').style.color = "#f2994a";
             p2pIndicator.className = 'p2p-dot connecting';
 
-            if (conn) conn.close();
-            conn = peer.connect(idToConnect);
-            setupConnection(conn, false, idToConnect);
+            const doConnect = () => {
+                if (conn) { try { conn.close(); } catch(e){} conn = null; }
+                currentTargetPeer = idToConnect;
+                conn = peer.connect(idToConnect, { reliable: true });
+                setupConnection(conn, false, idToConnect);
+
+                clearTimeout(connectTimer);
+                connectTimer = setTimeout(() => {
+                    if (conn && !conn.open) {
+                        document.getElementById('p2p-status').innerText = "❌ 连接超时，请重试";
+                        document.getElementById('p2p-status').style.color = "#eb5757";
+                        p2pIndicator.className = 'p2p-dot';
+                        try { conn.close(); } catch(e){}
+                    }
+                }, 7000);
+            };
+
+            if (!peer || peer.destroyed) {
+                initPeer(false);
+                peer.once('open', doConnect);
+            } else if (peer.open) {
+                doConnect();
+            } else {
+                peer.once('open', doConnect);
+            }
         };
 
         function setupConnection(connection, isHost, targetId) {
             connection.on('open', () => {
                 isAutoReconnecting = false; 
+                isConnecting = false;
+                clearTimeout(connectTimer);
                 document.getElementById('p2p-status').innerText = "✅ 已连接！实时同步中。";
                 document.getElementById('p2p-status').style.color = "#27ae60";
                 p2pIndicator.className = 'p2p-dot connected';
@@ -730,7 +799,12 @@
                     renderP2PHistory();
                 }
 
-                connection.send({ type: 'SYNC_DATA', payload: appData });
+                // 延迟 150ms 发送，等数据通道完全就绪，减少大包阻塞
+                setTimeout(() => {
+                    if (connection.open) {
+                        try { connection.send({ type: 'SYNC_DATA', payload: appData }); } catch(e){}
+                    }
+                }, 150);
             });
 
             connection.on('data', (data) => {
@@ -746,13 +820,17 @@
             });
 
             connection.on('close', () => {
+                isConnecting = false;
+                clearTimeout(connectTimer);
                 p2pIndicator.className = 'p2p-dot';
                 p2pIndicator.title = "未连接";
-                conn = null;
+                if (conn === connection) conn = null;
                 
                 if (!isAutoReconnecting) {
                     document.getElementById('p2p-status').innerText = "❌ 连接已断开";
                     document.getElementById('p2p-status').style.color = "#999";
+                } else {
+                    setTimeout(() => startAutoConnectLoop(), 500);
                 }
             });
             
@@ -761,10 +839,16 @@
             });
         }
 
+        // 数据同步节流：200ms 内多次修改只发送最后一次，避免连续 +1 时通道拥塞
         function saveDataToFile(data) {
             saveLocalStorage(); 
             if (conn && conn.open && !isSyncing) {
-                conn.send({ type: 'SYNC_DATA', payload: data });
+                clearTimeout(syncDebounceTimer);
+                syncDebounceTimer = setTimeout(() => {
+                    if (conn && conn.open && !isSyncing) {
+                        try { conn.send({ type: 'SYNC_DATA', payload: data }); } catch(e){}
+                    }
+                }, 200);
             }
         }
 
@@ -1733,12 +1817,10 @@
         
         renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); initDragAndDrop(); renderSnapshots();
         
-        // 初始化时渲染一次历史记录
         renderP2PHistory();
         const savedHost = localStorage.getItem('my_p2p_host_id');
         if (savedHost) document.getElementById('my-peer-id').innerText = savedHost;
         
-        // 尝试自动重连
         if (isMobileDevice && localStorage.getItem('last_connected_peer')) {
             document.getElementById('target-peer-id').value = localStorage.getItem('last_connected_peer');
             setTimeout(() => {
