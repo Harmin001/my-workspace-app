@@ -120,7 +120,8 @@ h2{font-size:1.15em;font-weight:600;margin-bottom:0;display:flex;align-items:cen
 .stat-card.other{border-top:4px solid #f2994a}
 .stat-card.exercise{border-top:4px solid #27ae60}
 .week-board{display:flex;gap:8px;height:400px;margin-bottom:24px;flex-shrink:0}
-.week-column{flex:1;background:var(--bg-sidebar);border-radius:8px;padding:8px;display:flex;flex-direction:column;border:1px dashed transparent}
+/* 修复：添加 overflow-y: auto 和 min-height: 0 让超出部分内部滚动 */
+.week-column{flex:1;background:var(--bg-sidebar);border-radius:8px;padding:8px;display:flex;flex-direction:column;border:1px dashed transparent;overflow-y:auto;min-height:0;}
 .week-column.today-col{border-color:var(--accent-color);background:#eef5fc}
 .week-column.drag-over{border-color:var(--accent-color);background:#eef5fc}
 .week-column-header{font-weight:600;text-align:center;margin-bottom:12px;font-size:.9em;color:#555}
@@ -592,6 +593,12 @@ h1{font-size:1.4em;margin-bottom:12px}
    1. 更新日志
    ========================================================= */
 const APP_CHANGELOG = [
+    { version: 'v1.6.0', date: '2026-10-26', changes: [
+        '修复：周计划任务过多时超出框，现可在列内滚动',
+        '修复：每日循环、每周循环等任务在之后的日期能正常显示',
+        '新增：支持按日期独立记录循环任务的完成状态与次数进度',
+        '优化：日历点击事件与数据读取逻辑'
+    ]},
     { version: 'v1.5.0', date: '2026-10-25', changes: [
         '新增：每次打开页面默认显示今天，不再恢复上次编辑日期',
         '新增：跨天自动切换（页面开着过夜时自动切到新的一天）',
@@ -604,19 +611,9 @@ const APP_CHANGELOG = [
         '新增：日计划子任务超过 3 个时折叠',
         '优化：设置页改为自适应网格布局，更紧凑'
     ]},
-    { version: 'v1.3.0', date: '2026-10-24', changes: [
-        '新增：日计划任务超过 5 个时折叠，可弹框查看全部',
-        '优化：更新日志改为版本更新记录'
-    ]},
-    { version: 'v1.2.0', date: '2026-10-24', changes: [
-        '新增：今日精力系统，支持午睡/课间恢复',
-        '新增：精力警告阈值设置',
-        '新增：RPG 属性编辑',
-        '优化：等级经验递增',
-        '优化：日计划默认三列显示',
-        '修复：修改 index 后日计划布局被重置'
-    ]},
-    { version: 'v1.1.0', date: '2026-10-23', changes: ['新增预计时长、大类备注、-1 减少、拖回锻炼池等功能'] },
+    { version: 'v1.3.0', date: '2026-10-24', changes: ['新增：日计划任务超过 5 个时折叠，可弹框查看全部', '优化：更新日志改为版本更新记录'] },
+    { version: 'v1.2.0', date: '2026-10-24', changes: ['新增：今日精力系统', '新增：精力警告阈值设置', '新增：RPG 属性编辑', '优化：等级经验递增', '优化：日计划默认三列显示'] },
+    { version: 'v1.1.0', date: '2026-10-23', changes: ['新增：预计时长、大类备注、-1 减少、拖回锻炼池等功能'] },
     { version: 'v1.0.0', date: '2026-10-22', changes: ['初始版本'] }
 ];
 
@@ -690,7 +687,6 @@ function getTodayString() {
 function formatDate(y, m, d) { return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`; }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-// 相对日期名称显示（今天 / 昨天 / 明天 / N天前 等）
 function getDateLabel(dateStr) {
     const today = getTodayString();
     const d = new Date(dateStr + 'T00:00:00');
@@ -708,14 +704,6 @@ function getDateLabel(dateStr) {
     if (diffDays < -2 && diffDays >= -7) return `${-diffDays}天后 · ${full}`;
     if (d.getFullYear() === t.getFullYear()) return full;
     return `${d.getFullYear()}年${full}`;
-}
-// 简短名称（用于徽章）
-function getShortDateLabel(dateStr) {
-    const diffDays = Math.round((new Date(getTodayString() + 'T00:00:00') - new Date(dateStr + 'T00:00:00')) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return '今天';
-    if (diffDays === 1) return '昨天';
-    if (diffDays === -1) return '明天';
-    return '';
 }
 
 function generatePeerId() {
@@ -741,16 +729,78 @@ function copyTextToClipboard(text, successMsg) {
     }
     if (fallbackCopy(text)) done(); else alert('复制失败');
 }
-function isRecurringMatch(type, dateStr) {
+
+// 循环匹配逻辑：传入开始日期和目标日期
+function isRecurringMatch(type, startDateStr, targetDateStr) {
     if (!type) return false;
     if (type === '每日') return true;
-    const targetDate = new Date(dateStr), today = new Date(getTodayString());
-    const diffDays = Math.ceil(Math.abs(targetDate - today) / (1000 * 60 * 60 * 24));
+    let startStr = startDateStr;
+    let targetStr = targetDateStr;
+    if (!targetStr) {
+        targetStr = startDateStr;
+        startStr = getTodayString();
+    }
+    const start = new Date(startStr);
+    const target = new Date(targetStr);
+    const diffTime = Math.abs(target - start);
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     if (type === '每周') return diffDays % 7 === 0;
-    if (type === '每月') return targetDate.getDate() === today.getDate();
+    if (type === '每月') return target.getDate() === start.getDate();
     const m = type.match(/自定义(\d+)天/);
     if (m) return diffDays % parseInt(m[1]) === 0;
     return false;
+}
+
+// 获取指定日期应该显示的所有任务
+function getTasksForDate(dateStr) {
+    return appData.tasks.filter(t => {
+        if (t.date === dateStr) return true;
+        if (t.date !== 'pool' && t.recurringType && t.date <= dateStr) {
+            return isRecurringMatch(t.recurringType, t.date, dateStr);
+        }
+        return false;
+    });
+}
+
+// 任务/子任务的每日独立状态读写
+function isTaskDone(task, dateStr) {
+    if (task.completions && task.completions[dateStr] !== undefined) return task.completions[dateStr];
+    if (task.date === dateStr) return !!task.completed;
+    return false;
+}
+function setTaskDone(task, dateStr, val) {
+    if (!task.completions) task.completions = {};
+    task.completions[dateStr] = val;
+    if (task.date === dateStr) task.completed = val;
+}
+function getTaskCurrent(task, dateStr) {
+    if (task.currents && task.currents[dateStr] !== undefined) return task.currents[dateStr];
+    if (task.date === dateStr) return task.current || 0;
+    return 0;
+}
+function setTaskCurrent(task, dateStr, val) {
+    if (!task.currents) task.currents = {};
+    task.currents[dateStr] = val;
+    if (task.date === dateStr) task.current = val;
+}
+
+function isSubTaskDone(sub, dateStr) {
+    if (sub.completions && sub.completions[dateStr] !== undefined) return sub.completions[dateStr];
+    return !!sub.completed;
+}
+function setSubTaskDone(sub, dateStr, val) {
+    if (!sub.completions) sub.completions = {};
+    sub.completions[dateStr] = val;
+    sub.completed = val;
+}
+function getSubCurrent(sub, dateStr) {
+    if (sub.currents && sub.currents[dateStr] !== undefined) return sub.currents[dateStr];
+    return sub.current || 0;
+}
+function setSubCurrent(sub, dateStr, val) {
+    if (!sub.currents) sub.currents = {};
+    sub.currents[dateStr] = val;
+    sub.current = val;
 }
 
 /* =========================================================
@@ -1436,19 +1486,36 @@ window.changeWeek = function(o) {
 /* =========================================================
    12. 进度计算与渲染
    ========================================================= */
-function getSubTaskProgress(s) { return s.target ? { done: s.current||0, total: s.target } : { done: s.completed?1:0, total: 1 }; }
-function getTaskProgress(t) {
+function getSubTaskProgress(s, ds) {
+    const done = isSubTaskDone(s, ds);
+    if (s.target) {
+        let cur = getSubCurrent(s, ds);
+        if (done) cur = s.target;
+        return { done: cur, total: s.target };
+    }
+    return { done: done ? 1 : 0, total: 1 };
+}
+function getTaskProgress(t, ds) {
+    const done = isTaskDone(t, ds);
     if (t.subTasks && t.subTasks.length > 0) {
         let d = 0, tot = 0;
-        t.subTasks.forEach(s => { const p = getSubTaskProgress(s); d += p.done; tot += p.total; });
+        t.subTasks.forEach(s => { const p = getSubTaskProgress(s, ds); d += p.done; tot += p.total; });
         return { done: d, total: tot };
     }
-    if (t.target) return { done: t.current||0, total: t.target };
-    return { done: t.completed?1:0, total: 1 };
+    if (t.target) {
+        let cur = getTaskCurrent(t, ds);
+        if (done) cur = t.target;
+        return { done: cur, total: t.target };
+    }
+    return { done: done ? 1 : 0, total: 1 };
 }
-function syncParentTaskStatus(t) {
+function syncParentTaskStatus(t, ds) {
     if (!t.subTasks || t.subTasks.length === 0) return;
-    t.completed = t.subTasks.every(s => s.target ? (s.current||0) >= s.target : s.completed);
+    const allDone = t.subTasks.every(s => {
+        if (s.target) return getSubCurrent(s, ds) >= s.target;
+        return isSubTaskDone(s, ds);
+    });
+    setTaskDone(t, ds, allDone);
 }
 function calcProgress(dateStr, type) {
     if (type === '锻炼') {
@@ -1464,9 +1531,9 @@ function calcProgress(dateStr, type) {
         });
         return { done: d, total: tot };
     }
-    const tasks = appData.tasks.filter(t => t.date === dateStr && t.type === type);
+    const tasks = getTasksForDate(dateStr).filter(t => t.type === type);
     let d = 0, tot = 0;
-    tasks.forEach(t => { const p = getTaskProgress(t); d += p.done; tot += p.total; });
+    tasks.forEach(t => { const p = getTaskProgress(t, dateStr); d += p.done; tot += p.total; });
     return { done: d, total: tot };
 }
 function renderStats(cid, s, e, p) {
@@ -1476,8 +1543,9 @@ function renderStats(cid, s, e, p) {
     let cur = new Date(s); const end = new Date(e);
     while (cur <= end) {
         const d = formatDate(cur.getFullYear(), cur.getMonth(), cur.getDate());
-        appData.tasks.filter(t => t.date === d).forEach(t => {
-            const pr = getTaskProgress(t);
+        const tasks = getTasksForDate(d);
+        tasks.forEach(t => {
+            const pr = getTaskProgress(t, d);
             if (t.type === 'learning') ld += pr.done;
             if (t.type === 'other') od += pr.done;
         });
@@ -1574,19 +1642,20 @@ function renderCalendar() {
     }
     renderStats('stats-month', formatDate(y, m, 1), formatDate(y, m, dim), '月');
 }
-function createWeekTaskDOM(t) {
+function createWeekTaskDOM(t, ds) {
     const item = document.createElement('div');
     item.className = 'task-item';
     item.draggable = true;
     item.ondragstart = (e) => drag(e, t.id);
-    const p = getTaskProgress(t);
+    const p = getTaskProgress(t, ds);
+    const isDone = isTaskDone(t, ds);
     const cb = document.createElement('input');
     cb.type = 'checkbox';
-    cb.checked = t.completed;
+    cb.checked = isDone;
     cb.onclick = (e) => e.stopPropagation();
-    cb.onchange = () => toggleMainTaskFromWeek(t.id);
+    cb.onchange = () => toggleMainTaskFromWeek(t.id, ds);
     const text = document.createElement('span');
-    text.className = 'task-text' + (t.completed ? ' task-completed' : '');
+    text.className = 'task-text' + (isDone ? ' task-completed' : '');
     text.innerText = (t.target || (t.subTasks && t.subTasks.length > 0)) ? `${t.text} (${p.done}/${p.total})` : t.text;
     item.appendChild(cb); item.appendChild(text);
     return item;
@@ -1620,7 +1689,7 @@ function renderWeekBoard() {
         col.ondrop = (e) => handleDrop(e, ds);
         col.ondragover = allowDrop;
         col.innerHTML = `<div class="week-column-header">${dn} <br><span style="font-size:0.85em;color:#999">${cd.getMonth()+1}/${cd.getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
-        appData.tasks.filter(t => t.date === ds).forEach(t => col.appendChild(createWeekTaskDOM(t)));
+        getTasksForDate(ds).forEach(t => col.appendChild(createWeekTaskDOM(t, ds)));
         const manual = appData.exerciseSchedule[ds] || [];
         const rec = appData.exercises.filter(e => isRecurringMatch(e.recurringType, ds)).map(e => e.name);
         const names = [...new Set([...manual, ...rec])];
@@ -1680,11 +1749,11 @@ function renderTaskPool() {
     pl.innerHTML = ''; po.innerHTML = '';
     ['learning', 'other'].forEach(type => {
         const pool = type === 'learning' ? pl : po;
-        appData.tasks.filter(t => t.type === type && (t.date === 'pool' || t.date === appData.selectedDate || (t.date < td && t.date !== 'pool' && !t.completed))).forEach(t => {
-            const item = createWeekTaskDOM(t);
+        appData.tasks.filter(t => t.type === type && (t.date === 'pool' || t.date === appData.selectedDate || (t.date < td && t.date !== 'pool' && !isTaskDone(t, t.date)))).forEach(t => {
+            const item = createWeekTaskDOM(t, t.date === 'pool' ? appData.selectedDate : t.date);
             if (t.date === appData.selectedDate) { const tag = document.createElement('span'); tag.className = 'task-tag today'; tag.innerText = '今日'; item.appendChild(tag); }
             else if (t.date === 'pool') { const tag = document.createElement('span'); tag.className = 'task-tag'; tag.innerText = '待安排'; item.appendChild(tag); }
-            else if (t.date < td && !t.completed) { const tag = document.createElement('span'); tag.className = 'task-tag overdue'; tag.innerText = '逾期'; item.appendChild(tag); }
+            else if (t.date < td && !isTaskDone(t, t.date)) { const tag = document.createElement('span'); tag.className = 'task-tag overdue'; tag.innerText = '逾期'; item.appendChild(tag); }
             pool.appendChild(item);
         });
     });
@@ -1747,7 +1816,8 @@ window.toggleSubFold = function(taskId, ev) {
 
 const SUB_FOLD_THRESHOLD = 3;
 function renderSubTaskHtml(task, sub, ds) {
-    const sp = getSubTaskProgress(sub);
+    const sp = getSubTaskProgress(sub, ds);
+    const done = isSubTaskDone(sub, ds);
     const isCount = sub.target > 0;
     const pct = isCount ? Math.min(100, Math.round((sp.done / sp.total) * 100)) : 0;
     const est = sub.estimate ? `<span class="estimate-label" ondblclick="setSubTaskEstimate('${task.id}', '${sub.id}')" title="双击修改">⏱ ${sub.estimate}</span>` : '';
@@ -1756,15 +1826,15 @@ function renderSubTaskHtml(task, sub, ds) {
     return `
         <div class="sub-task-item">
             <div class="sub-task-left">
-                <input type="checkbox" class="task-checkbox" ${sub.completed ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')">
-                <span class="${sub.completed ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${sub.text}</span>
+                <input type="checkbox" class="task-checkbox" ${done ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')">
+                <span class="${done ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${sub.text}</span>
                 ${est}
             </div>
             <div class="sub-actions">
                 ${isCount ? `<div class="sub-prog-container">
                     <div class="sub-prog-bar-bg"><div class="sub-prog-bar-fill" style="width:${pct}%;"></div></div>
                     <span class="sub-prog-text">${sp.done}/${sp.total}</span>
-                    ${!sub.completed ? `
+                    ${!done ? `
                         <button class="btn-sub-plus" onclick="decrementSubTaskProgress('${task.id}', '${sub.id}')" title="减少一次">-1</button>
                         <button class="btn-sub-plus" onclick="incrementSubTaskProgress('${task.id}', '${sub.id}')" title="增加一次">+1</button>
                     ` : ''}
@@ -1776,23 +1846,24 @@ function renderSubTaskHtml(task, sub, ds) {
             </div>
         </div>`;
 }
-function generateTaskDOM(task, td) {
+function generateTaskDOM(task, ds) {
     const div = document.createElement('div');
     div.className = `main-task-item ${task.pinned ? 'pinned-task' : ''}`;
+    const taskDone = isTaskDone(task, ds);
     const loopC = task.recurringType ? 'active' : '';
     const loopL = task.recurringType ? `<span class="loop-label">${task.recurringType}</span>` : '';
     const pinC = task.pinned ? 'active' : '';
     let dlC = '', dlT = '⏰ 设置截止日期';
-    if (task.deadline && !task.completed && task.deadline < td) { dlC = 'overdue'; dlT = '⚠️ 已逾期！'; }
+    if (task.deadline && !taskDone && task.deadline < ds) { dlC = 'overdue'; dlT = '⚠️ 已逾期！'; }
     const hasSub = task.subTasks && task.subTasks.length > 0;
-    const mp = getTaskProgress(task);
-    const mainCb = `<input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleMainTask('${task.id}')">`;
-    const editT = `<span class="task-text ${task.completed ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;">${task.text}</span>`;
+    const mp = getTaskProgress(task, ds);
+    const mainCb = `<input type="checkbox" class="task-checkbox" ${taskDone ? 'checked' : ''} onchange="toggleMainTask('${task.id}')">`;
+    const editT = `<span class="task-text ${taskDone ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;">${task.text}</span>`;
     const estL = task.estimate ? `<span class="estimate-label" ondblclick="setTaskEstimate('${task.id}')" title="双击修改">⏱ ${task.estimate}</span>` : '';
     let headerLeft;
     if (task.target || hasSub) {
         const pct = Math.min(100, Math.round((mp.done / mp.total) * 100));
-        headerLeft = `<div class="progress-task-container">${mainCb}${editT}${loopL}${estL}<div class="progress-task-bar-bg" style="width:80px;margin-left:8px;"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div><span class="progress-text">${mp.done}/${mp.total}</span>${!task.completed && !hasSub ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}</div>`;
+        headerLeft = `<div class="progress-task-container">${mainCb}${editT}${loopL}${estL}<div class="progress-task-bar-bg" style="width:80px;margin-left:8px;"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div><span class="progress-text">${mp.done}/${mp.total}</span>${!taskDone && !hasSub ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}</div>`;
     } else {
         headerLeft = `${mainCb}${editT}${loopL}${estL}`;
     }
@@ -1803,8 +1874,8 @@ function generateTaskDOM(task, td) {
     html += `<div class="sub-task-list">`;
     if (hasSub) {
         const isExpanded = expandedSubTasks.has(task.id);
-        const activeSubs = task.subTasks.filter(s => !s.completed);
-        const doneSubs = task.subTasks.filter(s => s.completed);
+        const activeSubs = task.subTasks.filter(s => !isSubTaskDone(s, ds));
+        const doneSubs = task.subTasks.filter(s => isSubTaskDone(s, ds));
         const totalActive = activeSubs.length;
         let visibleSubs = activeSubs;
         let hasHidden = false;
@@ -1812,7 +1883,7 @@ function generateTaskDOM(task, td) {
             visibleSubs = activeSubs.slice(0, SUB_FOLD_THRESHOLD);
             hasHidden = true;
         }
-        visibleSubs.forEach(s => { html += renderSubTaskHtml(task, s, td); });
+        visibleSubs.forEach(s => { html += renderSubTaskHtml(task, s, ds); });
         if (hasHidden) {
             html += `<div class="sub-fold-btn" onclick="toggleSubFold('${task.id}', event)">▼ 展开剩余 ${totalActive - SUB_FOLD_THRESHOLD} 个</div>`;
         } else if (isExpanded && totalActive > SUB_FOLD_THRESHOLD) {
@@ -1820,7 +1891,7 @@ function generateTaskDOM(task, td) {
         }
         if (doneSubs.length > 0) {
             html += `<details class="completed-tasks-section" style="margin-top:6px;padding-top:6px;"><summary>已完成 (${doneSubs.length})</summary>`;
-            doneSubs.forEach(s => { html += renderSubTaskHtml(task, s, td); });
+            doneSubs.forEach(s => { html += renderSubTaskHtml(task, s, ds); });
             html += `</details>`;
         }
     }
@@ -1833,16 +1904,16 @@ function renderDayPlan() {
     const ll = document.getElementById('learning-list'), ol = document.getElementById('other-list');
     const lc = document.getElementById('learning-completed'), oc = document.getElementById('other-completed');
     ll.innerHTML = ''; ol.innerHTML = ''; lc.innerHTML = ''; oc.innerHTML = '';
-    const td = getTodayString();
-    const dt = appData.tasks.filter(t => t.date === appData.selectedDate);
-    const aL = dt.filter(t => t.type === 'learning' && !t.completed).sort((a, b) => (a.pinned && !b.pinned ? -1 : (!a.pinned && b.pinned ? 1 : 0)));
-    const dL = dt.filter(t => t.type === 'learning' && t.completed);
-    const aO = dt.filter(t => t.type === 'other' && !t.completed).sort((a, b) => (a.pinned && !b.pinned ? -1 : (!a.pinned && b.pinned ? 1 : 0)));
-    const dO = dt.filter(t => t.type === 'other' && t.completed);
+    const ds = appData.selectedDate;
+    const dt = getTasksForDate(ds);
+    const aL = dt.filter(t => t.type === 'learning' && !isTaskDone(t, ds)).sort((a, b) => (a.pinned && !b.pinned ? -1 : (!a.pinned && b.pinned ? 1 : 0)));
+    const dL = dt.filter(t => t.type === 'learning' && isTaskDone(t, ds));
+    const aO = dt.filter(t => t.type === 'other' && !isTaskDone(t, ds)).sort((a, b) => (a.pinned && !b.pinned ? -1 : (!a.pinned && b.pinned ? 1 : 0)));
+    const dO = dt.filter(t => t.type === 'other' && isTaskDone(t, ds));
 
     const MAX_VISIBLE = 5;
     function renderList(el, tasks, type) {
-        tasks.slice(0, MAX_VISIBLE).forEach(t => el.appendChild(generateTaskDOM(t, td)));
+        tasks.slice(0, MAX_VISIBLE).forEach(t => el.appendChild(generateTaskDOM(t, ds)));
         if (tasks.length > MAX_VISIBLE) {
             const btn = document.createElement('button');
             btn.className = 'view-all-btn';
@@ -1858,11 +1929,11 @@ function renderDayPlan() {
         if (list.length > 0) {
             container.innerHTML = `<details class="completed-tasks-section"><summary>已完成 (${list.length})</summary><div class="completed-tasks-list"></div></details>`;
             const box = container.querySelector('.completed-tasks-list');
-            list.forEach(t => box.appendChild(generateTaskDOM(t, td)));
+            list.forEach(t => box.appendChild(generateTaskDOM(t, ds)));
         }
     });
     const rt = document.getElementById('daily-reflection-textarea');
-    if (rt) rt.value = appData.dailyReflections[appData.selectedDate] || '';
+    if (rt) rt.value = appData.dailyReflections[ds] || '';
     renderDayExercises();
     updateFixedProgressBars();
     saveDataToFile(appData);
@@ -1870,9 +1941,10 @@ function renderDayPlan() {
 }
 
 function getCategoryTasks(type) {
-    const dt = appData.tasks.filter(t => t.date === appData.selectedDate && t.type === type);
-    const active = dt.filter(t => !t.completed).sort((a, b) => (a.pinned && !b.pinned ? -1 : (!a.pinned && b.pinned ? 1 : 0)));
-    return { active, done: dt.filter(t => t.completed) };
+    const ds = appData.selectedDate;
+    const dt = getTasksForDate(ds).filter(t => t.type === type);
+    const active = dt.filter(t => !isTaskDone(t, ds)).sort((a, b) => (a.pinned && !b.pinned ? -1 : (!a.pinned && b.pinned ? 1 : 0)));
+    return { active, done: dt.filter(t => isTaskDone(t, ds)) };
 }
 window.openTaskListModal = function(type) {
     currentTaskModalCategory = type;
@@ -1889,14 +1961,14 @@ function renderTaskListModalContent(type) {
     const { active, done } = getCategoryTasks(type);
     body.innerHTML = '';
     if (active.length === 0 && done.length === 0) { body.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">暂无任务</div>'; return; }
-    const td = getTodayString();
-    active.forEach(t => body.appendChild(generateTaskDOM(t, td)));
+    const ds = appData.selectedDate;
+    active.forEach(t => body.appendChild(generateTaskDOM(t, ds)));
     if (done.length > 0) {
         const d = document.createElement('details');
         d.className = 'completed-tasks-section';
         d.innerHTML = `<summary>已完成 (${done.length})</summary><div class="completed-tasks-list"></div>`;
         const box = d.querySelector('.completed-tasks-list');
-        done.forEach(t => box.appendChild(generateTaskDOM(t, td)));
+        done.forEach(t => box.appendChild(generateTaskDOM(t, ds)));
         body.appendChild(d);
     }
 }
@@ -1910,10 +1982,11 @@ function isCategoryAllChecked(exId) {
 function renderDayExercises() {
     const grid = document.getElementById('exercise-grid');
     grid.innerHTML = '';
-    const manual = appData.exerciseSchedule[appData.selectedDate] || [];
-    const checks = appData.dailyExerciseChecks[appData.selectedDate] || {};
+    const ds = appData.selectedDate;
+    const manual = appData.exerciseSchedule[ds] || [];
+    const checks = appData.dailyExerciseChecks[ds] || {};
     appData.exercises.forEach(ex => {
-        const isPlanned = manual.includes(ex.name) || isRecurringMatch(ex.recurringType, appData.selectedDate);
+        const isPlanned = manual.includes(ex.name) || isRecurringMatch(ex.recurringType, ds);
         const card = document.createElement('div');
         card.className = `exercise-card ${isPlanned ? 'active-plan' : ''}`;
         const loopC = ex.recurringType ? 'active' : '';
@@ -2001,7 +2074,7 @@ window.deleteSubTask = function(tid, sid) {
     const t = appData.tasks.find(t => t.id === tid);
     if (t && t.subTasks) {
         t.subTasks = t.subTasks.filter(s => s.id !== sid);
-        if (t.subTasks.length > 0) syncParentTaskStatus(t); else t.completed = false;
+        if (t.subTasks.length > 0) syncParentTaskStatus(t, appData.selectedDate); else setTaskDone(t, appData.selectedDate, false);
         renderDayPlan(); renderCalendar(); updateFixedProgressBars(); saveDataToFile(appData);
     }
 };
@@ -2009,30 +2082,34 @@ window.togglePinTask = function(id) {
     const t = appData.tasks.find(t => t.id === id);
     if (t) { t.pinned = !t.pinned; renderDayPlan(); saveDataToFile(appData); }
 };
-window.toggleMainTaskFromWeek = function(id) {
+window.toggleMainTaskFromWeek = function(id, ds) {
     const t = appData.tasks.find(t => t.id === id);
     if (!t) return;
-    toggleTaskCompletion(t);
+    toggleTaskCompletion(t, ds);
     renderWeekBoard(); renderCalendar(); renderTaskPool(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
 };
-function toggleTaskCompletion(t) {
-    const was = t.completed;
+function toggleTaskCompletion(t, ds) {
+    const was = isTaskDone(t, ds);
     const will = !was;
     const hasSub = t.subTasks && t.subTasks.length > 0;
     const isCount = !!t.target && !hasSub;
+    
     if (hasSub) {
         t.subTasks.forEach(s => {
-            const sw = s.completed;
+            const sw = isSubTaskDone(s, ds);
             if (s.target) {
                 if (will) {
-                    const d = s.target - (s.current || 0);
+                    const cur = getSubCurrent(s, ds);
+                    const d = s.target - cur;
                     if (d > 0) { adjustTodayEnergy(d * (s.energyCost || 1)); adjustExp(d * (s.energyCost || 1)); }
-                    s.current = s.target; s.completed = true;
+                    setSubCurrent(s, ds, s.target); 
+                    setSubTaskDone(s, ds, true); 
                     if (!sw) adjustAttr(t.type, 1);
                 } else {
-                    const r = (s.current || 0) * (s.energyCost || 1);
-                    adjustTodayEnergy(-r); adjustExp(-r);
-                    s.current = 0; s.completed = false;
+                    const r = getSubCurrent(s, ds) * (s.energyCost || 1);
+                    adjustTodayEnergy(-r); adjustExp(-r); 
+                    setSubCurrent(s, ds, 0); 
+                    setSubTaskDone(s, ds, false); 
                     if (sw) adjustAttr(t.type, -1);
                 }
             } else {
@@ -2040,78 +2117,109 @@ function toggleTaskCompletion(t) {
                     if (will) { adjustTodayEnergy(s.energyCost || 5); adjustExp(s.energyCost || 5); adjustAttr(t.type, 1); }
                     else { adjustTodayEnergy(-(s.energyCost || 5)); adjustExp(-(s.energyCost || 5)); adjustAttr(t.type, -1); }
                 }
-                s.completed = will;
+                setSubTaskDone(s, ds, will);
             }
         });
-        t.completed = will;
+        setTaskDone(t, ds, will);
         if (will && !was) updateStreak();
     } else if (isCount) {
         if (will) {
-            const d = t.target - (t.current || 0);
+            const cur = getTaskCurrent(t, ds);
+            const d = t.target - cur;
             if (d > 0) { adjustTodayEnergy(d * (t.energyCost || 1)); adjustExp(d * (t.energyCost || 1)); }
-            t.current = t.target; t.completed = true; adjustAttr(t.type, 1); adjustAttr('focus', 1); updateStreak();
+            setTaskCurrent(t, ds, t.target); 
+            setTaskDone(t, ds, true); 
+            adjustAttr(t.type, 1); adjustAttr('focus', 1); updateStreak();
         } else {
-            const r = (t.current || 0) * (t.energyCost || 1);
-            adjustTodayEnergy(-r); adjustExp(-r);
-            t.current = 0; t.completed = false; adjustAttr(t.type, -1); adjustAttr('focus', -1);
+            const r = getTaskCurrent(t, ds) * (t.energyCost || 1);
+            adjustTodayEnergy(-r); adjustExp(-r); 
+            setTaskCurrent(t, ds, 0); 
+            setTaskDone(t, ds, false); 
+            adjustAttr(t.type, -1); adjustAttr('focus', -1);
         }
     } else {
-        if (will) { adjustTodayEnergy(t.energyCost || 10); adjustExp(t.energyCost || 10); adjustAttr(t.type, 1); t.completed = true; updateStreak(); }
-        else { adjustTodayEnergy(-(t.energyCost || 10)); adjustExp(-(t.energyCost || 10)); adjustAttr(t.type, -1); t.completed = false; }
+        if (will) { 
+            adjustTodayEnergy(t.energyCost || 10); adjustExp(t.energyCost || 10); adjustAttr(t.type, 1); 
+            setTaskDone(t, ds, true); 
+            updateStreak(); 
+        } else { 
+            adjustTodayEnergy(-(t.energyCost || 10)); adjustExp(-(t.energyCost || 10)); adjustAttr(t.type, -1); 
+            setTaskDone(t, ds, false); 
+        }
     }
 }
 window.incrementTaskProgress = function(id) {
+    const ds = appData.selectedDate;
     const t = appData.tasks.find(t => t.id === id);
-    if (!t || !t.target || t.completed || t.current >= t.target) return;
+    if (!t || !t.target) return;
+    const cur = getTaskCurrent(t, ds);
+    if (isTaskDone(t, ds) || cur >= t.target) return;
     const c = t.energyCost || 1;
-    t.current = (t.current || 0) + 1;
+    setTaskCurrent(t, ds, cur + 1);
     adjustTodayEnergy(c); adjustExp(c);
-    if (t.current >= t.target) { t.current = t.target; t.completed = true; adjustAttr(t.type, 1); adjustAttr('focus', 1); updateStreak(); }
+    if (cur + 1 >= t.target) { 
+        setTaskDone(t, ds, true); 
+        adjustAttr(t.type, 1); adjustAttr('focus', 1); updateStreak(); 
+    }
     renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.decrementTaskProgress = function(id) {
+    const ds = appData.selectedDate;
     const t = appData.tasks.find(t => t.id === id);
     if (!t || !t.target) return;
     const c = t.energyCost || 1;
-    if (t.completed) {
-        const r = (t.current || t.target) * c;
+    if (isTaskDone(t, ds)) {
+        const r = getTaskCurrent(t, ds) * c;
         adjustTodayEnergy(-r); adjustExp(-r); adjustAttr(t.type, -1); adjustAttr('focus', -1);
-        t.current = Math.max(0, (t.current || t.target) - 1); t.completed = false;
-    } else if (t.current > 0) {
-        adjustTodayEnergy(-c); adjustExp(-c); t.current = t.current - 1;
+        setTaskCurrent(t, ds, Math.max(0, getTaskCurrent(t, ds) - 1)); 
+        setTaskDone(t, ds, false);
+    } else if (getTaskCurrent(t, ds) > 0) {
+        adjustTodayEnergy(-c); adjustExp(-c); 
+        setTaskCurrent(t, ds, getTaskCurrent(t, ds) - 1);
     }
     renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.incrementSubTaskProgress = function(tid, sid) {
-    const t = appData.tasks.find(t => t.id === tid);
-    if (!t || !t.subTasks) return;
-    const s = t.subTasks.find(s => s.id === sid);
-    if (!s || !s.target || s.completed || s.current >= s.target) return;
-    const wt = t.completed;
-    const c = s.energyCost || 1;
-    s.current = (s.current || 0) + 1;
-    adjustTodayEnergy(c); adjustExp(c);
-    if (s.current >= s.target) { s.current = s.target; s.completed = true; adjustAttr(t.type, 1); }
-    syncParentTaskStatus(t);
-    if (!wt && t.completed) { adjustAttr('focus', 1); updateStreak(); }
-    renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
-};
-window.decrementSubTaskProgress = function(tid, sid) {
+    const ds = appData.selectedDate;
     const t = appData.tasks.find(t => t.id === tid);
     if (!t || !t.subTasks) return;
     const s = t.subTasks.find(s => s.id === sid);
     if (!s || !s.target) return;
-    const wt = t.completed;
+    const cur = getSubCurrent(s, ds);
+    if (isSubTaskDone(s, ds) || cur >= s.target) return;
+    const wt = isTaskDone(t, ds);
     const c = s.energyCost || 1;
-    if (s.completed) {
-        const r = (s.current || s.target) * c;
-        adjustTodayEnergy(-r); adjustExp(-r); adjustAttr(t.type, -1);
-        s.current = Math.max(0, (s.current || s.target) - 1); s.completed = false;
-    } else if (s.current > 0) {
-        adjustTodayEnergy(-c); adjustExp(-c); s.current = s.current - 1;
+    setSubCurrent(s, ds, cur + 1);
+    adjustTodayEnergy(c); adjustExp(c);
+    if (cur + 1 >= s.target) { 
+        setSubTaskDone(s, ds, true); 
+        adjustAttr(t.type, 1); 
     }
-    syncParentTaskStatus(t);
-    if (wt && !t.completed) adjustAttr('focus', -1);
+    syncParentTaskStatus(t, ds);
+    const newT = isTaskDone(t, ds);
+    if (!wt && newT) { adjustAttr('focus', 1); updateStreak(); }
+    renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
+};
+window.decrementSubTaskProgress = function(tid, sid) {
+    const ds = appData.selectedDate;
+    const t = appData.tasks.find(t => t.id === tid);
+    if (!t || !t.subTasks) return;
+    const s = t.subTasks.find(s => s.id === sid);
+    if (!s || !s.target) return;
+    const wt = isTaskDone(t, ds);
+    const c = s.energyCost || 1;
+    if (isSubTaskDone(s, ds)) {
+        const r = getSubCurrent(s, ds) * c;
+        adjustTodayEnergy(-r); adjustExp(-r); adjustAttr(t.type, -1);
+        setSubCurrent(s, ds, Math.max(0, getSubCurrent(s, ds) - 1)); 
+        setSubTaskDone(s, ds, false);
+    } else if (getSubCurrent(s, ds) > 0) {
+        adjustTodayEnergy(-c); adjustExp(-c); 
+        setSubCurrent(s, ds, getSubCurrent(s, ds) - 1);
+    }
+    syncParentTaskStatus(t, ds);
+    const newT = isTaskDone(t, ds);
+    if (wt && !newT) adjustAttr('focus', -1);
     renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.setTaskTarget = function(id) {
@@ -2122,8 +2230,8 @@ window.setTaskTarget = function(id) {
     const n = parseInt(v);
     if (isNaN(n) || n < 0) return;
     t.target = n;
-    if (n === 0) { delete t.target; delete t.current; t.completed = false; }
-    else { if (!t.current) t.current = 0; if (t.current >= t.target) t.completed = true; }
+    if (n === 0) { delete t.target; delete t.current; delete t.currents; setTaskDone(t, appData.selectedDate, false); }
+    else { if (!t.current) t.current = 0; if (getTaskCurrent(t, appData.selectedDate) >= t.target) setTaskDone(t, appData.selectedDate, true); }
     renderDayPlan();
 };
 window.setSubTaskTarget = function(tid, sid) {
@@ -2136,9 +2244,9 @@ window.setSubTaskTarget = function(tid, sid) {
     const n = parseInt(v);
     if (isNaN(n) || n < 0) return;
     s.target = n;
-    if (n === 0) { delete s.target; delete s.current; s.completed = false; }
-    else { if (!s.current) s.current = 0; if (s.current >= s.target) s.completed = true; }
-    syncParentTaskStatus(t); renderDayPlan(); renderCalendar();
+    if (n === 0) { delete s.target; delete s.current; delete s.currents; setSubTaskDone(s, appData.selectedDate, false); }
+    else { if (!s.current) s.current = 0; if (getSubCurrent(s, appData.selectedDate) >= s.target) setSubTaskDone(s, appData.selectedDate, true); }
+    syncParentTaskStatus(t, appData.selectedDate); renderDayPlan(); renderCalendar();
 };
 function handleAddInput(e, type, dateStr, isPool) {
     if (e.key !== 'Enter' || !e.target.value.trim()) return;
@@ -2244,32 +2352,46 @@ window.toggleExerciseTask = function(exId, sid) {
 window.toggleMainTask = function(id) {
     const t = appData.tasks.find(t => t.id === id);
     if (!t) return;
-    toggleTaskCompletion(t);
+    toggleTaskCompletion(t, appData.selectedDate);
     renderDayPlan(); renderCalendar(); renderTaskPool(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.toggleSubTask = function(tid, sid) {
+    const ds = appData.selectedDate;
     const t = appData.tasks.find(t => t.id === tid);
     if (!t || !t.subTasks) return;
     const s = t.subTasks.find(s => s.id === sid);
     if (!s) return;
-    const wt = t.completed;
-    const ws = s.completed;
+    const wt = isTaskDone(t, ds);
+    const ws = isSubTaskDone(s, ds);
     const will = !ws;
+    
     if (s.target) {
         if (will) {
-            const d = s.target - (s.current || 0);
+            const d = s.target - getSubCurrent(s, ds);
             if (d > 0) { adjustTodayEnergy(d * (s.energyCost || 1)); adjustExp(d * (s.energyCost || 1)); }
-            s.current = s.target; s.completed = true; adjustAttr(t.type, 1);
+            setSubCurrent(s, ds, s.target); 
+            setSubTaskDone(s, ds, true); 
+            adjustAttr(t.type, 1);
         } else {
-            const r = (s.current || 0) * (s.energyCost || 1);
-            adjustTodayEnergy(-r); adjustExp(-r); s.current = 0; s.completed = false; adjustAttr(t.type, -1);
+            const r = getSubCurrent(s, ds) * (s.energyCost || 1);
+            adjustTodayEnergy(-r); adjustExp(-r); 
+            setSubCurrent(s, ds, 0); 
+            setSubTaskDone(s, ds, false); 
+            adjustAttr(t.type, -1);
         }
     } else {
-        if (will) { adjustTodayEnergy(s.energyCost || 5); adjustExp(s.energyCost || 5); adjustAttr(t.type, 1); s.completed = true; }
-        else { adjustTodayEnergy(-(s.energyCost || 5)); adjustExp(-(s.energyCost || 5)); adjustAttr(t.type, -1); s.completed = false; }
+        if (will) { 
+            adjustTodayEnergy(s.energyCost || 5); adjustExp(s.energyCost || 5); adjustAttr(t.type, 1); 
+            setSubTaskDone(s, ds, true); 
+        } else { 
+            adjustTodayEnergy(-(s.energyCost || 5)); adjustExp(-(s.energyCost || 5)); adjustAttr(t.type, -1); 
+            setSubTaskDone(s, ds, false); 
+        }
     }
-    syncParentTaskStatus(t);
-    if (!wt && t.completed) { adjustAttr('focus', 1); updateStreak(); }
+    syncParentTaskStatus(t, ds);
+    const newT = isTaskDone(t, ds);
+    if (!wt && newT) { adjustAttr('focus', 1); updateStreak(); }
+    if (wt && !newT) { adjustAttr('focus', -1); }
     renderDayPlan(); renderCalendar(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.showSubInput = function(id) { const i = document.getElementById(`input-${id}`); if (i) { i.style.display = 'block'; i.focus(); } };
@@ -2285,7 +2407,7 @@ window.addSubTask = function(e, tid) {
     if (target > 0) { ns.target = target; ns.current = 0; }
     t.subTasks.push(ns);
     e.target.value = ''; e.target.style.display = 'none';
-    syncParentTaskStatus(t); renderDayPlan(); renderCalendar();
+    syncParentTaskStatus(t, appData.selectedDate); renderDayPlan(); renderCalendar();
 };
 function syncGoal(v) {
     appData.yearlyGoals = v;
@@ -2591,7 +2713,6 @@ function renderChangelog() {
     if (!appData.panelNotes) appData.panelNotes = { learning: '', other: '', exercise: '' };
     ensureEnergyData();
 
-    // 每次打开默认显示今天
     appData.selectedDate = getTodayString();
     appData.viewYear = new Date().getFullYear();
     appData.viewMonth = new Date().getMonth();
@@ -2630,7 +2751,6 @@ function renderChangelog() {
         setTimeout(() => initPeer(false, true), 500);
     }
 
-    // 每分钟检查：跨天自动切换 + 精力刷新
     setInterval(() => {
         const today = getTodayString();
         if (!userPickedDate && appData.selectedDate !== today) {
