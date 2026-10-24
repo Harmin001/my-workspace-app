@@ -358,6 +358,7 @@ body.dark-mode .task-tag.overdue { background: #3a1c1c; }
 #task-pool-overdue { border-color: #ffcdd2; background: #fff8f8; }
 body.dark-mode #task-pool-overdue { border-color: #5c2a2a; background: #2a1c1c; }
 .exercise-pool-wrapper { margin-top: 24px; border-top: 1px dashed var(--border-color); padding-top: 16px; }
+.exercise-pool-wrapper:first-child { margin-top: 0; border-top: none; padding-top: 0; }
 .exercise-pool-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .exercise-pool { display: flex; gap: 8px; flex-wrap: wrap; min-height: 40px; padding: 4px; border: 2px dashed transparent; border-radius: 6px; transition: all .2s; }
 .exercise-pool.drag-over { border-color: var(--accent-color); background: var(--hover-bg); }
@@ -367,6 +368,108 @@ body.dark-mode .week-column .exercise-capsule { background: #1b3322; border-colo
 .week-column .exercise-capsule input[type="checkbox"] { margin-right: 4px; cursor: pointer; accent-color: #4caf50; }
 .week-column .exercise-capsule .ex-del-btn { margin-left: auto; cursor: pointer; color: var(--danger-color); font-weight: bold; padding: 0 4px; opacity: .5; transition: opacity .2s; }
 .week-column .exercise-capsule .ex-del-btn:hover { opacity: 1; }
+
+/* ========== 周计划左侧悬浮抽屉 ========== */
+.week-drawer-panel {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translate(-105%, -50%);
+    transition: transform .35s cubic-bezier(.2,.8,.3,1);
+    width: 320px;
+    max-width: 88vw;
+    max-height: 85vh;
+    z-index: 500;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-left: none;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    box-shadow: 4px 0 24px rgba(0,0,0,.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+body.dark-mode .week-drawer-panel { box-shadow: 4px 0 24px rgba(0,0,0,.55); }
+.week-drawer-panel.open { transform: translate(0, -50%); }
+.week-drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-panel-header);
+    font-weight: 700;
+    font-size: var(--font-content);
+    flex-shrink: 0;
+}
+.week-drawer-close {
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: var(--font-content);
+    transition: background .2s, color .2s;
+}
+.week-drawer-close:hover { background: var(--hover-bg); color: var(--danger-color); }
+.week-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    min-height: 0;
+}
+/* 抽屉内的待办列改为单列纵向排列 */
+.week-drawer-body .todo-lists-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.week-drawer-body .todo-column {
+    width: 100% !important;
+    flex: none;
+    resize: none;
+    min-width: 0;
+    overflow: visible;
+}
+.week-drawer-body .exercise-pool-wrapper { margin-top: 16px; padding-top: 12px; }
+.week-drawer-body .exercise-pool-wrapper:first-child { margin-top: 0; padding-top: 0; }
+
+/* 抽屉拉手 */
+.week-drawer-tab {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 499;
+    background: var(--accent-color);
+    color: #fff;
+    padding: 14px 8px;
+    border-radius: 0 10px 10px 0;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: var(--font-hint);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 2px 0 12px rgba(0,0,0,.22);
+    user-select: none;
+    writing-mode: vertical-rl;
+    letter-spacing: 3px;
+    transition: opacity .25s, transform .25s, filter .2s;
+}
+.week-drawer-tab:hover { filter: brightness(1.1); }
+.week-drawer-tab.hidden { opacity: 0; pointer-events: none; transform: translateY(-50%) translateX(-20px); }
+
+/* PC 端抽屉从侧边栏右侧滑出，避免遮挡导航 */
+@media (min-width: 769px) {
+    .week-drawer-panel { left: 240px; border-radius: 0 var(--radius) var(--radius) 0; }
+    .week-drawer-tab { left: 240px; }
+}
+
+/* 抽屉展开时，周计划内容右移避免被遮挡 */
+#view-week { transition: padding-left .35s cubic-bezier(.2,.8,.3,1); }
+#view-week.drawer-open { padding-left: 344px; }
 
 /* 固定块（可无限拖拽） */
 .fixed-block-capsule {
@@ -657,6 +760,12 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
     .stats-layout { flex-direction: column; }
     .stats-left, .stats-right { flex: 1; width: 100%; }
     .common-btns-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* 移动端抽屉宽度调整为全屏 */
+    .week-drawer-panel { left: 0; width: 88vw; max-width: 88vw; }
+    .week-drawer-tab { left: 0; }
+    /* 移动端抽屉展开时不移动周计划内容（空间本就紧张），直接覆盖 */
+    #view-week.drawer-open { padding-left: 12px; }
 }
 </style>
 </head>
@@ -743,7 +852,14 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <div class="view-container" id="view-week">
 <div class="year-header"><h1>🗓️ 周计划</h1><div class="time-nav" style="margin-bottom:0;"><button onclick="changeWeek(-1)">← 上周</button><span id="week-display" style="font-size:var(--font-content);">本周</span><button onclick="changeWeek(1)">下周 →</button></div></div>
 <div class="week-board" id="week-board"></div>
-<div class="todo-section">
+
+<!-- 左侧悬浮抽屉：待办池 / 逾期 / 锻炼排期 / 固定块 -->
+<div class="week-drawer-panel" id="week-drawer-panel">
+<div class="week-drawer-header">
+<span>📋 待办与排期</span>
+<span class="week-drawer-close" onclick="toggleWeekDrawer(false)" title="收起">✕</span>
+</div>
+<div class="week-drawer-body">
 <div class="todo-lists-container">
 <div class="todo-column"><h3>📚 学习待办</h3><input type="text" class="todo-input" id="pool-input-learning" placeholder="📝 添加待办 (支持：任务名 * 100)..."><div class="task-pool-list" id="task-pool-learning" ondrop="handleDrop(event, 'pool')" ondragover="allowDrop(event)"></div></div>
 <div class="todo-column"><h3>🧺 其他待办</h3><input type="text" class="todo-input" id="pool-input-other" placeholder="📝 添加待办 (支持：任务名 * 100)..."><div class="task-pool-list" id="task-pool-other" ondrop="handleDrop(event, 'pool')" ondragover="allowDrop(event)"></div></div>
@@ -755,17 +871,19 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 </div>
 
 <div class="exercise-pool-wrapper">
-<div class="exercise-pool-header"><h2 style="margin:0;">🏋️ 锻炼排期</h2><button class="btn btn-sm btn-primary" onclick="addExerciseCategory()">➕ 添加</button></div>
+<div class="exercise-pool-header"><h2 style="margin:0;font-size:var(--font-content);">🏋️ 锻炼排期</h2><button class="btn btn-sm btn-primary" onclick="addExerciseCategory()">➕ 添加</button></div>
 <div class="exercise-pool" id="exercise-pool" ondrop="handleDrop(event, 'pool')" ondragover="allowDrop(event)"></div>
-<p style="font-size:var(--font-hint);color:var(--text-muted);margin-top:8px;">💡 拖拽锻炼胶囊到某天即可排期；把已排期的锻炼拖回这里，或点 ✕ 即可取消排期。</p>
+<p style="font-size:var(--font-small);color:var(--text-muted);margin-top:6px;line-height:1.4;">💡 拖拽锻炼胶囊到某天即可排期；把已排期的锻炼拖回这里，或点 ✕ 即可取消排期。</p>
 </div>
 
 <div class="exercise-pool-wrapper">
-<div class="exercise-pool-header"><h2 style="margin:0;">📌 固定块</h2><button class="btn btn-sm btn-primary" onclick="addFixedBlock()">➕ 添加</button></div>
+<div class="exercise-pool-header"><h2 style="margin:0;font-size:var(--font-content);">📌 固定块</h2><button class="btn btn-sm btn-primary" onclick="addFixedBlock()">➕ 添加</button></div>
 <div class="exercise-pool" id="fixed-block-pool"></div>
-<p style="font-size:var(--font-hint);color:var(--text-muted);margin-top:8px;">💡 固定块可无限次拖入课表的具体时间段（如：上课、吃饭）；双击名称可修改；点胶囊上的 ✕ 删除该固定块。</p>
+<p style="font-size:var(--font-small);color:var(--text-muted);margin-top:6px;line-height:1.4;">💡 固定块可无限次拖入课表的具体时间段（如：上课、吃饭）；双击名称可修改；点胶囊上的 ✕ 删除该固定块。</p>
 </div>
 </div>
+</div>
+<div class="week-drawer-tab" id="week-drawer-tab" onclick="toggleWeekDrawer()" title="展开待办面板">📋 待办</div>
 </div>
 
 <div class="view-container" id="view-day">
@@ -1027,6 +1145,11 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
    1. 更新日志
    ========================================================= */
 const APP_CHANGELOG = [
+    { version: 'v2.7.0', date: '2026-11-06', changes: [
+        '优化：周计划待办池升级为左侧悬浮抽屉，可随时拉出/推回，不再受课表长度影响',
+        '新增：拖拽到课表边缘时自动滚动，长课表也能拖到任意位置',
+        '新增：拖拽接近左侧拉手时自动展开抽屉，方便把课表任务拖回待办池'
+    ]},
     { version: 'v2.6.0', date: '2026-11-05', changes: [
         '新增：周计划「固定块」，可自定义名称并无限次拖入课表时间段（如：上课、吃饭）',
         '新增：课表内任务/固定块右上角一键取消（✕），任务可回原待办池或未安排区'
@@ -3013,6 +3136,11 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
             const sh = localStorage.getItem('my_p2p_host_id');
             if (sh) document.getElementById('my-peer-id').innerText = sh;
         }
+        // 离开周计划视图时收起抽屉
+        if (t !== 'week') {
+            const panel = document.getElementById('week-drawer-panel');
+            if (panel && panel.classList.contains('open')) toggleWeekDrawer(false);
+        }
     });
 });
 window.handleReflectionInput = function(val) {
@@ -3945,7 +4073,72 @@ function renderChangelog() {
 }
 
 /* =========================================================
-   17. 初始化
+   17. 周计划抽屉 & 拖拽自动滚动
+   ========================================================= */
+window.toggleWeekDrawer = function(force) {
+    const panel = document.getElementById('week-drawer-panel');
+    const tab = document.getElementById('week-drawer-tab');
+    const view = document.getElementById('view-week');
+    if (!panel || !tab) return;
+    const open = force !== undefined ? force : !panel.classList.contains('open');
+    if (open) {
+        panel.classList.add('open');
+        tab.classList.add('hidden');
+        if (view) view.classList.add('drawer-open');
+    } else {
+        panel.classList.remove('open');
+        tab.classList.remove('hidden');
+        if (view) view.classList.remove('drawer-open');
+    }
+};
+
+/* 拖拽到课表边缘时自动滚动 */
+let _autoScrollRAF = null, _autoScrollDir = 0, _autoScrollEl = null;
+function startAutoScroll(el, dir) {
+    if (_autoScrollEl === el && _autoScrollDir === dir && _autoScrollRAF) return;
+    stopAutoScroll();
+    _autoScrollEl = el; _autoScrollDir = dir;
+    const step = () => {
+        if (!_autoScrollEl || !_autoScrollDir) { _autoScrollRAF = null; return; }
+        _autoScrollEl.scrollTop += _autoScrollDir * 14;
+        _autoScrollRAF = requestAnimationFrame(step);
+    };
+    _autoScrollRAF = requestAnimationFrame(step);
+}
+function stopAutoScroll() {
+    _autoScrollEl = null; _autoScrollDir = 0;
+    if (_autoScrollRAF) { cancelAnimationFrame(_autoScrollRAF); _autoScrollRAF = null; }
+}
+document.addEventListener('dragover', (e) => {
+    if (!draggedTaskId && !draggedExerciseName && !draggedFixedBlockId) { stopAutoScroll(); return; }
+    const view = document.getElementById('view-week');
+    if (!view || !view.classList.contains('active')) { stopAutoScroll(); return; }
+    // 抽屉内部与拉手不触发滚动
+    if (e.target.closest && (e.target.closest('.week-drawer-panel') || e.target.closest('.week-drawer-tab'))) { stopAutoScroll(); return; }
+    const rect = view.getBoundingClientRect();
+    const threshold = 90;
+    if (e.clientY < rect.top + threshold) startAutoScroll(view, -1);
+    else if (e.clientY > rect.bottom - threshold) startAutoScroll(view, 1);
+    else stopAutoScroll();
+});
+document.addEventListener('dragend', stopAutoScroll);
+document.addEventListener('drop', stopAutoScroll, true);
+
+/* 拖拽接近左侧拉手时自动展开抽屉（方便把课表任务拖回待办池） */
+(function initDrawerTabDrag() {
+    const tab = document.getElementById('week-drawer-tab');
+    if (!tab) return;
+    tab.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const panel = document.getElementById('week-drawer-panel');
+        if (panel && !panel.classList.contains('open')) {
+            toggleWeekDrawer(true);
+        }
+    });
+})();
+
+/* =========================================================
+   18. 初始化
    ========================================================= */
 (function init() {
     const saved = localStorage.getItem('myWorkspaceAppData');
