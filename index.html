@@ -10,313 +10,405 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
-:root{--bg-main:#fff;--bg-sidebar:#f7f7f5;--text-main:#37352f;--text-muted:#9b9a97;--border-color:#e9e9e7;--hover-bg:#efefed;--accent-color:#2383e2;--danger-color:#eb5757;--font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--base-font-size:14px}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-family);background-color:var(--bg-main);color:var(--text-main);display:flex;height:100vh;overflow:hidden;font-size:var(--base-font-size);transition:font-size .2s}
-::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
-.sidebar{width:240px;background-color:var(--bg-sidebar);border-right:1px solid var(--border-color);display:flex;flex-direction:column;padding:12px;flex-shrink:0;transition:all .3s;overflow-y:auto}
-.sidebar-title{font-weight:600;padding:12px 8px;margin-bottom:8px;font-size:1.15em;display:flex;align-items:center;justify-content:space-between}
-.sync-controls{display:flex;gap:8px;align-items:center}
-.p2p-dot{width:10px;height:10px;border-radius:50%;background:#ccc;transition:background .3s;cursor:pointer}
-.p2p-dot.connected{background:#27ae60;box-shadow:0 0 5px #27ae60}
-.p2p-dot.connecting{background:#f2994a;box-shadow:0 0 5px #f2994a;animation:pulse 1s infinite}
-@keyframes pulse{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
-.nav-item{padding:8px 12px;margin-bottom:2px;border-radius:4px;cursor:pointer;transition:all .1s;display:flex;align-items:center;gap:8px;font-weight:500}
-.nav-item:hover{background-color:var(--hover-bg);transform:translateX(2px)}
-.nav-item.active{background-color:#e3e2e0}
-.sidebar-footer{margin-top:auto;display:flex;flex-direction:column;border-top:1px solid var(--border-color);padding-top:16px}
-.sidebar-goal-box{margin-bottom:24px;padding:0 8px}
-.sidebar-goal-title{font-size:.85em;font-weight:600;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:4px}
-.sidebar-goal-input{width:100%;min-height:40px;max-height:200px;overflow-y:auto;border:1px solid var(--border-color);border-radius:6px;padding:8px;font-size:.85em;font-family:inherit;background:#fff;outline:none;white-space:pre-wrap;word-break:break-word;transition:border .2s}
-.sidebar-goal-input:focus{border-color:var(--accent-color)}
-.sidebar-goal-input:empty:before{content:attr(placeholder);color:#aaa;pointer-events:none;display:block}
-.fixed-progress-bars{width:100%;padding:0 8px;display:flex;flex-direction:column;gap:12px;margin:8px 0}
-.prog-row{display:flex;flex-direction:column;gap:4px}
-.prog-label-row{display:flex;justify-content:space-between;font-size:.85em;color:var(--text-muted);font-weight:600}
-.prog-bar-bg{width:100%;height:8px;background:#e9e9e7;border-radius:4px;overflow:hidden}
-.prog-bar-fill{height:100%;border-radius:4px;transition:width .3s}
-.energy-rpg-panel{padding:0 8px;margin-top:10px;padding-bottom:10px}
-.rpg-card{background:linear-gradient(135deg,#fff8e7 0%,#ffefc2 100%);border:1px solid #e8c26a;border-radius:8px;padding:8px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
-.rpg-energy-section{padding-bottom:8px;margin-bottom:8px;border-bottom:1px dashed rgba(180,83,9,.25)}
-.energy-header{display:flex;justify-content:space-between;font-size:.82em;font-weight:700;color:#78350f;margin-bottom:6px}
-.energy-header #energy-text{color:#b45309}
-.energy-bar-bg{width:100%;height:8px;background:rgba(146,64,14,.15);border-radius:4px;overflow:hidden}
-.energy-bar-fill{height:100%;border-radius:4px;transition:width .3s,background .3s;background:#27ae60}
-.energy-actions{display:flex;gap:6px;margin-top:6px}
-.btn-energy-restore{flex:1;padding:4px 6px;font-size:.75em;font-weight:700;background:#fff;border:1px solid #fcd34d;border-radius:6px;color:#b45309;cursor:pointer;transition:all .15s}
-.btn-energy-restore:hover{background:#fef3c7}
-.energy-warn{margin-top:6px;padding:4px 8px;font-size:.75em;background:#ffebee;color:#c62828;border-radius:4px;border-left:3px solid #eb5757;font-weight:600}
-.rpg-card-main{cursor:pointer}
-.rpg-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.rpg-level{font-size:.95em;font-weight:800;color:#b45309;letter-spacing:.5px;display:inline-block}
-.rpg-title{font-size:.72em;color:#78350f;background:#fde68a;padding:2px 6px;border-radius:10px;font-weight:700}
-.rpg-exp-bar{width:100%;height:6px;background:rgba(146,64,14,.15);border-radius:3px;overflow:hidden;margin-bottom:3px;transition:box-shadow .3s}
-.rpg-exp-bar.flash{box-shadow:0 0 8px rgba(245,158,11,.8)}
-.rpg-exp-fill{height:100%;background:linear-gradient(90deg,#fbbf24,#f59e0b);border-radius:3px;transition:width .4s}
-.rpg-exp-text{font-size:.7em;color:#92400e;text-align:right;margin-bottom:8px;font-weight:600}
-.rpg-attrs{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:.75em}
-.rpg-attr{display:flex;justify-content:space-between;align-items:center;color:#78350f;padding:1px 0}
-.rpg-attr b{color:#b45309;font-weight:800;display:inline-block;transition:transform .2s}
-.rpg-value-pop{animation:rpgPop .6s ease}
-@keyframes rpgPop{0%{transform:scale(1)}40%{transform:scale(1.6);color:#eb5757;text-shadow:0 0 8px currentColor}100%{transform:scale(1)}}
-@keyframes rpgFloatUp{0%{opacity:1;transform:translate(-50%,0) scale(1)}30%{opacity:1;transform:translate(-50%,-12px) scale(1.35)}100%{opacity:0;transform:translate(-50%,-55px) scale(1)}}
-.rpg-tip{font-size:.68em;color:#92400e;text-align:center;margin-top:6px;opacity:.7}
-.btn-energy{cursor:pointer;color:#f59e0b;font-size:.9em;padding:0 4px;font-weight:bold}
-.rpg-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px}
-.rpg-modal-overlay.active{display:flex}
-.rpg-modal{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:92vh;overflow-y:auto;padding:20px;position:relative}
-.rpg-modal-header{text-align:center;margin-bottom:16px}
-.rpg-modal-level{font-size:2.2em;font-weight:800;color:#b45309}
-.rpg-modal-title{font-size:1em;color:#78350f;margin-top:4px;font-weight:600}
-.rpg-modal-exp{margin-top:12px;display:inline-block;background:#fef3c7;border-radius:6px;padding:8px 16px;font-size:.9em;color:#92400e;font-weight:700}
-.rpg-modal-energy{background:#fff8e7;border:1px solid #fde68a;border-radius:8px;padding:12px;margin-bottom:16px}
-.rpg-modal-energy .energy-header{color:#92400e}
-.rpg-modal-energy .energy-header #modal-energy-text{color:#b45309}
-.rpg-modal-energy .energy-bar-bg{background:rgba(146,64,14,.15)}
-.rpg-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.rpg-attr-card{background:#fff8e7;border:1px solid #fde68a;border-radius:8px;padding:12px}
-.rpg-attr-card .attr-row{display:flex;justify-content:space-between;align-items:center}
-.rpg-attr-card .attr-name{font-weight:600;color:#78350f;font-size:.9em}
-.rpg-attr-card .attr-value{font-size:1.6em;font-weight:800;color:#b45309;display:inline-block}
-.rpg-attr-card .attr-desc{font-size:.75em;color:#92400e;margin-top:4px}
-.rpg-modal-tips{margin-top:16px;padding:12px;background:#f5f5f5;border-radius:8px;font-size:.82em;color:#666;line-height:1.7}
-.rpg-modal-close{margin-top:16px;width:100%;padding:10px;border:none;border-radius:8px;background:#b45309;color:#fff;font-weight:700;cursor:pointer;font-size:.95em}
-.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.view-container{flex:1;padding:24px;overflow-y:auto;display:none;flex-direction:column}
-.view-container.active{display:flex}
-h1{font-size:1.7em;font-weight:700;margin-bottom:20px;flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-h2{font-size:1.15em;font-weight:600;margin-bottom:0;display:flex;align-items:center;gap:6px}
-.time-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:1.15em;font-weight:bold}
-.time-nav button{background:#fff;border:1px solid var(--border-color);border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:bold;color:var(--text-main);transition:all .2s;display:flex;align-items:center;gap:4px;font-size:.9em}
-.calendar-wrapper{background-color:#fee2e2;padding:16px;border-bottom:1px solid var(--border-color);flex-shrink:0;border-radius:8px;margin-bottom:24px}
-.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-.calendar-header-cell{text-align:center;font-weight:bold;color:#555;padding-bottom:8px;font-size:.85em}
-.day-box{background:#fff;border-radius:6px;padding:8px;cursor:pointer;border:2px solid transparent;min-height:100px;display:flex;flex-direction:column;transition:all .2s ease;position:relative;overflow:hidden}
-.day-box:hover{border-color:#ccc}
-.day-box.active{border-color:var(--accent-color)}
-.day-box.all-done{background-color:#e8f5e9;border-color:#a5d6a7}
-.day-box.is-today{box-shadow:0 0 0 2px var(--accent-color) inset}
-.day-number{font-size:1.15em;font-weight:bold;margin-bottom:4px;color:#333;display:flex;align-items:center;gap:6px}
-.today-badge{font-size:.55em;font-weight:700;color:#fff;background:var(--accent-color);padding:1px 6px;border-radius:8px;letter-spacing:0.3px}
-.day-summary{font-size:.8em;color:var(--text-main);line-height:1.4;margin-top:auto;display:flex;flex-direction:column;gap:4px}
-.mini-bar-row{display:flex;align-items:center;gap:4px;font-size:.85em;color:#555;white-space:nowrap}
-.mini-bar-row span:first-child{width:44px;flex-shrink:0}
-.mini-bar-row span:last-child{width:26px;text-align:right;flex-shrink:0}
-.mini-bar-bg{flex:1;height:6px;background:#eee;border-radius:3px;overflow:hidden;min-width:10px}
-.mini-bar-fill{height:100%;border-radius:3px;transition:width .3s}
-.reflection-preview,.deadline-preview{font-size:.8em;margin-top:4px;padding:2px 4px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.reflection-preview{color:#888;background:#f5f5f5;border-left:2px solid #ccc}
-.deadline-preview{color:var(--danger-color);background:#ffebee;border-left:2px solid var(--danger-color);font-weight:bold}
-.year-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-shrink:0}
-.year-heatmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(36px,1fr));gap:6px;margin-bottom:24px;padding:16px;background:#fff;border:1px solid var(--border-color);border-radius:8px;flex-shrink:0}
-.heatmap-cell{width:100%;aspect-ratio:1/1;background-color:#ebedf0;border-radius:4px;cursor:pointer;transition:all .1s;display:flex;align-items:center;justify-content:center;font-size:.9em;font-weight:600;position:relative}
-.heatmap-cell:hover{transform:scale(1.15);z-index:10}
-.heatmap-cell.today-cell{outline:2px solid var(--accent-color);outline-offset:-2px}
-.stats-container{display:flex;gap:16px;margin:16px 0 24px 0;flex-shrink:0}
-.stat-card{flex:1;background:#fff;border:1px solid var(--border-color);border-radius:8px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.stat-value{font-size:1.7em;font-weight:bold;margin-bottom:4px}
-.stat-label{font-size:.85em;color:var(--text-muted);font-weight:500}
-.stat-card.learning{border-top:4px solid #2383e2}
-.stat-card.other{border-top:4px solid #f2994a}
-.stat-card.exercise{border-top:4px solid #27ae60}
-.week-board{display:flex;gap:8px;height:400px;margin-bottom:24px;flex-shrink:0}
-.week-column{flex:1;background:var(--bg-sidebar);border-radius:8px;padding:8px;display:flex;flex-direction:column;border:1px dashed transparent;overflow-y:auto;min-height:0;}
-.week-column.today-col{border-color:var(--accent-color);background:#eef5fc}
-.week-column.drag-over{border-color:var(--accent-color);background:#eef5fc}
-.week-column-header{font-weight:600;text-align:center;margin-bottom:12px;font-size:.9em;color:#555;cursor:pointer;padding:4px;border-radius:4px;transition:background .2s}
-.week-column-header:hover{background:#e3e2e0}
-.week-today-badge{display:inline-block;font-size:.7em;color:#fff;background:var(--accent-color);padding:1px 6px;border-radius:8px;margin-top:2px}
-.todo-section{background:#fff;border:1px solid var(--border-color);border-radius:8px;padding:16px;flex-shrink:0}
-.todo-input{width:100%;padding:10px 12px;border:1px solid var(--border-color);border-radius:6px;margin-bottom:12px;outline:none;font-family:inherit;font-size:.95em}
-.todo-input:focus{border-color:var(--accent-color)}
-/* 支持自定义拖拽宽度的待办列 */
-.todo-lists-container{display:flex;gap:16px;margin-bottom:24px;align-items:flex-start}
-.todo-column{flex:1;min-width:200px;resize:horizontal;overflow:auto;padding-bottom:4px;border-bottom:1px dashed transparent}
-.todo-column:hover{border-bottom-color:#ccc}
-.todo-column h3{font-size:1em;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:4px}
-.task-pool-list{display:flex;flex-wrap:wrap;gap:8px;min-height:60px;padding:8px;border:2px dashed var(--border-color);border-radius:6px;background:#fafafa}
-.task-item{background:#fff;border:1px solid var(--border-color);padding:6px 12px;border-radius:6px;cursor:grab;display:inline-flex;align-items:center;gap:6px;font-size:.9em}
-.task-item input[type="checkbox"]{margin-right:2px;cursor:pointer;accent-color:var(--accent-color);width:14px;height:14px}
-.task-item .task-text{flex:1;word-break:break-all}
-.week-column .task-item{width:100%;margin-bottom:6px}
-.task-tag{font-size:.75em;padding:2px 6px;border-radius:4px;background:#eee;font-weight:bold}
-.task-tag.today{background:#e3f2fd;color:#1976d2}
-.task-tag.overdue{background:#ffebee;color:var(--danger-color)}
-.exercise-pool-wrapper{margin-top:24px;border-top:1px dashed var(--border-color);padding-top:16px}
-.exercise-pool-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.exercise-pool{display:flex;gap:8px;flex-wrap:wrap;min-height:40px;padding:4px;border:2px dashed transparent;border-radius:6px;transition:all .2s}
-.exercise-pool.drag-over{border-color:var(--accent-color);background:#eef5fc}
-.exercise-capsule{padding:8px 16px;background:#fff;border:1px solid var(--border-color);border-radius:20px;cursor:grab;font-size:.9em;font-weight:600;color:#444;display:flex;align-items:center;gap:6px}
-.week-column .exercise-capsule{width:100%;justify-content:flex-start;margin-bottom:4px;background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32;cursor:grab;padding:4px 8px;user-select:none}
-.week-column .exercise-capsule input[type="checkbox"]{margin-right:4px;cursor:pointer;accent-color:#4caf50}
-.week-column .exercise-capsule .ex-del-btn{margin-left:auto;cursor:pointer;color:#eb5757;font-weight:bold;padding:0 4px;opacity:.5;transition:opacity .2s}
-.week-column .exercise-capsule .ex-del-btn:hover{opacity:1}
-.day-panels-grid{display:flex;flex-wrap:wrap;gap:20px;flex:1;align-items:flex-start;margin-bottom:24px}
-.section-box{width:calc((100% - 40px)/3);min-width:220px;border:1px solid var(--border-color);border-radius:8px;display:flex;flex-direction:column;background:#fff;position:relative;height:350px;resize:both;overflow:hidden;min-height:200px}
-.section-box.span-full{width:100%!important}
-.panel-header{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border-color);background:#fafafa;border-radius:8px 8px 0 0;flex-shrink:0;cursor:grab}
-.panel-header h2{margin:0;font-size:1.1em;display:flex;align-items:center;gap:6px}
-.drag-handle-icon{color:#aaa;margin-right:6px;font-size:1.1em;user-select:none}
-.panel-controls{display:flex;gap:8px;align-items:center}
-.btn-resize{cursor:pointer;color:#999;font-size:1.1em;padding:2px 6px;border-radius:4px}
-.panel-content{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px;display:flex;flex-direction:column;min-height:0}
-.panel-input-wrapper{flex-shrink:0;margin-bottom:12px}
-.panel-note{width:100%;min-height:30px;border:1px dashed var(--border-color);border-radius:6px;padding:5px 8px;font-size:.85em;color:var(--text-muted);background:#fafafa;outline:none;margin-bottom:10px;white-space:pre-wrap;word-break:break-word;flex-shrink:0}
-.panel-note:empty:before{content:attr(data-placeholder);color:#bbb;pointer-events:none;display:block}
-.panel-note:focus{border-color:var(--accent-color);background:#fff}
-.main-task-item{margin-bottom:12px;padding:8px;border-bottom:1px dashed var(--border-color);border-radius:6px}
-.main-task-item.pinned-task{background-color:#fff9f0;border-left:3px solid #f2994a;padding-left:10px}
-.main-task-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.main-task-left{display:flex;align-items:center;flex:1;flex-wrap:wrap;gap:4px}
-.task-checkbox{width:16px;height:16px;margin-right:8px;cursor:pointer;accent-color:var(--accent-color)}
-.task-text{font-weight:500;word-break:break-all;font-size:.95em}
-.task-completed{text-decoration:line-through;color:var(--text-muted)}
-.progress-task-container{display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap}
-.progress-task-bar-bg{flex:1;height:8px;background:#eee;border-radius:4px;overflow:hidden;margin-right:4px}
-.progress-task-bar-fill{height:100%;background:var(--accent-color);border-radius:4px}
-.btn-plus-one{background:var(--accent-color);color:#fff;border:none;border-radius:4px;padding:2px 7px;font-size:.85em;cursor:pointer;font-weight:bold}
-.btn-minus-one{background:#9b9a97;color:#fff;border:none;border-radius:4px;padding:2px 7px;font-size:.85em;cursor:pointer;font-weight:bold}
-.progress-text{font-size:.85em;font-weight:bold;color:var(--text-muted);min-width:40px;text-align:right}
-.task-meta{display:flex;align-items:center;gap:6px;font-size:.85em}
-.btn-pin{cursor:pointer;color:#ccc;font-size:1.1em;padding:0 4px}
-.btn-pin.active{color:#f2994a}
-.btn-loop{font-size:1.1em;color:#ccc;cursor:pointer}
-.btn-loop.active{color:var(--accent-color)}
-.loop-label{font-size:.75em;color:var(--accent-color);background:#e3f2fd;padding:2px 6px;border-radius:4px;margin-left:4px;font-weight:bold;white-space:nowrap}
-.btn-target{cursor:pointer;color:#ccc;font-size:1em;font-weight:bold;padding:0 4px}
-.btn-delete-task{cursor:pointer;color:#aaa;font-size:1em;padding:0 4px}
-.deadline-input{font-size:.85em;border:none;outline:none;color:var(--text-muted);font-family:inherit;cursor:pointer;background:transparent;font-weight:500;max-width:105px}
-.estimate-label{font-size:.75em;color:#1976d2;background:#e3f2fd;padding:1px 6px;border-radius:4px;cursor:pointer;white-space:nowrap;font-weight:600;margin-left:4px}
-.btn-estimate{cursor:pointer;color:#aaa;font-size:.9em;padding:0 4px}
-.sub-task-list{margin-left:24px;margin-top:8px;padding-left:12px;border-left:2px solid var(--border-color);display:flex;flex-direction:column;gap:6px}
-.sub-task-item{display:flex;align-items:center;font-size:.9em;color:#444;justify-content:space-between;margin-bottom:2px}
-.sub-task-left{display:flex;align-items:center;flex:1;flex-wrap:wrap;gap:4px}
-.sub-task-item .task-checkbox{width:14px;height:14px;margin-right:4px}
-.sub-prog-container{display:flex;align-items:center;gap:4px;margin-left:8px}
-.sub-prog-bar-bg{flex:1;height:6px;background:#eee;border-radius:3px;overflow:hidden;width:60px}
-.sub-prog-bar-fill{height:100%;background:var(--accent-color);border-radius:3px}
-.sub-prog-text{font-size:.8em;color:#999;width:32px;text-align:right}
-.sub-actions{display:flex;align-items:center;gap:6px;margin-left:8px}
-.btn-sub-plus{background:#e9e9e7;color:var(--text-main);border:none;border-radius:4px;padding:0px 6px;font-size:.8em;cursor:pointer;font-weight:bold}
-.btn-sub-target{cursor:pointer;color:#aaa;font-size:.9em;padding:0 2px}
-.btn-sub-delete{cursor:pointer;color:#aaa;font-size:.9em;padding:0 2px}
-.add-sub-task-input{margin-left:24px;margin-top:8px;font-size:.85em;padding:4px 8px;border:1px dashed var(--border-color);width:calc(100% - 24px);display:none;border-radius:4px}
-.btn-add-sub{font-size:.85em;color:var(--accent-color);cursor:pointer;margin-left:24px;margin-top:4px;display:inline-block;font-weight:500}
-.sub-fold-btn{margin-left:24px;margin-top:4px;font-size:.85em;color:var(--accent-color);cursor:pointer;font-weight:600;display:inline-block;user-select:none;padding:2px 6px;border-radius:4px;background:#eef5fc}
-.sub-fold-btn:hover{background:#dbeafe}
-.completed-tasks-section{margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px}
-.completed-tasks-section summary{cursor:pointer;font-size:.9em;color:var(--text-muted);font-weight:500;outline:none;user-select:none;display:flex;align-items:center;gap:6px;list-style:none}
-.completed-tasks-section summary::-webkit-details-marker{display:none}
-.completed-tasks-section summary::before{content:'▶';font-size:.8em;transition:transform .2s}
-.completed-tasks-section[open] summary::before{transform:rotate(90deg)}
-.completed-tasks-list{margin-top:12px;opacity:.8}
-.completed-tasks-list .main-task-item{border-bottom:none;padding-bottom:4px;margin-bottom:8px}
-.exercise-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
-.exercise-card{background:var(--bg-sidebar);border:1px solid var(--border-color);border-radius:8px;padding:12px;display:flex;flex-direction:column;min-width:0}
-.exercise-card.active-plan{border-color:#4caf50;background:#f1f8e9}
-.exercise-card-header{font-weight:600;margin-bottom:8px;color:var(--text-muted);font-size:1em;display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:4px}
-.exercise-header-left{display:flex;align-items:center;gap:4px;flex:1;min-width:0}
-.exercise-cat-checkbox{width:16px;height:16px;cursor:pointer;accent-color:#4caf50;flex-shrink:0}
-.exercise-name{cursor:pointer;padding:2px 4px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.exercise-card.active-plan .exercise-card-header{color:#2e7d32}
-.exercise-header-right{display:flex;align-items:center;gap:2px;flex-shrink:0}
-.btn-del-ex{cursor:pointer;color:var(--danger-color);font-size:1.1em;font-weight:bold;padding:0 4px;flex-shrink:0}
-.exercise-content{flex:1;display:flex;flex-direction:column;gap:4px;font-size:.85em}
-.exercise-item{display:flex;align-items:center;color:#555;justify-content:space-between;margin-bottom:4px}
-.exercise-item-left{display:flex;align-items:center;flex:1;min-width:0}
-.exercise-item input[type="checkbox"]{margin-right:4px;cursor:pointer;flex-shrink:0}
-.btn-del-action{cursor:pointer;color:#aaa;font-size:.85em;padding:0 4px;flex-shrink:0}
-.exercise-card details{margin-top:8px;border-top:1px dashed var(--border-color);padding-top:4px}
-.exercise-card summary{font-size:.85em;color:var(--text-muted);cursor:pointer;outline:none;list-style:none}
-.exercise-card summary::-webkit-details-marker{display:none}
-.exercise-card summary::before{content:'▶ ';font-size:.8em}
-.exercise-card details[open] summary::before{content:'▼ '}
-input[type="text"],input[type="password"]{width:100%;box-sizing:border-box;min-width:0;padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;font-family:inherit;outline:none;font-size:.95em}
-textarea{width:100%;box-sizing:border-box;height:100px;padding:12px;border:1px solid var(--border-color);border-radius:6px;font-family:inherit;outline:none;resize:vertical;font-size:.95em}
-.btn{padding:6px 12px;border:1px solid var(--border-color);background:#fff;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:4px;font-weight:500;font-size:.95em}
-.btn-primary{background:var(--accent-color);color:#fff;border-color:var(--accent-color)}
-.btn-danger{background:var(--danger-color);color:#fff;border-color:var(--danger-color)}
-.btn-sm{font-size:.85em;padding:4px 8px}
-input[type="range"]{-webkit-appearance:none;width:100%;height:6px;background:#e9e9e7;border-radius:3px;outline:none;margin-top:10px}
-input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent-color);cursor:pointer}
-input[type="number"]{padding:6px 8px;border:1px solid var(--border-color);border-radius:6px;font-family:inherit;outline:none;font-size:.95em;width:100%}
-.snapshot-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
-.snapshot-item{display:flex;justify-content:space-between;align-items:center;background:var(--bg-sidebar);padding:6px 10px;border-radius:6px;border:1px solid var(--border-color);font-size:.85em}
-.snapshot-actions{display:flex;gap:6px}
-.bottom-summary{flex-shrink:0;margin-top:auto}
-/* 极度紧凑的设置界面 */
-.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;align-items:stretch;margin-bottom:20px}
-.settings-grid>.section-box{width:100%!important;height:auto!important;resize:none!important;margin-bottom:0!important;padding:0}
-.settings-grid>.section-box.span-full{grid-column:1/-1}
-.settings-grid .panel-content{padding:10px 12px}
-.settings-grid .panel-content h2{font-size:.95em;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #eee}
-.settings-grid .panel-content p{font-size:.78em!important;margin:4px 0!important;color:#888}
-.settings-grid .panel-content .btn{padding:4px 8px;font-size:.8em}
-.settings-grid .panel-content .btn-sm{padding:3px 6px;font-size:.75em}
-/* 折叠面板样式 */
-details.settings-details summary{font-size:.95em;font-weight:600;color:#303f9f;cursor:pointer;outline:none;user-select:none;display:flex;align-items:center;gap:6px;padding-bottom:4px;list-style:none}
-details.settings-details summary::-webkit-details-marker{display:none}
-details.settings-details summary::before{content:'▶';font-size:.8em;transition:transform .2s}
-details.settings-details[open] summary::before{transform:rotate(90deg)}
-.settings-details .panel-content{padding-top:8px}
-.backup-status{font-size:.75em;color:var(--text-muted);margin-top:4px;line-height:1.4}
-.log-list{max-height:200px;overflow-y:auto;margin-top:8px}
-.log-item{display:flex;gap:6px;padding:4px 0;border-bottom:1px dashed #eee;font-size:.78em;align-items:flex-start}
-.log-time{color:#999;font-family:ui-monospace,Menlo,monospace;flex-shrink:0;min-width:125px}
-.log-type{font-weight:600;flex-shrink:0;padding:0 4px;border-radius:4px;font-size:.9em}
-.log-detail{color:#555;flex:1;word-break:break-all}
-.rpg-edit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
-.rpg-edit-grid label{display:flex;flex-direction:column;gap:2px;font-size:.78em;color:#555}
-.rpg-edit-grid span{font-weight:600;color:#92400e}
-.rpg-edit-grid input{padding:4px 6px;font-size:.8em}
-.level-config-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;max-height:260px;overflow-y:auto;padding-right:4px}
-.level-config-row{display:flex;gap:6px;align-items:center}
-.level-config-row input[type="text"]{flex:1;padding:4px 6px;font-size:.8em}
-.level-config-row input[type="number"]{width:70px;padding:4px 6px;font-size:.8em}
-.level-badge{font-size:.75em;font-weight:700;color:#b45309;background:#fde68a;padding:2px 6px;border-radius:4px;min-width:38px;text-align:center;flex-shrink:0}
-.mobile-rpg-fab{display:none}
-.task-list-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1001;align-items:center;justify-content:center;padding:20px}
-.task-list-modal-overlay.active{display:flex}
-.task-list-modal{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:88vh;overflow-y:auto;padding:20px;position:relative}
-.task-list-modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-color)}
-.task-list-modal-header h3{font-size:1.15em;font-weight:700}
-.task-list-modal-close{background:none;border:none;font-size:1.5em;cursor:pointer;color:#999;padding:0 8px}
-.task-list-modal-body{display:flex;flex-direction:column;gap:4px}
-.view-all-btn{display:block;width:100%;margin-top:8px;padding:6px;border:1px dashed var(--border-color);border-radius:6px;background:#fafafa;color:var(--accent-color);font-size:.85em;font-weight:600;cursor:pointer;text-align:center}
-.view-all-btn:hover{background:#eef5fc}
-@media(max-width:900px){.settings-grid{grid-template-columns:1fr;gap:12px}.rpg-edit-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:768px){
-body{flex-direction:column}
-.sidebar{width:100%;height:auto;order:2;border-right:none;border-top:1px solid var(--border-color);padding:8px 4px;flex-direction:row;justify-content:space-around;align-items:center;position:fixed;bottom:0;left:0;z-index:100;background:rgba(247,247,245,.95);backdrop-filter:blur(10px)}
-.sidebar-title,.sidebar-footer{display:none}
-.nav-item{flex-direction:column;padding:6px 0;font-size:.75em;gap:2px;flex:1;text-align:center;margin-bottom:0;border-radius:8px}
-.nav-item:hover{transform:none;background-color:transparent}
-.nav-item.active{background-color:#e3e2e0;color:var(--accent-color);font-weight:bold}
-.main-content{order:1;height:calc(100vh - 65px)}
-.view-container{padding:12px}
-.day-panels-grid{flex-direction:column;gap:16px}
-.section-box{width:100%!important;height:auto!important;min-height:250px;resize:none}
-.calendar-wrapper{padding:8px;margin-bottom:12px}
-.calendar-grid{gap:2px}
-.day-box{padding:4px;min-height:70px;border-width:1px}
-.day-number{font-size:.9em;margin-bottom:2px}
-.today-badge{font-size:.7em;padding:0 4px}
-.day-summary{gap:2px;margin-top:auto}
-.mini-bar-row span{display:none!important}
-.mini-bar-bg{height:4px;margin-bottom:2px;border-radius:2px}
-.reflection-preview,.deadline-preview{display:none}
-.week-board{flex-direction:column;height:auto;gap:12px}
-.week-column{min-height:80px;max-height:200px;overflow-y:auto;padding:8px}
-.week-column-header{margin-bottom:8px}
-.todo-lists-container{flex-direction:column}
-h1{font-size:1.4em;margin-bottom:12px}
-.exercise-grid{grid-template-columns:1fr}
-.rpg-modal-grid{grid-template-columns:1fr}
-.rpg-edit-grid{grid-template-columns:repeat(2,1fr)}
-.mobile-rpg-fab{display:flex;position:fixed;right:12px;bottom:78px;z-index:99;background:linear-gradient(135deg,#fff8e7,#ffefc2);border:1px solid #e8c26a;border-radius:22px;padding:8px 14px;gap:8px;align-items:center;font-size:.85em;font-weight:800;color:#b45309;box-shadow:0 4px 12px rgba(180,83,9,.25);cursor:pointer;user-select:none}
-.mobile-rpg-fab:active{transform:scale(.96)}
-.mobile-rpg-fab #mobile-rpg-energy{color:#b45309}
-.task-list-modal{max-width:100%;max-height:92vh;padding:16px}
+:root {
+    --bg-main: #ffffff;
+    --bg-sidebar: #f7f7f5;
+    --bg-card: #ffffff;
+    --bg-panel-header: #fafafa;
+    --bg-input: #ffffff;
+    --text-main: #37352f;
+    --text-muted: #9b9a97;
+    --border-color: #e9e9e7;
+    --hover-bg: #efefed;
+    --accent-color: #2383e2;
+    --danger-color: #eb5757;
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --base-font-size: 14px;
+}
+body.dark-mode {
+    --bg-main: #121212;
+    --bg-sidebar: #1e1e1e;
+    --bg-card: #242424;
+    --bg-panel-header: #2a2a2a;
+    --bg-input: #2c2c2c;
+    --text-main: #e0e0e0;
+    --text-muted: #9e9e9e;
+    --border-color: #333333;
+    --hover-bg: #333333;
+    --accent-color: #3b82f6;
+    --danger-color: #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    font-size: var(--base-font-size);
+    transition: background-color 0.3s, color 0.3s, font-size 0.2s;
+}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+
+/* 侧边栏 */
+.sidebar { width: 240px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 12px; flex-shrink: 0; transition: all .3s; overflow-y: auto; }
+.sidebar-title { font-weight: 600; padding: 12px 8px; margin-bottom: 8px; font-size: 1.15em; display: flex; align-items: center; justify-content: space-between; }
+.sync-controls { display: flex; gap: 8px; align-items: center; }
+.p2p-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; transition: background .3s; cursor: pointer; }
+.p2p-dot.connected { background: #27ae60; box-shadow: 0 0 5px #27ae60; }
+.p2p-dot.connecting { background: #f2994a; box-shadow: 0 0 5px #f2994a; animation: pulse 1s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: .5; } 100% { opacity: 1; } }
+.nav-item { padding: 8px 12px; margin-bottom: 2px; border-radius: 4px; cursor: pointer; transition: all .1s; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.nav-item:hover { background-color: var(--hover-bg); transform: translateX(2px); }
+.nav-item.active { background-color: var(--hover-bg); font-weight: bold; }
+.sidebar-footer { margin-top: auto; display: flex; flex-direction: column; border-top: 1px solid var(--border-color); padding-top: 16px; }
+.sidebar-goal-box { margin-bottom: 24px; padding: 0 8px; }
+.sidebar-goal-title { font-size: .85em; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
+.sidebar-goal-input { width: 100%; min-height: 40px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; font-size: .85em; font-family: inherit; background: var(--bg-input); color: var(--text-main); outline: none; white-space: pre-wrap; word-break: break-word; transition: border .2s; }
+.sidebar-goal-input:focus { border-color: var(--accent-color); }
+.sidebar-goal-input:empty:before { content: attr(placeholder); color: #aaa; pointer-events: none; display: block; }
+.fixed-progress-bars { width: 100%; padding: 0 8px; display: flex; flex-direction: column; gap: 12px; margin: 8px 0; }
+.prog-row { display: flex; flex-direction: column; gap: 4px; }
+.prog-label-row { display: flex; justify-content: space-between; font-size: .85em; color: var(--text-muted); font-weight: 600; }
+.prog-bar-bg { width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; }
+.prog-bar-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+
+/* 精力与 RPG */
+.energy-rpg-panel { padding: 0 8px; margin-top: 10px; padding-bottom: 10px; }
+.rpg-card { background: linear-gradient(135deg, #fff8e7 0%, #ffefc2 100%); border: 1px solid #e8c26a; border-radius: 8px; padding: 8px 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,.6); transition: all 0.3s; }
+body.dark-mode .rpg-card { background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%); border-color: #444; box-shadow: inset 0 1px 0 rgba(0,0,0,.5); }
+.rpg-energy-section { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px dashed rgba(180,83,9,.25); }
+body.dark-mode .rpg-energy-section { border-bottom-color: #444; }
+.energy-header { display: flex; justify-content: space-between; font-size: .82em; font-weight: 700; color: #78350f; margin-bottom: 6px; }
+body.dark-mode .energy-header { color: var(--text-muted); }
+.energy-header #energy-text { color: #b45309; }
+body.dark-mode .energy-header #energy-text { color: #fbbf24; }
+.energy-bar-bg { width: 100%; height: 8px; background: rgba(146,64,14,.15); border-radius: 4px; overflow: hidden; }
+body.dark-mode .energy-bar-bg { background: #333; }
+.energy-bar-fill { height: 100%; border-radius: 4px; transition: width .3s, background .3s; background: #27ae60; }
+.energy-actions { display: flex; gap: 6px; margin-top: 6px; }
+.btn-energy-restore { flex: 1; padding: 4px 6px; font-size: .75em; font-weight: 700; background: #fff; border: 1px solid #fcd34d; border-radius: 6px; color: #b45309; cursor: pointer; transition: all .15s; }
+body.dark-mode .btn-energy-restore { background: #333; border-color: #555; color: #fbbf24; }
+.btn-energy-restore:hover { background: #fef3c7; }
+body.dark-mode .btn-energy-restore:hover { background: #444; }
+.energy-warn { margin-top: 6px; padding: 4px 8px; font-size: .75em; background: #ffebee; color: #c62828; border-radius: 4px; border-left: 3px solid var(--danger-color); font-weight: 600; }
+body.dark-mode .energy-warn { background: #3a1c1c; color: #fca5a5; }
+.rpg-card-main { cursor: pointer; }
+.rpg-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.rpg-level { font-size: .95em; font-weight: 800; color: #b45309; letter-spacing: .5px; display: inline-block; }
+body.dark-mode .rpg-level { color: #fbbf24; }
+.rpg-title { font-size: .72em; color: #78350f; background: #fde68a; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
+body.dark-mode .rpg-title { background: #4a3a1a; color: #fbbf24; }
+.rpg-exp-bar { width: 100%; height: 6px; background: rgba(146,64,14,.15); border-radius: 3px; overflow: hidden; margin-bottom: 3px; transition: box-shadow .3s; }
+body.dark-mode .rpg-exp-bar { background: #333; }
+.rpg-exp-bar.flash { box-shadow: 0 0 8px rgba(245,158,11,.8); }
+.rpg-exp-fill { height: 100%; background: linear-gradient(90deg, #fbbf24, #f59e0b); border-radius: 3px; transition: width .4s; }
+.rpg-exp-text { font-size: .7em; color: #92400e; text-align: right; margin-bottom: 8px; font-weight: 600; }
+body.dark-mode .rpg-exp-text { color: var(--text-muted); }
+.rpg-attrs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: .75em; }
+.rpg-attr { display: flex; justify-content: space-between; align-items: center; color: #78350f; padding: 1px 0; }
+body.dark-mode .rpg-attr { color: var(--text-muted); }
+.rpg-attr b { color: #b45309; font-weight: 800; display: inline-block; transition: transform .2s; }
+body.dark-mode .rpg-attr b { color: #fbbf24; }
+.rpg-value-pop { animation: rpgPop .6s ease; }
+@keyframes rpgPop { 0% { transform: scale(1) } 40% { transform: scale(1.6); color: var(--danger-color); text-shadow: 0 0 8px currentColor; } 100% { transform: scale(1) } }
+@keyframes rpgFloatUp { 0% { opacity: 1; transform: translate(-50%, 0) scale(1); } 30% { opacity: 1; transform: translate(-50%, -12px) scale(1.35); } 100% { opacity: 0; transform: translate(-50%, -55px) scale(1); } }
+.rpg-tip { font-size: .68em; color: #92400e; text-align: center; margin-top: 6px; opacity: .7; }
+body.dark-mode .rpg-tip { color: var(--text-muted); }
+.btn-energy { cursor: pointer; color: #f59e0b; font-size: .9em; padding: 0 4px; font-weight: bold; }
+
+/* 通用模态框 */
+.rpg-modal-overlay, .task-list-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+.rpg-modal-overlay.active, .task-list-modal-overlay.active { display: flex; }
+.rpg-modal, .task-list-modal { background: var(--bg-card); color: var(--text-main); border-radius: 16px; max-width: 560px; width: 100%; max-height: 92vh; overflow-y: auto; padding: 20px; position: relative; }
+.task-list-modal { max-width: 640px; }
+.rpg-modal-header { text-align: center; margin-bottom: 16px; }
+.rpg-modal-level { font-size: 2.2em; font-weight: 800; color: #b45309; }
+body.dark-mode .rpg-modal-level { color: #fbbf24; }
+.rpg-modal-title { font-size: 1em; color: #78350f; margin-top: 4px; font-weight: 600; }
+body.dark-mode .rpg-modal-title { color: var(--text-muted); }
+.rpg-modal-exp { margin-top: 12px; display: inline-block; background: #fef3c7; border-radius: 6px; padding: 8px 16px; font-size: .9em; color: #92400e; font-weight: 700; }
+body.dark-mode .rpg-modal-exp { background: #333; color: #fbbf24; }
+.rpg-modal-energy { background: #fff8e7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+body.dark-mode .rpg-modal-energy { background: #2a2a2a; border-color: #444; }
+.rpg-modal-energy .energy-header { color: #92400e; }
+body.dark-mode .rpg-modal-energy .energy-header { color: var(--text-muted); }
+.rpg-modal-energy .energy-header #modal-energy-text { color: #b45309; }
+body.dark-mode .rpg-modal-energy .energy-header #modal-energy-text { color: #fbbf24; }
+.rpg-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rpg-attr-card { background: #fff8e7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; }
+body.dark-mode .rpg-attr-card { background: #2a2a2a; border-color: #444; }
+.rpg-attr-card .attr-row { display: flex; justify-content: space-between; align-items: center; }
+.rpg-attr-card .attr-name { font-weight: 600; color: #78350f; font-size: .9em; }
+body.dark-mode .rpg-attr-card .attr-name { color: var(--text-muted); }
+.rpg-attr-card .attr-value { font-size: 1.6em; font-weight: 800; color: #b45309; display: inline-block; }
+body.dark-mode .rpg-attr-card .attr-value { color: #fbbf24; }
+.rpg-attr-card .attr-desc { font-size: .75em; color: #92400e; margin-top: 4px; }
+body.dark-mode .rpg-attr-card .attr-desc { color: var(--text-muted); }
+.rpg-modal-tips { margin-top: 16px; padding: 12px; background: var(--bg-sidebar); border-radius: 8px; font-size: .82em; color: var(--text-muted); line-height: 1.7; }
+.rpg-modal-close, .task-list-modal-close { margin-top: 16px; width: 100%; padding: 10px; border: none; border-radius: 8px; background: var(--accent-color); color: #fff; font-weight: 700; cursor: pointer; font-size: .95em; }
+.task-list-modal-close { width: auto; margin: 0; background: none; color: var(--text-muted); font-size: 1.5em; padding: 0 8px; }
+.task-list-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); }
+.task-list-modal-header h3 { font-size: 1.15em; font-weight: 700; }
+
+/* 主内容区 */
+.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.view-container { flex: 1; padding: 24px; overflow-y: auto; display: none; flex-direction: column; }
+.view-container.active { display: flex; }
+h1 { font-size: 1.7em; font-weight: 700; margin-bottom: 20px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+h2 { font-size: 1.15em; font-weight: 600; margin-bottom: 0; display: flex; align-items: center; gap: 6px; }
+.time-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 1.15em; font-weight: bold; }
+.time-nav button { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 12px; cursor: pointer; font-weight: bold; color: var(--text-main); transition: all .2s; display: flex; align-items: center; gap: 4px; font-size: .9em; }
+.time-nav button:hover { background: var(--hover-bg); }
+
+/* 月计划 */
+.calendar-wrapper { background-color: #fee2e2; padding: 16px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; border-radius: 8px; margin-bottom: 24px; transition: background .3s; }
+body.dark-mode .calendar-wrapper { background-color: #2c1e1e; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.calendar-header-cell { text-align: center; font-weight: bold; color: var(--text-muted); padding-bottom: 8px; font-size: .85em; }
+.day-box { background: var(--bg-card); border-radius: 6px; padding: 8px; cursor: pointer; border: 2px solid transparent; min-height: 100px; display: flex; flex-direction: column; transition: all .2s ease; position: relative; overflow: hidden; }
+.day-box:hover { border-color: var(--text-muted); }
+.day-box.active { border-color: var(--accent-color); }
+.day-box.all-done { background-color: #e8f5e9; border-color: #a5d6a7; }
+body.dark-mode .day-box.all-done { background-color: #1b3322; border-color: #2e5937; }
+.day-box.is-today { box-shadow: 0 0 0 2px var(--accent-color) inset; }
+.day-number { font-size: 1.15em; font-weight: bold; margin-bottom: 4px; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+.today-badge { font-size: .55em; font-weight: 700; color: #fff; background: var(--accent-color); padding: 1px 6px; border-radius: 8px; letter-spacing: .3px; }
+.day-summary { font-size: .8em; color: var(--text-main); line-height: 1.4; margin-top: auto; display: flex; flex-direction: column; gap: 4px; }
+.mini-bar-row { display: flex; align-items: center; gap: 4px; font-size: .85em; color: var(--text-muted); white-space: nowrap; }
+.mini-bar-row span:first-child { width: 44px; flex-shrink: 0; }
+.mini-bar-row span:last-child { width: 26px; text-align: right; flex-shrink: 0; }
+.mini-bar-bg { flex: 1; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; min-width: 10px; }
+.mini-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+.reflection-preview, .deadline-preview { font-size: .8em; margin-top: 4px; padding: 2px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reflection-preview { color: var(--text-muted); background: var(--bg-sidebar); border-left: 2px solid var(--border-color); }
+.deadline-preview { color: var(--danger-color); background: #ffebee; border-left: 2px solid var(--danger-color); font-weight: bold; }
+body.dark-mode .deadline-preview { background: #3a1c1c; }
+
+/* 全年 */
+.year-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-shrink: 0; }
+.year-heatmap { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 6px; margin-bottom: 24px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; flex-shrink: 0; }
+.heatmap-cell { width: 100%; aspect-ratio: 1/1; background-color: var(--bg-sidebar); border-radius: 4px; cursor: pointer; transition: all .1s; display: flex; align-items: center; justify-content: center; font-size: .9em; font-weight: 600; position: relative; }
+.heatmap-cell:hover { transform: scale(1.15); z-index: 10; }
+.heatmap-cell.today-cell { outline: 2px solid var(--accent-color); outline-offset: -2px; }
+.stats-container { display: flex; gap: 16px; margin: 16px 0 24px 0; flex-shrink: 0; }
+.stat-card { flex: 1; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.stat-value { font-size: 1.7em; font-weight: bold; margin-bottom: 4px; }
+.stat-label { font-size: .85em; color: var(--text-muted); font-weight: 500; }
+.stat-card.learning { border-top: 4px solid #2383e2; }
+.stat-card.other { border-top: 4px solid #f2994a; }
+.stat-card.exercise { border-top: 4px solid #27ae60; }
+
+/* 周计划 */
+.week-board { display: flex; gap: 8px; height: 400px; margin-bottom: 24px; flex-shrink: 0; }
+.week-column { flex: 1; background: var(--bg-sidebar); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; border: 1px dashed transparent; overflow-y: auto; min-height: 0; }
+.week-column.today-col { border-color: var(--accent-color); background: var(--hover-bg); }
+.week-column.drag-over { border-color: var(--accent-color); background: var(--hover-bg); }
+.week-column-header { font-weight: 600; text-align: center; margin-bottom: 12px; font-size: .9em; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px; transition: background .2s; }
+.week-column-header:hover { background: var(--border-color); }
+.week-today-badge { display: inline-block; font-size: .7em; color: #fff; background: var(--accent-color); padding: 1px 6px; border-radius: 8px; margin-top: 2px; }
+.todo-section { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; flex-shrink: 0; }
+.todo-input { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 12px; outline: none; font-family: inherit; font-size: .95em; background: var(--bg-input); color: var(--text-main); }
+.todo-input:focus { border-color: var(--accent-color); }
+.todo-lists-container { display: flex; gap: 16px; margin-bottom: 24px; align-items: flex-start; }
+.todo-column { flex: 1; min-width: 200px; resize: horizontal; overflow: auto; padding-bottom: 4px; border-bottom: 1px dashed transparent; }
+.todo-column:hover { border-bottom-color: var(--border-color); }
+.todo-column h3 { font-size: 1em; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
+.task-pool-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; padding: 8px; border: 2px dashed var(--border-color); border-radius: 6px; background: var(--bg-sidebar); }
+.task-item { background: var(--bg-card); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; cursor: grab; display: inline-flex; align-items: center; gap: 6px; font-size: .9em; }
+.task-item input[type="checkbox"] { margin-right: 2px; cursor: pointer; accent-color: var(--accent-color); width: 14px; height: 14px; }
+.task-item .task-text { flex: 1; word-break: break-all; }
+.week-column .task-item { width: 100%; margin-bottom: 6px; }
+.task-tag { font-size: .75em; padding: 2px 6px; border-radius: 4px; background: var(--border-color); font-weight: bold; color: var(--text-main); }
+.task-tag.today { background: #e3f2fd; color: #1976d2; }
+body.dark-mode .task-tag.today { background: #1e3a5f; color: #90caf9; }
+.task-tag.overdue { background: #ffebee; color: var(--danger-color); }
+body.dark-mode .task-tag.overdue { background: #3a1c1c; }
+.exercise-pool-wrapper { margin-top: 24px; border-top: 1px dashed var(--border-color); padding-top: 16px; }
+.exercise-pool-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.exercise-pool { display: flex; gap: 8px; flex-wrap: wrap; min-height: 40px; padding: 4px; border: 2px dashed transparent; border-radius: 6px; transition: all .2s; }
+.exercise-pool.drag-over { border-color: var(--accent-color); background: var(--hover-bg); }
+.exercise-capsule { padding: 8px 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; cursor: grab; font-size: .9em; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+.week-column .exercise-capsule { width: 100%; justify-content: flex-start; margin-bottom: 4px; background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; cursor: grab; padding: 4px 8px; user-select: none; }
+body.dark-mode .week-column .exercise-capsule { background: #1b3322; border-color: #2e5937; color: #a5d6a7; }
+.week-column .exercise-capsule input[type="checkbox"] { margin-right: 4px; cursor: pointer; accent-color: #4caf50; }
+.week-column .exercise-capsule .ex-del-btn { margin-left: auto; cursor: pointer; color: var(--danger-color); font-weight: bold; padding: 0 4px; opacity: .5; transition: opacity .2s; }
+.week-column .exercise-capsule .ex-del-btn:hover { opacity: 1; }
+
+/* 日计划 */
+.day-panels-grid { display: flex; flex-wrap: wrap; gap: 20px; flex: 1; align-items: flex-start; margin-bottom: 24px; }
+.section-box { width: calc((100% - 40px)/3); min-width: 220px; border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; background: var(--bg-card); position: relative; height: 350px; resize: both; overflow: hidden; min-height: 200px; }
+.section-box.span-full { width: 100% !important; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-panel-header); border-radius: 8px 8px 0 0; flex-shrink: 0; cursor: grab; }
+.panel-header h2 { margin: 0; font-size: 1.1em; display: flex; align-items: center; gap: 6px; }
+.drag-handle-icon { color: var(--text-muted); margin-right: 6px; font-size: 1.1em; user-select: none; }
+.panel-controls { display: flex; gap: 8px; align-items: center; }
+.btn-resize { cursor: pointer; color: var(--text-muted); font-size: 1.1em; padding: 2px 6px; border-radius: 4px; }
+.panel-content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px; display: flex; flex-direction: column; min-height: 0; }
+.panel-input-wrapper { flex-shrink: 0; margin-bottom: 12px; }
+.panel-note { width: 100%; min-height: 30px; border: 1px dashed var(--border-color); border-radius: 6px; padding: 5px 8px; font-size: .85em; color: var(--text-muted); background: var(--bg-sidebar); outline: none; margin-bottom: 10px; white-space: pre-wrap; word-break: break-word; flex-shrink: 0; }
+.panel-note:empty:before { content: attr(data-placeholder); color: var(--text-muted); pointer-events: none; display: block; }
+.panel-note:focus { border-color: var(--accent-color); background: var(--bg-input); }
+.main-task-item { margin-bottom: 12px; padding: 8px; border-bottom: 1px dashed var(--border-color); border-radius: 6px; }
+.main-task-item.pinned-task { background-color: #fff9f0; border-left: 3px solid #f2994a; padding-left: 10px; }
+body.dark-mode .main-task-item.pinned-task { background-color: #2a1e11; }
+.main-task-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.main-task-left { display: flex; align-items: center; flex: 1; flex-wrap: wrap; gap: 4px; }
+.task-checkbox { width: 16px; height: 16px; margin-right: 8px; cursor: pointer; accent-color: var(--accent-color); }
+.task-text { font-weight: 500; word-break: break-all; font-size: .95em; }
+.task-completed { text-decoration: line-through; color: var(--text-muted); }
+.progress-task-container { display: flex; align-items: center; gap: 6px; flex: 1; flex-wrap: wrap; }
+.progress-task-bar-bg { flex: 1; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-right: 4px; }
+.progress-task-bar-fill { height: 100%; background: var(--accent-color); border-radius: 4px; }
+.btn-plus-one { background: var(--accent-color); color: #fff; border: none; border-radius: 4px; padding: 2px 7px; font-size: .85em; cursor: pointer; font-weight: bold; }
+.btn-minus-one { background: var(--text-muted); color: #fff; border: none; border-radius: 4px; padding: 2px 7px; font-size: .85em; cursor: pointer; font-weight: bold; }
+.progress-text { font-size: .85em; font-weight: bold; color: var(--text-muted); min-width: 40px; text-align: right; }
+.task-meta { display: flex; align-items: center; gap: 6px; font-size: .85em; }
+.btn-pin { cursor: pointer; color: var(--border-color); font-size: 1.1em; padding: 0 4px; }
+.btn-pin.active { color: #f2994a; }
+.btn-loop { font-size: 1.1em; color: var(--border-color); cursor: pointer; }
+.btn-loop.active { color: var(--accent-color); }
+.loop-label { font-size: .75em; color: var(--accent-color); background: var(--hover-bg); padding: 2px 6px; border-radius: 4px; margin-left: 4px; font-weight: bold; white-space: nowrap; }
+.btn-target { cursor: pointer; color: var(--border-color); font-size: 1em; font-weight: bold; padding: 0 4px; }
+.btn-delete-task { cursor: pointer; color: var(--text-muted); font-size: 1em; padding: 0 4px; }
+.deadline-input { font-size: .85em; border: none; outline: none; color: var(--text-muted); font-family: inherit; cursor: pointer; background: transparent; font-weight: 500; max-width: 105px; }
+.estimate-label { font-size: .75em; color: #1976d2; background: #e3f2fd; padding: 1px 6px; border-radius: 4px; cursor: pointer; white-space: nowrap; font-weight: 600; margin-left: 4px; }
+body.dark-mode .estimate-label { background: #1e3a5f; color: #90caf9; }
+.btn-estimate { cursor: pointer; color: var(--text-muted); font-size: .9em; padding: 0 4px; }
+.sub-task-list { margin-left: 24px; margin-top: 8px; padding-left: 12px; border-left: 2px solid var(--border-color); display: flex; flex-direction: column; gap: 6px; }
+.sub-task-item { display: flex; align-items: center; font-size: .9em; color: var(--text-main); justify-content: space-between; margin-bottom: 2px; }
+.sub-task-left { display: flex; align-items: center; flex: 1; flex-wrap: wrap; gap: 4px; }
+.sub-task-item .task-checkbox { width: 14px; height: 14px; margin-right: 4px; }
+.sub-prog-container { display: flex; align-items: center; gap: 4px; margin-left: 8px; }
+.sub-prog-bar-bg { flex: 1; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; width: 60px; }
+.sub-prog-bar-fill { height: 100%; background: var(--accent-color); border-radius: 3px; }
+.sub-prog-text { font-size: .8em; color: var(--text-muted); width: 32px; text-align: right; }
+.sub-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px; }
+.btn-sub-plus { background: var(--hover-bg); color: var(--text-main); border: none; border-radius: 4px; padding: 0px 6px; font-size: .8em; cursor: pointer; font-weight: bold; }
+.btn-sub-target { cursor: pointer; color: var(--text-muted); font-size: .9em; padding: 0 2px; }
+.btn-sub-delete { cursor: pointer; color: var(--text-muted); font-size: .9em; padding: 0 2px; }
+.add-sub-task-input { margin-left: 24px; margin-top: 8px; font-size: .85em; padding: 4px 8px; border: 1px dashed var(--border-color); width: calc(100% - 24px); display: none; border-radius: 4px; background: var(--bg-input); color: var(--text-main); }
+.btn-add-sub { font-size: .85em; color: var(--accent-color); cursor: pointer; margin-left: 24px; margin-top: 4px; display: inline-block; font-weight: 500; }
+.sub-fold-btn { margin-left: 24px; margin-top: 4px; font-size: .85em; color: var(--accent-color); cursor: pointer; font-weight: 600; display: inline-block; user-select: none; padding: 2px 6px; border-radius: 4px; background: var(--hover-bg); }
+.sub-fold-btn:hover { background: var(--border-color); }
+.completed-tasks-section { margin-top: 16px; border-top: 1px dashed var(--border-color); padding-top: 12px; }
+.completed-tasks-section summary { cursor: pointer; font-size: .9em; color: var(--text-muted); font-weight: 500; outline: none; user-select: none; display: flex; align-items: center; gap: 6px; list-style: none; }
+.completed-tasks-section summary::-webkit-details-marker { display: none; }
+.completed-tasks-section summary::before { content: '▶'; font-size: .8em; transition: transform .2s; }
+.completed-tasks-section[open] summary::before { transform: rotate(90deg); }
+.completed-tasks-list { margin-top: 12px; opacity: .8; }
+.completed-tasks-list .main-task-item { border-bottom: none; padding-bottom: 4px; margin-bottom: 8px; }
+.exercise-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.exercise-card { background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; min-width: 0; }
+.exercise-card.active-plan { border-color: #4caf50; background: #f1f8e9; }
+body.dark-mode .exercise-card.active-plan { border-color: #2e5937; background: #1b3322; }
+.exercise-card-header { font-weight: 600; margin-bottom: 8px; color: var(--text-muted); font-size: 1em; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 4px; }
+.exercise-header-left { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.exercise-cat-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: #4caf50; flex-shrink: 0; }
+.exercise-name { cursor: pointer; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exercise-card.active-plan .exercise-card-header { color: #2e7d32; }
+body.dark-mode .exercise-card.active-plan .exercise-card-header { color: #a5d6a7; }
+.exercise-header-right { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.btn-del-ex { cursor: pointer; color: var(--danger-color); font-size: 1.1em; font-weight: bold; padding: 0 4px; flex-shrink: 0; }
+.exercise-content { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: .85em; }
+.exercise-item { display: flex; align-items: center; color: var(--text-main); justify-content: space-between; margin-bottom: 4px; }
+.exercise-item-left { display: flex; align-items: center; flex: 1; min-width: 0; }
+.exercise-item input[type="checkbox"] { margin-right: 4px; cursor: pointer; flex-shrink: 0; }
+.btn-del-action { cursor: pointer; color: var(--text-muted); font-size: .85em; padding: 0 4px; flex-shrink: 0; }
+.exercise-card details { margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 4px; }
+.exercise-card summary { font-size: .85em; color: var(--text-muted); cursor: pointer; outline: none; list-style: none; }
+.exercise-card summary::-webkit-details-marker { display: none; }
+.exercise-card summary::before { content: '▶ '; font-size: .8em; }
+.exercise-card details[open] summary::before { content: '▼ '; }
+
+/* 设置 */
+input[type="text"], input[type="password"] { width: 100%; box-sizing: border-box; min-width: 0; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; outline: none; font-size: .95em; background: var(--bg-input); color: var(--text-main); }
+textarea { width: 100%; box-sizing: border-box; height: 100px; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; outline: none; resize: vertical; font-size: .95em; background: var(--bg-input); color: var(--text-main); }
+.btn { padding: 6px 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 500; font-size: .95em; }
+.btn:hover { background: var(--hover-bg); }
+.btn-primary { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
+.btn-primary:hover { background: var(--accent-color); opacity: 0.9; }
+.btn-danger { background: var(--danger-color); color: #fff; border-color: var(--danger-color); }
+.btn-danger:hover { background: var(--danger-color); opacity: 0.9; }
+.btn-sm { font-size: .85em; padding: 4px 8px; }
+input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; background: var(--border-color); border-radius: 3px; outline: none; margin-top: 10px; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-color); cursor: pointer; }
+input[type="number"] { padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; outline: none; font-size: .95em; width: 100%; background: var(--bg-input); color: var(--text-main); }
+.snapshot-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.snapshot-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-sidebar); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: .85em; }
+.snapshot-actions { display: flex; gap: 6px; }
+.bottom-summary { flex-shrink: 0; margin-top: auto; }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; align-items: stretch; margin-bottom: 20px; }
+.settings-grid > .section-box { width: 100% !important; height: auto !important; resize: none !important; margin-bottom: 0 !important; padding: 0; }
+.settings-grid > .section-box.span-full { grid-column: 1 / -1; }
+.settings-grid .panel-content { padding: 10px 12px; }
+.settings-grid .panel-content h2 { font-size: .95em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color); }
+.settings-grid .panel-content p { font-size: .78em !important; margin: 4px 0 !important; color: var(--text-muted); }
+.settings-grid .panel-content .btn { padding: 4px 8px; font-size: .8em; }
+.settings-grid .panel-content .btn-sm { padding: 3px 6px; font-size: .75em; }
+details.settings-details summary { font-size: .95em; font-weight: 600; color: var(--accent-color); cursor: pointer; outline: none; user-select: none; display: flex; align-items: center; gap: 6px; padding-bottom: 4px; list-style: none; }
+details.settings-details summary::-webkit-details-marker { display: none; }
+details.settings-details summary::before { content: '▶'; font-size: .8em; transition: transform .2s; }
+details.settings-details[open] summary::before { transform: rotate(90deg); }
+.settings-details .panel-content { padding-top: 8px; }
+.backup-status { font-size: .75em; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+.log-list { max-height: 200px; overflow-y: auto; margin-top: 8px; }
+.log-item { display: flex; gap: 6px; padding: 4px 0; border-bottom: 1px dashed var(--border-color); font-size: .78em; align-items: flex-start; }
+.log-time { color: var(--text-muted); font-family: ui-monospace, Menlo, monospace; flex-shrink: 0; min-width: 125px; }
+.log-type { font-weight: 600; flex-shrink: 0; padding: 0 4px; border-radius: 4px; font-size: .9em; }
+.log-detail { color: var(--text-main); flex: 1; word-break: break-all; }
+.rpg-edit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
+.rpg-edit-grid label { display: flex; flex-direction: column; gap: 2px; font-size: .78em; color: var(--text-main); }
+.rpg-edit-grid span { font-weight: 600; color: var(--text-muted); }
+.rpg-edit-grid input { padding: 4px 6px; font-size: .8em; }
+.level-config-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; max-height: 260px; overflow-y: auto; padding-right: 4px; }
+.level-config-row { display: flex; gap: 6px; align-items: center; }
+.level-config-row input[type="text"] { flex: 1; padding: 4px 6px; font-size: .8em; }
+.level-config-row input[type="number"] { width: 70px; padding: 4px 6px; font-size: .8em; }
+.level-badge { font-size: .75em; font-weight: 700; color: #b45309; background: #fde68a; padding: 2px 6px; border-radius: 4px; min-width: 38px; text-align: center; flex-shrink: 0; }
+body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
+.mobile-rpg-fab { display: none; }
+.view-all-btn { display: block; width: 100%; margin-top: 8px; padding: 6px; border: 1px dashed var(--border-color); border-radius: 6px; background: var(--bg-sidebar); color: var(--accent-color); font-size: .85em; font-weight: 600; cursor: pointer; text-align: center; }
+.view-all-btn:hover { background: var(--hover-bg); }
+
+@media(max-width: 900px) { .settings-grid { grid-template-columns: 1fr; gap: 12px; } .rpg-edit-grid { grid-template-columns: repeat(2, 1fr); } }
+@media(max-width: 768px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; order: 2; border-right: none; border-top: 1px solid var(--border-color); padding: 8px 4px; flex-direction: row; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; z-index: 100; background: rgba(247,247,245,.95); backdrop-filter: blur(10px); }
+    body.dark-mode .sidebar { background: rgba(30,30,30,.95); }
+    .sidebar-title, .sidebar-footer { display: none; }
+    .nav-item { flex-direction: column; padding: 6px 0; font-size: .75em; gap: 2px; flex: 1; text-align: center; margin-bottom: 0; border-radius: 8px; }
+    .nav-item:hover { transform: none; background-color: transparent; }
+    .nav-item.active { background-color: var(--hover-bg); color: var(--accent-color); font-weight: bold; }
+    .main-content { order: 1; height: calc(100vh - 65px); }
+    .view-container { padding: 12px; }
+    .day-panels-grid { flex-direction: column; gap: 16px; }
+    .section-box { width: 100% !important; height: auto !important; min-height: 250px; resize: none; }
+    .calendar-wrapper { padding: 8px; margin-bottom: 12px; }
+    .calendar-grid { gap: 2px; }
+    .day-box { padding: 4px; min-height: 70px; border-width: 1px; }
+    .day-number { font-size: .9em; margin-bottom: 2px; }
+    .today-badge { font-size: .7em; padding: 0 4px; }
+    .day-summary { gap: 2px; margin-top: auto; }
+    .mini-bar-row span { display: none !important; }
+    .mini-bar-bg { height: 4px; margin-bottom: 2px; border-radius: 2px; }
+    .reflection-preview, .deadline-preview { display: none; }
+    .week-board { flex-direction: column; height: auto; gap: 12px; }
+    .week-column { min-height: 80px; max-height: 200px; overflow-y: auto; padding: 8px; }
+    .week-column-header { margin-bottom: 8px; }
+    .todo-lists-container { flex-direction: column; }
+    h1 { font-size: 1.4em; margin-bottom: 12px; }
+    .exercise-grid { grid-template-columns: 1fr; }
+    .rpg-modal-grid { grid-template-columns: 1fr; }
+    .rpg-edit-grid { grid-template-columns: repeat(2, 1fr); }
+    .mobile-rpg-fab { display: flex; position: fixed; right: 12px; bottom: 78px; z-index: 99; background: linear-gradient(135deg, #fff8e7, #ffefc2); border: 1px solid #e8c26a; border-radius: 22px; padding: 8px 14px; gap: 8px; align-items: center; font-size: .85em; font-weight: 800; color: #b45309; box-shadow: 0 4px 12px rgba(180,83,9,.25); cursor: pointer; user-select: none; }
+    body.dark-mode .mobile-rpg-fab { background: linear-gradient(135deg, #2a2a2a, #1f1f1f); border-color: #444; color: #fbbf24; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+    .mobile-rpg-fab:active { transform: scale(.96); }
+    .mobile-rpg-fab #mobile-rpg-energy { color: #b45309; }
+    body.dark-mode .mobile-rpg-fab #mobile-rpg-energy { color: #fbbf24; }
+    .task-list-modal { max-width: 100%; max-height: 92vh; padding: 16px; }
 }
 </style>
 </head>
@@ -371,7 +463,6 @@ h1{font-size:1.4em;margin-bottom:12px}
 <div class="mobile-rpg-fab" id="mobile-rpg-fab" onclick="openRPGModal()"><span id="mobile-rpg-lv">Lv.1</span><span id="mobile-rpg-energy">⚡100</span></div>
 
 <div class="main-content">
-
 <div class="view-container" id="view-year">
 <div class="year-header"><h1>📊 全年总览</h1><div class="time-nav" style="margin-bottom:0;"><button onclick="changeYear(-1)">← 上一年</button><span id="year-display" style="font-size:1em;">2023年</span><button onclick="changeYear(1)">下一年 →</button></div></div>
 <div class="year-heatmap" id="year-heatmap"></div>
@@ -445,22 +536,26 @@ h1{font-size:1.4em;margin-bottom:12px}
 <div class="panel-content">
 <h2>🎨 主题与字体</h2>
 <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+<button class="btn btn-sm" onclick="changeThemeMode('light')">☀️ 明亮</button>
+<button class="btn btn-sm" onclick="changeThemeMode('dark')">🌙 黑暗</button>
+</div>
+<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
 <button class="btn btn-sm" onclick="changeTheme('#2383e2')">经典蓝</button>
 <button class="btn btn-sm" onclick="changeTheme('#f2994a')">活力橙</button>
 <button class="btn btn-sm" onclick="changeTheme('#27ae60')">护眼绿</button>
 <button class="btn btn-sm" onclick="changeTheme('#9b51e0')">浪漫紫</button>
 </div>
-<div style="margin-top:8px;font-size:.8em;font-weight:600;color:#555;">字体大小 (<span id="font-size-val">14</span>px)</div>
-<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:#999;">小</span><input type="range" id="font-size-slider" min="12" max="22" step="1" value="14" oninput="changeFontSize(this.value + 'px')"><span style="font-size:14px;color:#999;">大</span></div>
+<div style="margin-top:8px;font-size:.8em;font-weight:600;color:var(--text-muted);">字体大小 (<span id="font-size-val">14</span>px)</div>
+<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:var(--text-muted);">小</span><input type="range" id="font-size-slider" min="12" max="22" step="1" value="14" oninput="changeFontSize(this.value + 'px')"><span style="font-size:14px;color:var(--text-muted);">大</span></div>
 </div>
 </div>
 <div class="section-box" style="border-color:#fde68a;">
 <div class="panel-content">
 <h2 style="color:#b45309;">⚡ 精力设置</h2>
-<div style="margin-top:6px;font-size:.8em;font-weight:600;color:#555;">今日精力上限 (<span id="energy-max-val">100</span>)</div>
-<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:#999;">50</span><input type="range" id="energy-max-slider" min="50" max="200" step="10" value="100" oninput="changeEnergyMax(this.value)"><span style="font-size:14px;color:#999;">200</span></div>
-<div style="margin-top:8px;font-size:.8em;font-weight:600;color:#555;">精力警告阈值 (<span id="energy-warn-val">30</span>)</div>
-<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:#999;">10</span><input type="range" id="energy-warn-slider" min="10" max="100" step="5" value="30" oninput="changeEnergyWarn(this.value)"><span style="font-size:14px;color:#999;">100</span></div>
+<div style="margin-top:6px;font-size:.8em;font-weight:600;color:var(--text-muted);">今日精力上限 (<span id="energy-max-val">100</span>)</div>
+<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:var(--text-muted);">50</span><input type="range" id="energy-max-slider" min="50" max="200" step="10" value="100" oninput="changeEnergyMax(this.value)"><span style="font-size:14px;color:var(--text-muted);">200</span></div>
+<div style="margin-top:8px;font-size:.8em;font-weight:600;color:var(--text-muted);">精力警告阈值 (<span id="energy-warn-val">30</span>)</div>
+<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:var(--text-muted);">10</span><input type="range" id="energy-warn-slider" min="10" max="100" step="5" value="30" oninput="changeEnergyWarn(this.value)"><span style="font-size:14px;color:var(--text-muted);">100</span></div>
 </div>
 </div>
 <div class="section-box" style="border-color:#c5cae9;">
@@ -481,7 +576,7 @@ h1{font-size:1.4em;margin-bottom:12px}
 <h2 style="color:#b45309;">🏆 等级配置</h2>
 <div class="level-config-list" id="level-config-list"></div>
 <button class="btn btn-sm" onclick="addLevelConfig()" style="margin-top:6px;color:#b45309;border-color:#fcd34d;">➕ 添加等级</button>
-<button class="btn btn-sm" onclick="resetLevelConfig()" style="margin-top:6px;color:#666;margin-left:6px;">🔄 恢复默认</button>
+<button class="btn btn-sm" onclick="resetLevelConfig()" style="margin-top:6px;color:var(--text-muted);margin-left:6px;">🔄 恢复默认</button>
 </div>
 </div>
 <div class="section-box" style="border-color:#a5d6a7;">
@@ -511,7 +606,7 @@ h1{font-size:1.4em;margin-bottom:12px}
 <button class="btn btn-sm" id="btn-restore-backup-folder" style="display:none;color:#1565c0;border-color:#90caf9;" onclick="restoreBackupFolder()">🔄 恢复文件夹</button>
 <button class="btn btn-sm" onclick="performBackup(false)">💾 立即备份</button>
 <button class="btn btn-sm btn-danger" id="btn-stop-auto-backup" style="display:none;" onclick="stopAutoBackup()">⏹ 停止</button>
-<select id="backup-interval" onchange="changeBackupInterval(this.value)" style="padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;font-size:.8em;">
+<select id="backup-interval" onchange="changeBackupInterval(this.value)" style="padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;font-size:.8em;background:var(--bg-input);color:var(--text-main);">
 <option value="1">1 分钟</option><option value="2">2 分钟</option><option value="3" selected>3 分钟</option><option value="5">5 分钟</option><option value="10">10 分钟</option><option value="15">15 分钟</option><option value="30">30 分钟</option>
 </select>
 </div>
@@ -525,7 +620,7 @@ h1{font-size:1.4em;margin-bottom:12px}
 <summary style="color:#e65100;padding:10px 12px;">📡 局域网点对点同步</summary>
 <div class="panel-content" style="padding-top:0;">
 <div style="display:flex;gap:12px;flex-wrap:wrap;">
-<div style="flex:1;min-width:260px;background:#fff3e0;padding:8px;border-radius:8px;">
+<div style="flex:1;min-width:260px;background:var(--bg-sidebar);padding:8px;border-radius:8px;border:1px solid var(--border-color);">
 <h3 style="font-size:.85em;margin-bottom:4px;">💻 我是主机</h3>
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
 <span style="font-weight:bold;font-size:.85em;color:#e65100;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace;" id="my-peer-id">未生成</span>
@@ -534,11 +629,11 @@ h1{font-size:1.4em;margin-bottom:12px}
 <button class="btn btn-sm btn-danger" onclick="resetHostId()">🔄 重置</button>
 </div>
 </div>
-<div style="flex:1;min-width:260px;background:#e3f2fd;padding:8px;border-radius:8px;">
+<div style="flex:1;min-width:260px;background:var(--bg-sidebar);padding:8px;border-radius:8px;border:1px solid var(--border-color);">
 <h3 style="font-size:.85em;margin-bottom:4px;">📱 我是客户端</h3>
 <div style="display:flex;gap:6px;"><input type="text" id="target-peer-id" placeholder="粘贴连接码" style="padding:4px 6px;font-size:.8em;"><button class="btn btn-sm btn-primary" onclick="connectToPeer()">连接</button></div>
-<div id="p2p-status" style="font-size:.8em;color:#666;margin-top:4px;">未连接</div>
-<div style="margin-top:6px;border-top:1px dashed #bbdefb;padding-top:4px;">
+<div id="p2p-status" style="font-size:.8em;color:var(--text-muted);margin-top:4px;">未连接</div>
+<div style="margin-top:6px;border-top:1px dashed var(--border-color);padding-top:4px;">
 <span style="font-size:.75em;color:#1976d2;font-weight:bold;display:block;margin-bottom:4px;">历史记录</span>
 <div id="p2p-history-list" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
 </div>
@@ -600,6 +695,12 @@ h1{font-size:1.4em;margin-bottom:12px}
    1. 更新日志
    ========================================================= */
 const APP_CHANGELOG = [
+    { version: 'v1.8.0', date: '2026-10-28', changes: [
+        '新增：黑暗模式（设置页可切换）',
+        '重要修复：优化长时间挂机导致的严重卡顿',
+        '修复：引入任务和进度缓存，解决渲染计算量过大的问题',
+        '修复：面板尺寸监听防抖，避免引发无限重绘'
+    ]},
     { version: 'v1.7.0', date: '2026-10-27', changes: [
         '新增：点击周计划表头可直接跳转到对应日计划',
         '新增：待办列表支持拖拽右下角自由调整左右宽度',
@@ -625,7 +726,7 @@ const APP_CHANGELOG = [
 ];
 
 /* =========================================================
-   2. 默认等级配置
+   2. 默认配置与数据
    ========================================================= */
 const DEFAULT_LEVELS = [
     { name: '新手', needExp: 100 },
@@ -637,9 +738,6 @@ const DEFAULT_LEVELS = [
     { name: '传说', needExp: 800 }
 ];
 
-/* =========================================================
-   3. 全局数据模型
-   ========================================================= */
 let appData = {
     tasks: [],
     exercises: [
@@ -655,6 +753,7 @@ let appData = {
     yearlyGoals: "",
     panelNotes: { learning: '', other: '', exercise: '' },
     themeColor: "#2383e2",
+    themeMode: "light",
     fontSize: "14px",
     viewYear: new Date().getFullYear(),
     viewMonth: new Date().getMonth(),
@@ -668,9 +767,6 @@ let appData = {
     levelConfig: { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) }
 };
 
-/* =========================================================
-   4. 变量
-   ========================================================= */
 let peer = null, conn = null;
 let isSyncing = false, isAutoReconnecting = false, isConnecting = false;
 let connectTimer = null, syncDebounceTimer = null;
@@ -684,8 +780,14 @@ let lastRpgState = null;
 let userPickedDate = false;
 const expandedSubTasks = new Set();
 
+/* 性能优化：缓存 */
+let _cachedTasksLength = -1;
+let _cachedTasksModified = -1;
+let _taskMapCache = {};
+let _progressCache = {};
+
 /* =========================================================
-   5. 工具函数
+   3. 工具函数
    ========================================================= */
 function getTodayString() {
     const d = new Date();
@@ -757,15 +859,29 @@ function isRecurringMatch(type, startDateStr, targetDateStr) {
     return false;
 }
 
-function getTasksForDate(dateStr) {
-    return appData.tasks.filter(t => {
-        if (t.date === dateStr) return true;
-        if (t.date !== 'pool' && t.recurringType && t.date <= dateStr) {
-            return isRecurringMatch(t.recurringType, t.date, dateStr);
+/* 缓存核心：更新任务索引 */
+function updateTaskCache() {
+    if (appData.tasks.length === _cachedTasksLength && appData._lastModified === _cachedTasksModified) return;
+    _cachedTasksLength = appData.tasks.length;
+    _cachedTasksModified = appData._lastModified || 0;
+    _taskMapCache = {};
+    appData.tasks.forEach(t => {
+        if (t.date && t.date !== 'pool') {
+            if (!_taskMapCache[t.date]) _taskMapCache[t.date] = [];
+            _taskMapCache[t.date].push(t);
         }
-        return false;
     });
 }
+
+function getTasksForDate(dateStr) {
+    updateTaskCache();
+    const directTasks = _taskMapCache[dateStr] || [];
+    const recurring = appData.tasks.filter(t => t.recurringType && t.date !== 'pool' && t.date <= dateStr && !directTasks.includes(t));
+    const matched = recurring.filter(t => isRecurringMatch(t.recurringType, t.date, dateStr));
+    return [...directTasks, ...matched];
+}
+
+function clearProgressCache() { _progressCache = {}; }
 
 function isTaskDone(task, dateStr) {
     if (task.completions && task.completions[dateStr] !== undefined) return task.completions[dateStr];
@@ -787,7 +903,6 @@ function setTaskCurrent(task, dateStr, val) {
     task.currents[dateStr] = val;
     if (task.date === dateStr) task.current = val;
 }
-
 function isSubTaskDone(sub, dateStr) {
     if (sub.completions && sub.completions[dateStr] !== undefined) return sub.completions[dateStr];
     return !!sub.completed;
@@ -808,7 +923,7 @@ function setSubCurrent(sub, dateStr, val) {
 }
 
 /* =========================================================
-   6. 精力与 RPG
+   4. 精力与 RPG
    ========================================================= */
 function ensureEnergyData() {
     if (!appData.dailyEnergy) appData.dailyEnergy = {};
@@ -909,7 +1024,7 @@ function renderEnergyAndRPG() {
 
     const energyTextEl = document.getElementById('energy-text');
     const energyFillEl = document.getElementById('energy-fill');
-    if (energyTextEl) { energyTextEl.innerText = `${remaining} / ${max}`; energyTextEl.style.color = low ? '#eb5757' : '#b45309'; }
+    if (energyTextEl) { energyTextEl.innerText = `${remaining} / ${max}`; energyTextEl.style.color = low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309'); }
     if (energyFillEl) { energyFillEl.style.width = pct + '%'; energyFillEl.style.background = energyColor; }
     const warnEl = document.getElementById('energy-warn');
     if (warnEl) warnEl.style.display = low ? 'block' : 'none';
@@ -917,7 +1032,7 @@ function renderEnergyAndRPG() {
     const mEText = document.getElementById('modal-energy-text');
     const mEFill = document.getElementById('modal-energy-fill');
     const mWarn = document.getElementById('modal-energy-warn');
-    if (mEText) { mEText.innerText = `${remaining} / ${max}`; mEText.style.color = low ? '#eb5757' : '#b45309'; }
+    if (mEText) { mEText.innerText = `${remaining} / ${max}`; mEText.style.color = low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309'); }
     if (mEFill) { mEFill.style.width = pct + '%'; mEFill.style.background = energyColor; }
     if (mWarn) mWarn.style.display = low ? 'block' : 'none';
 
@@ -939,7 +1054,7 @@ function renderEnergyAndRPG() {
     const mLv = document.getElementById('mobile-rpg-lv');
     const mEn = document.getElementById('mobile-rpg-energy');
     if (mLv) mLv.innerText = 'Lv.' + level;
-    if (mEn) { mEn.innerText = '⚡' + remaining; mEn.style.color = low ? '#eb5757' : '#b45309'; }
+    if (mEn) { mEn.innerText = '⚡' + remaining; mEn.style.color = low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309'); }
 
     const maxV = document.getElementById('energy-max-val'), maxS = document.getElementById('energy-max-slider');
     if (maxV) maxV.innerText = max;
@@ -963,7 +1078,7 @@ function renderEnergyAndRPG() {
                 flashElement(document.getElementById('rpg-exp-bar-wrap'), 'flash', 700);
                 if (expText) { flashElement(expText, 'rpg-value-pop'); showRpgFloat(expText, '+' + delta + ' EXP', '#27ae60'); }
             } else if (expText) {
-                showRpgFloat(expText, delta + ' EXP', '#eb5757');
+                showRpgFloat(expText, delta + ' EXP', 'var(--danger-color)');
             }
         }
         if (cur.level !== lastRpgState.level) {
@@ -978,7 +1093,7 @@ function renderEnergyAndRPG() {
                 const el = document.getElementById('rpg-' + k);
                 if (el) {
                     flashElement(el, 'rpg-value-pop');
-                    showRpgFloat(el, (delta > 0 ? '+' : '') + delta, delta > 0 ? '#27ae60' : '#eb5757');
+                    showRpgFloat(el, (delta > 0 ? '+' : '') + delta, delta > 0 ? '#27ae60' : 'var(--danger-color)');
                 }
             }
         });
@@ -1081,7 +1196,7 @@ function renderLevelConfig() {
     if (!list) return;
     const levels = appData.levelConfig.levels;
     if (levels.length === 0) {
-        list.innerHTML = '<div style="color:#999;text-align:center;padding:10px;font-size:.85em;">暂无等级</div>';
+        list.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:10px;font-size:.85em;">暂无等级</div>';
         return;
     }
     list.innerHTML = levels.map((lv, idx) => `
@@ -1089,7 +1204,7 @@ function renderLevelConfig() {
             <span class="level-badge">Lv.${idx + 1}</span>
             <input type="text" value="${escapeHtml(lv.name)}" onchange="updateLevelName(${idx}, this.value)" placeholder="等级名称">
             <input type="number" value="${lv.needExp}" onchange="updateLevelExp(${idx}, this.value)" min="1" placeholder="所需经验" title="升到下一级所需经验">
-            <button class="btn btn-sm" onclick="deleteLevelConfig(${idx})" style="color:#eb5757;border-color:#ffcccc;padding:2px 6px;font-size:.75em;">✕</button>
+            <button class="btn btn-sm" onclick="deleteLevelConfig(${idx})" style="color:var(--danger-color);border-color:var(--danger-color);padding:2px 6px;font-size:.75em;">✕</button>
         </div>
     `).join('');
 }
@@ -1124,7 +1239,7 @@ window.resetLevelConfig = function() {
 };
 
 /* =========================================================
-   7. 数据保存
+   5. 保存与主题
    ========================================================= */
 function getDataSignature(data) {
     const copy = JSON.parse(JSON.stringify(data));
@@ -1132,6 +1247,7 @@ function getDataSignature(data) {
     return JSON.stringify(copy);
 }
 function saveDataToFile(data) {
+    clearProgressCache(); // 数据改变，清空进度缓存
     const sig = getDataSignature(data);
     const changed = sig !== lastSavedSignature;
     if (!isSyncing && changed) { data._lastModified = Date.now(); lastSavedSignature = getDataSignature(data); }
@@ -1147,247 +1263,17 @@ function saveDataToFile(data) {
 }
 function saveLocalStorage() { localStorage.setItem('myWorkspaceAppData', JSON.stringify(appData)); }
 
-/* =========================================================
-   8. P2P 同步
-   ========================================================= */
-window.copyHostId = function() {
-    const t = document.getElementById('my-peer-id').innerText.trim();
-    if (!t || t === '未生成') { alert('请先点击“开启”'); return; }
-    copyTextToClipboard(t, '✅ 连接码已复制！');
+window.changeThemeMode = function(mode) {
+    appData.themeMode = mode;
+    if (mode === 'dark') document.body.classList.add('dark-mode');
+    else document.body.classList.remove('dark-mode');
+    saveDataToFile(appData);
 };
-function renderP2PHistory() {
-    const container = document.getElementById('p2p-history-list');
-    let history = JSON.parse(localStorage.getItem('my_p2p_history') || '[]');
-    container.innerHTML = '';
-    if (history.length === 0) { container.innerHTML = '<span style="font-size:.8em;color:#999;">暂无</span>'; return; }
-    history.forEach(id => {
-        const w = document.createElement('div');
-        w.style.cssText = 'display:flex;align-items:center;background:#fff;border:1px solid #90caf9;border-radius:4px;overflow:hidden;font-size:.8em;';
-        const c = document.createElement('div');
-        c.style.cssText = 'padding:3px 6px;color:#1976d2;cursor:pointer;';
-        c.innerText = id.substring(0, 10) + '...';
-        c.title = id;
-        c.onclick = () => { isAutoReconnecting = false; document.getElementById('target-peer-id').value = id; connectToPeer(); };
-        const cp = document.createElement('div');
-        cp.style.cssText = 'padding:3px 6px;background:#e3f2fd;color:#1976d2;cursor:pointer;border-left:1px solid #90caf9;';
-        cp.innerText = '📋';
-        cp.onclick = (e) => { e.stopPropagation(); copyTextToClipboard(id, '✅ 已复制：\n' + id); };
-        const d = document.createElement('div');
-        d.style.cssText = 'padding:3px 6px;background:#ffebee;color:#eb5757;cursor:pointer;border-left:1px solid #90caf9;';
-        d.innerText = '✕';
-        d.onclick = (e) => { e.stopPropagation(); deletePeerHistory(id); };
-        w.appendChild(c); w.appendChild(cp); w.appendChild(d);
-        container.appendChild(w);
-    });
+function changeTheme(color) {
+    appData.themeColor = color;
+    document.documentElement.style.setProperty('--accent-color', color);
+    if (!isSyncing) saveDataToFile(appData);
 }
-function deletePeerHistory(id) {
-    if (!confirm('确定删除？')) return;
-    let history = JSON.parse(localStorage.getItem('my_p2p_history') || '[]');
-    history = history.filter(x => x !== id);
-    localStorage.setItem('my_p2p_history', JSON.stringify(history));
-    if (localStorage.getItem('last_connected_peer') === id) { localStorage.removeItem('last_connected_peer'); isAutoReconnecting = false; }
-    renderP2PHistory();
-}
-window.resetHostId = function() {
-    if (!confirm('重置同步码？手机需重新连接新码。')) return;
-    localStorage.removeItem('my_p2p_host_id');
-    if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
-    if (conn) { try { conn.close(); } catch(e){} conn = null; }
-    document.getElementById('my-peer-id').innerText = '未生成';
-    initPeer(true);
-};
-window.initPeer = function(isHost, isAutoConnect = false) {
-    if (isHost && peer && !peer.destroyed && peer.open && !peer.disconnected) {
-        document.getElementById('my-peer-id').innerText = peer.id;
-        document.getElementById('p2p-status').innerText = "✅ 主机已就绪";
-        document.getElementById('p2p-status').style.color = "#f2994a";
-        return;
-    }
-    if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
-    if (conn) { try { conn.close(); } catch(e){} conn = null; }
-    isConnecting = false; handshakeDone = false; clearTimeout(connectTimer);
-    let customId = null;
-    if (isHost) {
-        customId = localStorage.getItem('my_p2p_host_id');
-        if (!customId) { customId = generatePeerId(); localStorage.setItem('my_p2p_host_id', customId); }
-        document.getElementById('my-peer-id').innerText = customId;
-    }
-    peer = new Peer(customId, {
-        debug: 1,
-        config: { iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun.cloudflare.com:3478' }
-        ], iceCandidatePoolSize: 10 },
-        pingInterval: 3000
-    });
-    peer.on('open', function(id) {
-        if (isHost) {
-            document.getElementById('my-peer-id').innerText = id;
-            document.getElementById('p2p-status').innerText = "✅ 主机已就绪";
-            document.getElementById('p2p-status').style.color = "#f2994a";
-        } else if (isAutoConnect) { isAutoReconnecting = true; startAutoConnectLoop(); }
-    });
-    peer.on('connection', function(c) {
-        if (conn && conn !== c && conn.open) { try { conn.close(); } catch(e){} }
-        conn = c; handshakeDone = false;
-        setupConnection(conn, true, c.peer);
-    });
-    peer.on('disconnected', function() { if (peer && !peer.destroyed) { try { peer.reconnect(); } catch(e){} } });
-    peer.on('error', function(err) {
-        if (err.type === 'unavailable-id') {
-            if (isHost) { localStorage.removeItem('my_p2p_host_id'); setTimeout(() => initPeer(true), 500); }
-        } else if (err.type === 'peer-unavailable') {
-            if (!isHost) {
-                isConnecting = false; clearTimeout(connectTimer);
-                document.getElementById('p2p-status').innerText = "⏳ 主机不在线";
-                document.getElementById('p2p-status').style.color = "#eb5757";
-                p2pIndicator.className = 'p2p-dot';
-                if (isAutoReconnecting) setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 3000);
-            }
-        }
-    });
-};
-function startAutoConnectLoop() {
-    if (!isAutoReconnecting) return;
-    const lastPeer = localStorage.getItem('last_connected_peer');
-    if (!lastPeer) { isAutoReconnecting = false; return; }
-    if (conn && conn.open) { isAutoReconnecting = false; isConnecting = false; return; }
-    if (isConnecting) return;
-    if (!peer || peer.destroyed) { initPeer(false); setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 300); return; }
-    if (peer.disconnected) { try { peer.reconnect(); } catch(e){} setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 500); return; }
-    if (!peer.open) { setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 300); return; }
-    isConnecting = true; handshakeDone = false;
-    document.getElementById('p2p-status').innerText = "🔄 寻找主机...";
-    document.getElementById('p2p-status').style.color = "#f2994a";
-    p2pIndicator.className = 'p2p-dot connecting';
-    if (conn) { try { conn.close(); } catch(e){} conn = null; }
-    currentTargetPeer = lastPeer;
-    try { conn = peer.connect(lastPeer, { reliable: true }); }
-    catch (e) { isConnecting = false; setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 1000); return; }
-    setupConnection(conn, false, lastPeer);
-    clearTimeout(connectTimer);
-    connectTimer = setTimeout(() => {
-        if (isConnecting && (!conn || !conn.open)) {
-            isConnecting = false;
-            if (conn) { try { conn.close(); } catch(e){} conn = null; }
-            if (isAutoReconnecting) setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 1000);
-        }
-    }, 7000);
-}
-window.connectToPeer = function(targetId = null) {
-    isAutoReconnecting = false; isConnecting = false; handshakeDone = false;
-    clearTimeout(connectTimer);
-    const id = targetId || document.getElementById('target-peer-id').value.trim();
-    if (!id) { alert('请输入连接码'); return; }
-    document.getElementById('p2p-status').innerText = "正在连接...";
-    document.getElementById('p2p-status').style.color = "#f2994a";
-    p2pIndicator.className = 'p2p-dot connecting';
-    const doConnect = () => {
-        if (!peer || peer.destroyed) { initPeer(false); setTimeout(doConnect, 500); return; }
-        if (peer.disconnected) { try { peer.reconnect(); } catch(e){} setTimeout(doConnect, 500); return; }
-        if (!peer.open) { setTimeout(doConnect, 300); return; }
-        if (conn) { try { conn.close(); } catch(e){} conn = null; }
-        currentTargetPeer = id;
-        try { conn = peer.connect(id, { reliable: true }); }
-        catch (e) { document.getElementById('p2p-status').innerText = "❌ 连接失败"; return; }
-        setupConnection(conn, false, id);
-        clearTimeout(connectTimer);
-        connectTimer = setTimeout(() => {
-            if (conn && !conn.open) {
-                document.getElementById('p2p-status').innerText = "❌ 连接超时";
-                document.getElementById('p2p-status').style.color = "#eb5757";
-                p2pIndicator.className = 'p2p-dot';
-                try { conn.close(); } catch(e){}
-            }
-        }, 7000);
-    };
-    doConnect();
-};
-function applyRemoteData(payload) {
-    isSyncing = true;
-    appData = payload;
-    if (!appData._lastModified) appData._lastModified = 1;
-    if (!appData.panelNotes) appData.panelNotes = { learning: '', other: '', exercise: '' };
-    ensureEnergyData();
-    if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
-    if (appData.fontSize) {
-        document.documentElement.style.setProperty('--base-font-size', appData.fontSize);
-        const s = document.getElementById('font-size-slider'), v = document.getElementById('font-size-val');
-        const n = parseInt(appData.fontSize);
-        if (s) s.value = n;
-        if (v) v.innerText = n;
-    }
-    lastSavedSignature = getDataSignature(appData);
-    lastRpgState = null;
-    renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderPanelNotes(); renderEnergyAndRPG(); renderLevelConfig();
-    saveLocalStorage();
-    isSyncing = false;
-}
-function setupConnection(connection, isHost, targetId) {
-    connection.on('open', () => {
-        if (conn !== connection) return;
-        isAutoReconnecting = false; isConnecting = false; handshakeDone = false;
-        clearTimeout(connectTimer);
-        document.getElementById('p2p-status').innerText = "🔗 已连接，比较数据...";
-        document.getElementById('p2p-status').style.color = "#f2994a";
-        p2pIndicator.className = 'p2p-dot connected';
-        if (!isHost && targetId) {
-            let history = JSON.parse(localStorage.getItem('my_p2p_history') || '[]');
-            if (!history.includes(targetId)) {
-                history.unshift(targetId);
-                if (history.length > 5) history.pop();
-                localStorage.setItem('my_p2p_history', JSON.stringify(history));
-            }
-            localStorage.setItem('last_connected_peer', targetId);
-            renderP2PHistory();
-        }
-        try { connection.send({ type: 'SYNC_META', lastModified: appData._lastModified || 1 }); } catch(e){}
-    });
-    connection.on('data', (data) => {
-        if (conn !== connection || !data || !data.type) return;
-        if (data.type === 'SYNC_META') {
-            const r = data.lastModified || 1, l = appData._lastModified || 1;
-            if (r > l) {
-                try { connection.send({ type: 'SYNC_NEED_DATA' }); } catch(e){}
-                document.getElementById('p2p-status').innerText = "📥 拉取中...";
-            } else if (r < l) {
-                try { connection.send({ type: 'SYNC_DATA', payload: appData, lastModified: l }); } catch(e){}
-                document.getElementById('p2p-status').innerText = "📤 已发送...";
-            } else {
-                handshakeDone = true;
-                document.getElementById('p2p-status').innerText = "✅ 已连接，实时同步";
-                document.getElementById('p2p-status').style.color = "#27ae60";
-            }
-        } else if (data.type === 'SYNC_NEED_DATA') {
-            try { connection.send({ type: 'SYNC_DATA', payload: appData, lastModified: appData._lastModified || 1 }); } catch(e){}
-        } else if (data.type === 'SYNC_DATA') {
-            if (data.lastModified && data.lastModified < (appData._lastModified || 1)) return;
-            applyRemoteData(data.payload);
-            handshakeDone = true;
-            document.getElementById('p2p-status').innerText = "✅ 已同步";
-            document.getElementById('p2p-status').style.color = "#27ae60";
-        }
-    });
-    connection.on('close', () => {
-        if (conn !== connection) return;
-        isConnecting = false; handshakeDone = false; clearTimeout(connectTimer);
-        p2pIndicator.className = 'p2p-dot';
-        conn = null;
-        if (!isAutoReconnecting) {
-            document.getElementById('p2p-status').innerText = "❌ 连接已断开";
-            document.getElementById('p2p-status').style.color = "#999";
-        } else {
-            setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 1000);
-        }
-    });
-    connection.on('error', (err) => { if (conn !== connection) return; console.log("Err:", err); });
-}
-
-/* =========================================================
-   9. 主题 / 字体 / 备注
-   ========================================================= */
-function changeTheme(color) { appData.themeColor = color; document.documentElement.style.setProperty('--accent-color', color); if (!isSyncing) saveDataToFile(appData); }
 function changeFontSize(s) {
     const n = parseInt(s);
     appData.fontSize = n + 'px';
@@ -1409,7 +1295,7 @@ window.handlePanelNoteInput = function(key, val) {
 };
 
 /* =========================================================
-   10. 面板布局
+   6. 面板布局
    ========================================================= */
 function applyPanelLayout() {
     ensureEnergyData();
@@ -1443,17 +1329,21 @@ function setupResizeObserver() {
     const grid = document.getElementById('day-panels-grid');
     if (!grid) return;
     ensureEnergyData();
+    let resizeDebounce = null;
     resizeObserver = new ResizeObserver(entries => {
-        let changed = false;
-        entries.forEach(entry => {
-            const p = entry.target, k = p.getAttribute('data-panel');
-            if (!k) return;
-            const w = p.style.width, h = p.style.height;
-            if (!appData.panelLayout.sizes[k]) appData.panelLayout.sizes[k] = {};
-            if (w && appData.panelLayout.sizes[k].w !== w) { appData.panelLayout.sizes[k].w = w; changed = true; }
-            if (h && appData.panelLayout.sizes[k].h !== h) { appData.panelLayout.sizes[k].h = h; changed = true; }
-        });
-        if (changed) saveDataToFile(appData);
+        clearTimeout(resizeDebounce);
+        resizeDebounce = setTimeout(() => {
+            let changed = false;
+            entries.forEach(entry => {
+                const p = entry.target, k = p.getAttribute('data-panel');
+                if (!k) return;
+                const w = p.style.width, h = p.style.height;
+                if (!appData.panelLayout.sizes[k]) appData.panelLayout.sizes[k] = {};
+                if (w && appData.panelLayout.sizes[k].w !== w) { appData.panelLayout.sizes[k].w = w; changed = true; }
+                if (h && appData.panelLayout.sizes[k].h !== h) { appData.panelLayout.sizes[k].h = h; changed = true; }
+            });
+            if (changed) saveDataToFile(appData);
+        }, 500); // 500ms 防抖
     });
     grid.querySelectorAll('[data-panel]').forEach(p => resizeObserver.observe(p));
 }
@@ -1471,7 +1361,7 @@ function initDragAndDrop() {
 }
 
 /* =========================================================
-   11. 时间导航 & 跳转
+   7. 时间与进度
    ========================================================= */
 window.changeMonth = function(o) {
     appData.viewMonth += o;
@@ -1492,9 +1382,6 @@ window.jumpToDay = function(ds) {
     document.querySelector('.nav-item[data-target="day"]').click();
 };
 
-/* =========================================================
-   12. 进度计算与渲染
-   ========================================================= */
 function getSubTaskProgress(s, ds) {
     const done = isSubTaskDone(s, ds);
     if (s.target) {
@@ -1526,25 +1413,36 @@ function syncParentTaskStatus(t, ds) {
     });
     setTaskDone(t, ds, allDone);
 }
+
 function calcProgress(dateStr, type) {
+    const cacheKey = `${dateStr}_${type}`;
+    if (_progressCache[cacheKey]) return _progressCache[cacheKey];
+
     if (type === '锻炼') {
         const manual = appData.exerciseSchedule[dateStr] || [];
         const recurring = appData.exercises.filter(e => isRecurringMatch(e.recurringType, dateStr)).map(e => e.name);
         const names = [...new Set([...manual, ...recurring])];
-        if (names.length === 0) return { done: 0, total: 0 };
+        if (names.length === 0) {
+            _progressCache[cacheKey] = { done: 0, total: 0 };
+            return _progressCache[cacheKey];
+        }
         let tot = 0, d = 0;
         const checks = appData.dailyExerciseChecks[dateStr] || {};
         names.forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
             if (ex && ex.subTasks) ex.subTasks.forEach(s => { tot++; if (checks[`${ex.id}_${s.id}`]) d++; });
         });
-        return { done: d, total: tot };
+        _progressCache[cacheKey] = { done: d, total: tot };
+        return _progressCache[cacheKey];
     }
+    
     const tasks = getTasksForDate(dateStr).filter(t => t.type === type);
     let d = 0, tot = 0;
     tasks.forEach(t => { const p = getTaskProgress(t, dateStr); d += p.done; tot += p.total; });
-    return { done: d, total: tot };
+    _progressCache[cacheKey] = { done: d, total: tot };
+    return _progressCache[cacheKey];
 }
+
 function renderStats(cid, s, e, p) {
     const c = document.getElementById(cid);
     if (!c) return;
@@ -1573,6 +1471,7 @@ function renderStats(cid, s, e, p) {
         <div class="stat-card exercise"><div class="stat-value" style="color:#27ae60;">${ed}</div><div class="stat-label">💪 ${p}锻炼</div></div>
     `;
 }
+
 function renderYearHeatmap() {
     document.getElementById('year-display').innerText = appData.viewYear + '年';
     const h = document.getElementById('year-heatmap');
@@ -1592,7 +1491,7 @@ function renderYearHeatmap() {
             const pct = (done / tot) * 100;
             if (pct === 100) { div.style.backgroundColor = '#27ae60'; div.style.color = '#fff'; }
             else { const hue = pct * 1.2; div.style.backgroundColor = `hsl(${hue}, 70%, 60%)`; div.style.color = hue > 50 ? '#333' : '#fff'; }
-        } else { div.style.backgroundColor = '#ebedf0'; div.style.color = '#999'; }
+        } else { div.style.backgroundColor = 'var(--bg-sidebar)'; div.style.color = 'var(--text-muted)'; }
         if (ds === td) div.classList.add('today-cell');
         div.onclick = () => { jumpToDay(ds); appData.viewYear = d.getFullYear(); appData.viewMonth = d.getMonth(); };
         h.appendChild(div);
@@ -1602,6 +1501,7 @@ function renderYearHeatmap() {
     document.getElementById('yearly-goals').innerText = g;
     document.getElementById('yearly-goals-bottom').value = g;
 }
+
 function renderCalendar() {
     const grid = document.getElementById('calendar-grid');
     grid.innerHTML = '';
@@ -1631,7 +1531,7 @@ function renderCalendar() {
         if (lp.total > 0) { const p = Math.round((lp.done/lp.total)*100); sHtml += `<div class="mini-bar-row"><span>📚学习</span><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${p}%;background:#2383e2;"></div></div><span>${p}%</span></div>`; }
         if (op.total > 0) { const p = Math.round((op.done/op.total)*100); sHtml += `<div class="mini-bar-row"><span>🧺其他</span><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${p}%;background:#f2994a;"></div></div><span>${p}%</span></div>`; }
         if (ep.total > 0) { const p = Math.round((ep.done/ep.total)*100); sHtml += `<div class="mini-bar-row"><span>💪锻炼</span><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${p}%;background:#27ae60;"></div></div><span>${p}%</span></div>`; }
-        if (tot === 0) sHtml += '<div style="color:#aaa;font-size:0.8em;text-align:center;margin-top:8px;">🌸 无任务</div>';
+        if (tot === 0) sHtml += '<div style="color:var(--text-muted);font-size:0.8em;text-align:center;margin-top:8px;">🌸 无任务</div>';
         sHtml += '</div>';
         let refl = '';
         if (appData.dailyReflections[ds] && appData.dailyReflections[ds].trim()) {
@@ -1651,6 +1551,7 @@ function renderCalendar() {
     }
     renderStats('stats-month', formatDate(y, m, 1), formatDate(y, m, dim), '月');
 }
+
 function createWeekTaskDOM(t, ds) {
     const item = document.createElement('div');
     item.className = 'task-item';
@@ -1669,6 +1570,7 @@ function createWeekTaskDOM(t, ds) {
     item.appendChild(cb); item.appendChild(text);
     return item;
 }
+
 function removeExerciseFromDate(name, ds) {
     if (!appData.exerciseSchedule[ds]) return;
     appData.exerciseSchedule[ds] = appData.exerciseSchedule[ds].filter(n => n !== name);
@@ -1679,6 +1581,7 @@ function isExerciseAllChecked(ds, ex) {
     const c = appData.dailyExerciseChecks[ds] || {};
     return ex.subTasks.every(s => c[`${ex.id}_${s.id}`]);
 }
+
 function renderWeekBoard() {
     const board = document.getElementById('week-board');
     board.innerHTML = '';
@@ -1697,8 +1600,7 @@ function renderWeekBoard() {
         col.className = 'week-column' + (isToday ? ' today-col' : '');
         col.ondrop = (e) => handleDrop(e, ds);
         col.ondragover = allowDrop;
-        // 添加点击表头跳转逻辑
-        col.innerHTML = `<div class="week-column-header" onclick="jumpToDay('${ds}')" title="点击跳转到该日的日计划">${dn} <br><span style="font-size:0.85em;color:#999">${cd.getMonth()+1}/${cd.getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
+        col.innerHTML = `<div class="week-column-header" onclick="jumpToDay('${ds}')" title="点击跳转到该日的日计划">${dn} <br><span style="font-size:0.85em;color:var(--text-muted);">${cd.getMonth()+1}/${cd.getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
         getTasksForDate(ds).forEach(t => col.appendChild(createWeekTaskDOM(t, ds)));
         const manual = appData.exerciseSchedule[ds] || [];
         const rec = appData.exercises.filter(e => isRecurringMatch(e.recurringType, ds)).map(e => e.name);
@@ -1740,6 +1642,7 @@ function renderWeekBoard() {
     const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
     renderStats('stats-week', formatDate(mon.getFullYear(), mon.getMonth(), mon.getDate()), formatDate(sun.getFullYear(), sun.getMonth(), sun.getDate()), '周');
 }
+
 function renderExercisePool() {
     const pool = document.getElementById('exercise-pool');
     pool.innerHTML = '';
@@ -1752,6 +1655,7 @@ function renderExercisePool() {
         pool.appendChild(div);
     });
 }
+
 function renderTaskPool() {
     const td = getTodayString();
     const pl = document.getElementById('task-pool-learning');
@@ -1770,7 +1674,7 @@ function renderTaskPool() {
 }
 
 /* =========================================================
-   13. 任务 DOM
+   8. 任务渲染
    ========================================================= */
 window.enableTaskEdit = function(span, taskId, subId) {
     if (span.dataset.editing === '1') return;
@@ -1779,7 +1683,7 @@ window.enableTaskEdit = function(span, taskId, subId) {
     const input = document.createElement('input');
     input.type = 'text';
     input.value = orig;
-    input.style.cssText = 'font:inherit;padding:2px 6px;border:1px solid var(--accent-color);border-radius:4px;width:100%;max-width:360px;background:#fff;outline:none;';
+    input.style.cssText = 'font:inherit;padding:2px 6px;border:1px solid var(--accent-color);border-radius:4px;width:100%;max-width:360px;background:var(--bg-input);color:var(--text-main);outline:none;';
     span.style.display = 'none';
     span.parentNode.insertBefore(input, span.nextSibling);
     input.focus(); input.select();
@@ -1879,7 +1783,7 @@ function generateTaskDOM(task, ds) {
     }
     const defEC = task.target ? 1 : 10;
     const ec = task.energyCost !== undefined ? task.energyCost : defEC;
-    let html = `<div class="main-task-header"><div class="main-task-left">${headerLeft}</div><div class="task-meta"><span class="btn-estimate" title="预计完成时长" onclick="setTaskEstimate('${task.id}')">⏱</span><span class="btn-energy" title="精力消耗" onclick="setTaskEnergyCost('${task.id}')">⚡${ec}</span><span class="btn-pin ${pinC}" title="置顶" onclick="togglePinTask('${task.id}')">📌</span><span class="btn-target" title="次数" onclick="setTaskTarget('${task.id}')">#</span><span class="btn-loop ${loopC}" title="循环" onclick="toggleRecurring('${task.id}')">🔁</span><div style="display:flex;align-items:center;gap:4px;" title="${dlT}"><span style="font-size:1em;color:#999;">📅</span><input type="date" class="deadline-input ${dlC}" value="${task.deadline || ''}" onchange="setDeadline('${task.id}', this.value)"></div><span class="btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span></div></div>`;
+    let html = `<div class="main-task-header"><div class="main-task-left">${headerLeft}</div><div class="task-meta"><span class="btn-estimate" title="预计完成时长" onclick="setTaskEstimate('${task.id}')">⏱</span><span class="btn-energy" title="精力消耗" onclick="setTaskEnergyCost('${task.id}')">⚡${ec}</span><span class="btn-pin ${pinC}" title="置顶" onclick="togglePinTask('${task.id}')">📌</span><span class="btn-target" title="次数" onclick="setTaskTarget('${task.id}')">#</span><span class="btn-loop ${loopC}" title="循环" onclick="toggleRecurring('${task.id}')">🔁</span><div style="display:flex;align-items:center;gap:4px;" title="${dlT}"><span style="font-size:1em;color:var(--text-muted);">📅</span><input type="date" class="deadline-input ${dlC}" value="${task.deadline || ''}" onchange="setDeadline('${task.id}', this.value)"></div><span class="btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span></div></div>`;
 
     html += `<div class="sub-task-list">`;
     if (hasSub) {
@@ -1909,6 +1813,7 @@ function generateTaskDOM(task, ds) {
     div.innerHTML = html;
     return div;
 }
+
 function renderDayPlan() {
     document.getElementById('day-title').innerText = `📝 日计划 (${getDateLabel(appData.selectedDate)})`;
     const ll = document.getElementById('learning-list'), ol = document.getElementById('other-list');
@@ -1970,7 +1875,7 @@ function renderTaskListModalContent(type) {
     const body = document.getElementById('task-list-modal-body');
     const { active, done } = getCategoryTasks(type);
     body.innerHTML = '';
-    if (active.length === 0 && done.length === 0) { body.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">暂无任务</div>'; return; }
+    if (active.length === 0 && done.length === 0) { body.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;">暂无任务</div>'; return; }
     const ds = appData.selectedDate;
     active.forEach(t => body.appendChild(generateTaskDOM(t, ds)));
     if (done.length > 0) {
@@ -2004,7 +1909,7 @@ function renderDayExercises() {
         const all = isCategoryAllChecked(ex.id);
         let html = `<div class="exercise-card-header"><div class="exercise-header-left"><input type="checkbox" class="exercise-cat-checkbox" ${all ? 'checked' : ''} onchange="toggleExerciseCategory('${ex.id}')"><span class="exercise-name" title="${ex.name}" ondblclick="renameExerciseCategory('${ex.id}')">${ex.name}</span>${loopL}</div><div class="exercise-header-right"><span class="btn-energy" title="精力消耗" onclick="setExerciseEnergyCost('${ex.id}')">⚡${ex.energyCost || 15}</span><span class="btn-loop ${loopC}" title="循环" onclick="toggleExerciseRecurring('${ex.id}')">🔁</span><span class="btn-del-ex" title="删除" onclick="deleteExerciseCategory('${ex.id}')">✖</span></div></div><div class="exercise-content">`;
         if (ex.subTasks.length === 0) {
-            html += '<div style="color:#aaa;text-align:center;font-size:0.85em;margin:8px 0;">👇 点击下方添加动作</div>';
+            html += '<div style="color:var(--text-muted);text-align:center;font-size:0.85em;margin:8px 0;">👇 点击下方添加动作</div>';
         } else {
             const act = ex.subTasks.filter(s => !checks[`${ex.id}_${s.id}`]);
             const done = ex.subTasks.filter(s => checks[`${ex.id}_${s.id}`]);
@@ -2015,14 +1920,14 @@ function renderDayExercises() {
                 html += `</details>`;
             }
         }
-        html += `</div><div style="margin-top:8px;display:flex;gap:4px;"><input type="text" style="flex:1;min-width:0;border:1px solid #ddd;padding:4px 6px;border-radius:4px;font-size:0.85em;" placeholder="🏋️ 添加动作..." onkeypress="addExerciseTask(event, '${ex.id}')"></div>`;
+        html += `</div><div style="margin-top:8px;display:flex;gap:4px;"><input type="text" style="flex:1;min-width:0;border:1px solid var(--border-color);padding:4px 6px;border-radius:4px;font-size:0.85em;background:var(--bg-input);color:var(--text-main);" placeholder="🏋️ 添加动作..." onkeypress="addExerciseTask(event, '${ex.id}')"></div>`;
         card.innerHTML = html;
         grid.appendChild(card);
     });
 }
 
 /* =========================================================
-   14. 导航 / 反思 / 拖拽
+   9. 导航与拖拽
    ========================================================= */
 document.querySelectorAll('.nav-item[data-target]').forEach(item => {
     item.addEventListener('click', () => {
@@ -2073,7 +1978,7 @@ function handleDrop(ev, td) {
 }
 
 /* =========================================================
-   15. 任务操作
+   10. 交互操作
    ========================================================= */
 window.deleteTask = function(id) {
     if (!confirm('删除这个任务？')) return;
@@ -2429,7 +2334,7 @@ document.getElementById('yearly-goals').addEventListener('input', e => syncGoal(
 document.getElementById('yearly-goals-bottom').addEventListener('input', e => syncGoal(e.target.value));
 
 /* =========================================================
-   16. 固定进度条
+   11. 固定进度条
    ========================================================= */
 function updateFixedProgressBars() {
     const td = getTodayString();
@@ -2459,7 +2364,7 @@ function updateFixedProgressBars() {
 }
 
 /* =========================================================
-   17. 存档 / 导入导出 / 清空
+   12. 存档与备份
    ========================================================= */
 function getSnapshots() { return JSON.parse(localStorage.getItem('myWorkspaceSnapshots') || '[]'); }
 function saveSnapshots(s) { localStorage.setItem('myWorkspaceSnapshots', JSON.stringify(s)); }
@@ -2483,6 +2388,7 @@ window.restoreSnapshot = function(i) {
         ensureEnergyData();
         lastSavedSignature = '';
         lastRpgState = null;
+        if (appData.themeMode === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
         if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
         if (appData.fontSize) {
             document.documentElement.style.setProperty('--base-font-size', appData.fontSize);
@@ -2508,7 +2414,7 @@ function renderSnapshots() {
     if (!l) return;
     const s = getSnapshots();
     l.innerHTML = '';
-    if (s.length === 0) { l.innerHTML = '<div style="color:#999;font-size:.85em;text-align:center;padding:8px;">暂无存档</div>'; return; }
+    if (s.length === 0) { l.innerHTML = '<div style="color:var(--text-muted);font-size:.85em;text-align:center;padding:8px;">暂无存档</div>'; return; }
     s.forEach((sn, i) => {
         const d = document.createElement('div');
         d.className = 'snapshot-item';
@@ -2535,6 +2441,7 @@ window.importData = function(e) {
                 ensureEnergyData();
                 lastSavedSignature = '';
                 lastRpgState = null;
+                if (appData.themeMode === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
                 if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
                 if (appData.fontSize) {
                     document.documentElement.style.setProperty('--base-font-size', appData.fontSize);
@@ -2558,7 +2465,7 @@ window.resetAllData = function() {
 };
 
 /* =========================================================
-   18. 自动备份
+   13. 自动备份与 P2P（保留原有逻辑）
    ========================================================= */
 let backupDirHandle = null, pendingBackupHandle = null;
 let autoBackupTimer = null, isBackingUp = false, autoBackupIntervalMin = 3;
@@ -2689,18 +2596,254 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 /* =========================================================
-   19. 更新日志
+   14. 其他基础逻辑
    ========================================================= */
+window.copyHostId = function() {
+    const t = document.getElementById('my-peer-id').innerText.trim();
+    if (!t || t === '未生成') { alert('请先点击“开启”'); return; }
+    copyTextToClipboard(t, '✅ 连接码已复制！');
+};
+function renderP2PHistory() {
+    const container = document.getElementById('p2p-history-list');
+    let history = JSON.parse(localStorage.getItem('my_p2p_history') || '[]');
+    container.innerHTML = '';
+    if (history.length === 0) { container.innerHTML = '<span style="font-size:.8em;color:var(--text-muted);">暂无</span>'; return; }
+    history.forEach(id => {
+        const w = document.createElement('div');
+        w.style.cssText = 'display:flex;align-items:center;background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;overflow:hidden;font-size:.8em;';
+        const c = document.createElement('div');
+        c.style.cssText = 'padding:3px 6px;color:var(--accent-color);cursor:pointer;';
+        c.innerText = id.substring(0, 10) + '...';
+        c.title = id;
+        c.onclick = () => { isAutoReconnecting = false; document.getElementById('target-peer-id').value = id; connectToPeer(); };
+        const cp = document.createElement('div');
+        cp.style.cssText = 'padding:3px 6px;background:var(--hover-bg);color:var(--accent-color);cursor:pointer;border-left:1px solid var(--border-color);';
+        cp.innerText = '📋';
+        cp.onclick = (e) => { e.stopPropagation(); copyTextToClipboard(id, '✅ 已复制：\n' + id); };
+        const d = document.createElement('div');
+        d.style.cssText = 'padding:3px 6px;background:var(--hover-bg);color:var(--danger-color);cursor:pointer;border-left:1px solid var(--border-color);';
+        d.innerText = '✕';
+        d.onclick = (e) => { e.stopPropagation(); deletePeerHistory(id); };
+        w.appendChild(c); w.appendChild(cp); w.appendChild(d);
+        container.appendChild(w);
+    });
+}
+function deletePeerHistory(id) {
+    if (!confirm('确定删除？')) return;
+    let history = JSON.parse(localStorage.getItem('my_p2p_history') || '[]');
+    history = history.filter(x => x !== id);
+    localStorage.setItem('my_p2p_history', JSON.stringify(history));
+    if (localStorage.getItem('last_connected_peer') === id) { localStorage.removeItem('last_connected_peer'); isAutoReconnecting = false; }
+    renderP2PHistory();
+}
+window.resetHostId = function() {
+    if (!confirm('重置同步码？手机需重新连接新码。')) return;
+    localStorage.removeItem('my_p2p_host_id');
+    if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+    if (conn) { try { conn.close(); } catch(e){} conn = null; }
+    document.getElementById('my-peer-id').innerText = '未生成';
+    initPeer(true);
+};
+window.initPeer = function(isHost, isAutoConnect = false) {
+    if (isHost && peer && !peer.destroyed && peer.open && !peer.disconnected) {
+        document.getElementById('my-peer-id').innerText = peer.id;
+        document.getElementById('p2p-status').innerText = "✅ 主机已就绪";
+        document.getElementById('p2p-status').style.color = "#f2994a";
+        return;
+    }
+    if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+    if (conn) { try { conn.close(); } catch(e){} conn = null; }
+    isConnecting = false; handshakeDone = false; clearTimeout(connectTimer);
+    let customId = null;
+    if (isHost) {
+        customId = localStorage.getItem('my_p2p_host_id');
+        if (!customId) { customId = generatePeerId(); localStorage.setItem('my_p2p_host_id', customId); }
+        document.getElementById('my-peer-id').innerText = customId;
+    }
+    peer = new Peer(customId, {
+        debug: 1,
+        config: { iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun.cloudflare.com:3478' }
+        ], iceCandidatePoolSize: 10 },
+        pingInterval: 3000
+    });
+    peer.on('open', function(id) {
+        if (isHost) {
+            document.getElementById('my-peer-id').innerText = id;
+            document.getElementById('p2p-status').innerText = "✅ 主机已就绪";
+            document.getElementById('p2p-status').style.color = "#f2994a";
+        } else if (isAutoConnect) { isAutoReconnecting = true; startAutoConnectLoop(); }
+    });
+    peer.on('connection', function(c) {
+        if (conn && conn !== c && conn.open) { try { conn.close(); } catch(e){} }
+        conn = c; handshakeDone = false;
+        setupConnection(conn, true, c.peer);
+    });
+    peer.on('disconnected', function() { if (peer && !peer.destroyed) { try { peer.reconnect(); } catch(e){} } });
+    peer.on('error', function(err) {
+        if (err.type === 'unavailable-id') {
+            if (isHost) { localStorage.removeItem('my_p2p_host_id'); setTimeout(() => initPeer(true), 500); }
+        } else if (err.type === 'peer-unavailable') {
+            if (!isHost) {
+                isConnecting = false; clearTimeout(connectTimer);
+                document.getElementById('p2p-status').innerText = "⏳ 主机不在线";
+                document.getElementById('p2p-status').style.color = "var(--danger-color)";
+                p2pIndicator.className = 'p2p-dot';
+                if (isAutoReconnecting) setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 3000);
+            }
+        }
+    });
+};
+function startAutoConnectLoop() {
+    if (!isAutoReconnecting) return;
+    const lastPeer = localStorage.getItem('last_connected_peer');
+    if (!lastPeer) { isAutoReconnecting = false; return; }
+    if (conn && conn.open) { isAutoReconnecting = false; isConnecting = false; return; }
+    if (isConnecting) return;
+    if (!peer || peer.destroyed) { initPeer(false); setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 300); return; }
+    if (peer.disconnected) { try { peer.reconnect(); } catch(e){} setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 500); return; }
+    if (!peer.open) { setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 300); return; }
+    isConnecting = true; handshakeDone = false;
+    document.getElementById('p2p-status').innerText = "🔄 寻找主机...";
+    document.getElementById('p2p-status').style.color = "#f2994a";
+    p2pIndicator.className = 'p2p-dot connecting';
+    if (conn) { try { conn.close(); } catch(e){} conn = null; }
+    currentTargetPeer = lastPeer;
+    try { conn = peer.connect(lastPeer, { reliable: true }); }
+    catch (e) { isConnecting = false; setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 1000); return; }
+    setupConnection(conn, false, lastPeer);
+    clearTimeout(connectTimer);
+    connectTimer = setTimeout(() => {
+        if (isConnecting && (!conn || !conn.open)) {
+            isConnecting = false;
+            if (conn) { try { conn.close(); } catch(e){} conn = null; }
+            if (isAutoReconnecting) setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 1000);
+        }
+    }, 7000);
+}
+window.connectToPeer = function(targetId = null) {
+    isAutoReconnecting = false; isConnecting = false; handshakeDone = false;
+    clearTimeout(connectTimer);
+    const id = targetId || document.getElementById('target-peer-id').value.trim();
+    if (!id) { alert('请输入连接码'); return; }
+    document.getElementById('p2p-status').innerText = "正在连接...";
+    document.getElementById('p2p-status').style.color = "#f2994a";
+    p2pIndicator.className = 'p2p-dot connecting';
+    const doConnect = () => {
+        if (!peer || peer.destroyed) { initPeer(false); setTimeout(doConnect, 500); return; }
+        if (peer.disconnected) { try { peer.reconnect(); } catch(e){} setTimeout(doConnect, 500); return; }
+        if (!peer.open) { setTimeout(doConnect, 300); return; }
+        if (conn) { try { conn.close(); } catch(e){} conn = null; }
+        currentTargetPeer = id;
+        try { conn = peer.connect(id, { reliable: true }); }
+        catch (e) { document.getElementById('p2p-status').innerText = "❌ 连接失败"; return; }
+        setupConnection(conn, false, id);
+        clearTimeout(connectTimer);
+        connectTimer = setTimeout(() => {
+            if (conn && !conn.open) {
+                document.getElementById('p2p-status').innerText = "❌ 连接超时";
+                document.getElementById('p2p-status').style.color = "var(--danger-color)";
+                p2pIndicator.className = 'p2p-dot';
+                try { conn.close(); } catch(e){}
+            }
+        }, 7000);
+    };
+    doConnect();
+};
+function applyRemoteData(payload) {
+    isSyncing = true;
+    appData = payload;
+    if (!appData._lastModified) appData._lastModified = 1;
+    if (!appData.panelNotes) appData.panelNotes = { learning: '', other: '', exercise: '' };
+    ensureEnergyData();
+    if (appData.themeMode === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
+    if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
+    if (appData.fontSize) {
+        document.documentElement.style.setProperty('--base-font-size', appData.fontSize);
+        const s = document.getElementById('font-size-slider'), v = document.getElementById('font-size-val');
+        const n = parseInt(appData.fontSize);
+        if (s) s.value = n;
+        if (v) v.innerText = n;
+    }
+    lastSavedSignature = getDataSignature(appData);
+    lastRpgState = null;
+    clearProgressCache();
+    renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderPanelNotes(); renderEnergyAndRPG(); renderLevelConfig();
+    saveLocalStorage();
+    isSyncing = false;
+}
+function setupConnection(connection, isHost, targetId) {
+    connection.on('open', () => {
+        if (conn !== connection) return;
+        isAutoReconnecting = false; isConnecting = false; handshakeDone = false;
+        clearTimeout(connectTimer);
+        document.getElementById('p2p-status').innerText = "🔗 已连接，比较数据...";
+        document.getElementById('p2p-status').style.color = "#f2994a";
+        p2pIndicator.className = 'p2p-dot connected';
+        if (!isHost && targetId) {
+            let history = JSON.parse(localStorage.getItem('my_p2p_history') || '[]');
+            if (!history.includes(targetId)) {
+                history.unshift(targetId);
+                if (history.length > 5) history.pop();
+                localStorage.setItem('my_p2p_history', JSON.stringify(history));
+            }
+            localStorage.setItem('last_connected_peer', targetId);
+            renderP2PHistory();
+        }
+        try { connection.send({ type: 'SYNC_META', lastModified: appData._lastModified || 1 }); } catch(e){}
+    });
+    connection.on('data', (data) => {
+        if (conn !== connection || !data || !data.type) return;
+        if (data.type === 'SYNC_META') {
+            const r = data.lastModified || 1, l = appData._lastModified || 1;
+            if (r > l) {
+                try { connection.send({ type: 'SYNC_NEED_DATA' }); } catch(e){}
+                document.getElementById('p2p-status').innerText = "📥 拉取中...";
+            } else if (r < l) {
+                try { connection.send({ type: 'SYNC_DATA', payload: appData, lastModified: l }); } catch(e){}
+                document.getElementById('p2p-status').innerText = "📤 已发送...";
+            } else {
+                handshakeDone = true;
+                document.getElementById('p2p-status').innerText = "✅ 已连接，实时同步";
+                document.getElementById('p2p-status').style.color = "#27ae60";
+            }
+        } else if (data.type === 'SYNC_NEED_DATA') {
+            try { connection.send({ type: 'SYNC_DATA', payload: appData, lastModified: appData._lastModified || 1 }); } catch(e){}
+        } else if (data.type === 'SYNC_DATA') {
+            if (data.lastModified && data.lastModified < (appData._lastModified || 1)) return;
+            applyRemoteData(data.payload);
+            handshakeDone = true;
+            document.getElementById('p2p-status').innerText = "✅ 已同步";
+            document.getElementById('p2p-status').style.color = "#27ae60";
+        }
+    });
+    connection.on('close', () => {
+        if (conn !== connection) return;
+        isConnecting = false; handshakeDone = false; clearTimeout(connectTimer);
+        p2pIndicator.className = 'p2p-dot';
+        conn = null;
+        if (!isAutoReconnecting) {
+            document.getElementById('p2p-status').innerText = "❌ 连接已断开";
+            document.getElementById('p2p-status').style.color = "var(--text-muted)";
+        } else {
+            setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 1000);
+        }
+    });
+    connection.on('error', (err) => { if (conn !== connection) return; console.log("Err:", err); });
+}
+
 function renderChangelog() {
     const list = document.getElementById('changelog-list');
     if (!list) return;
     list.innerHTML = APP_CHANGELOG.map(v => `
-        <div style="padding:6px 0;border-bottom:1px dashed #eee;">
+        <div style="padding:6px 0;border-bottom:1px dashed var(--border-color);">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
-                <span style="font-weight:700;color:#303f9f;font-size:.85em;">${v.version}</span>
-                <span style="color:#999;font-size:.75em;">${v.date}</span>
+                <span style="font-weight:700;color:var(--accent-color);font-size:.85em;">${v.version}</span>
+                <span style="color:var(--text-muted);font-size:.75em;">${v.date}</span>
             </div>
-            <ul style="margin:0;padding-left:14px;color:#555;font-size:.8em;line-height:1.6;">
+            <ul style="margin:0;padding-left:14px;color:var(--text-main);font-size:.8em;line-height:1.6;">
                 ${v.changes.map(c => `<li>${c}</li>`).join('')}
             </ul>
         </div>
@@ -2708,7 +2851,7 @@ function renderChangelog() {
 }
 
 /* =========================================================
-   20. 初始化
+   15. 初始化
    ========================================================= */
 (function init() {
     const saved = localStorage.getItem('myWorkspaceAppData');
@@ -2733,6 +2876,11 @@ function renderChangelog() {
         if (t.subTasks) t.subTasks.forEach(s => { if (s.energyCost === undefined) s.energyCost = s.target ? 1 : 5; });
     });
     appData.exercises.forEach(ex => { if (ex.energyCost === undefined) ex.energyCost = 15; });
+    
+    // 主题初始化
+    if (appData.themeMode === 'dark') document.body.classList.add('dark-mode');
+    else document.body.classList.remove('dark-mode');
+    
     lastSavedSignature = getDataSignature(appData);
     lastBackupModified = appData._lastModified || 0;
     const si = localStorage.getItem('myWorkspaceBackupInterval');
@@ -2741,6 +2889,7 @@ function renderChangelog() {
     if (slb) lastBackupTime = parseInt(slb) || 0;
     const sel = document.getElementById('backup-interval');
     if (sel) sel.value = String(autoBackupIntervalMin);
+    
     if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
     if (appData.fontSize) {
         document.documentElement.style.setProperty('--base-font-size', appData.fontSize);
@@ -2762,6 +2911,7 @@ function renderChangelog() {
     }
 
     setInterval(() => {
+        if (document.hidden) return;
         const today = getTodayString();
         if (!userPickedDate && appData.selectedDate !== today) {
             appData.selectedDate = today;
