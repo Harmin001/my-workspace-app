@@ -105,6 +105,22 @@ body.dark-mode .btn-energy-restore { background: #333; border-color: #555; color
 body.dark-mode .btn-energy-restore:hover { background: #444; }
 .energy-warn { margin-top: 6px; padding: 4px 8px; font-size: var(--font-hint); background: #ffebee; color: #c62828; border-radius: 4px; border-left: 3px solid var(--danger-color); font-weight: 600; }
 body.dark-mode .energy-warn { background: #3a1c1c; color: #fca5a5; }
+
+/* 精力临界警告特效 */
+.rpg-card.rpg-critical, .rpg-modal-energy.rpg-critical {
+    border-color: var(--danger-color) !important;
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important;
+    animation: pulseRed 1s infinite alternate;
+}
+body.dark-mode .rpg-card.rpg-critical, body.dark-mode .rpg-modal-energy.rpg-critical {
+    background: linear-gradient(135deg, #3a1c1c 0%, #2a1111 100%) !important;
+    border-color: #ef4444 !important;
+}
+@keyframes pulseRed {
+    0% { box-shadow: 0 0 0 rgba(239, 68, 68, 0.4); }
+    100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); }
+}
+
 .rpg-card-main { cursor: pointer; }
 .rpg-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .rpg-level { font-size: var(--font-content); font-weight: 800; color: #b45309; letter-spacing: .5px; display: inline-block; }
@@ -135,7 +151,7 @@ body.dark-mode .rpg-tip { color: var(--text-muted); }
 .rpg-modal, .task-list-modal, .stats-modal, .task-detail-modal { background: var(--bg-card); color: var(--text-main); border-radius: 16px; max-height: 92vh; overflow-y: auto; padding: 20px; position: relative; }
 .rpg-modal { max-width: 560px; width: 100%; }
 .task-list-modal { max-width: 640px; width: 100%; }
-.stats-modal { max-width: 700px; width: 95%; } /* 加大统计窗口 */
+.stats-modal { max-width: 700px; width: 95%; }
 .task-detail-modal { max-width: 900px; width: 95%; }
 
 .rpg-modal-header { text-align: center; margin-bottom: 16px; }
@@ -176,7 +192,6 @@ body.dark-mode .rpg-attr-card .attr-desc { color: var(--text-muted); }
 .stat-bar-track { flex: 1; height: 16px; background: var(--bg-sidebar); border-radius: 4px; overflow: hidden; position: relative; }
 .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
 .stat-bar-val { width: 40px; text-align: right; font-size: var(--font-content); font-weight: bold; flex-shrink: 0; }
-/* 柱状图样式 */
 .chart-title { text-align: center; font-size: var(--font-hint); color: var(--text-muted); margin-bottom: 8px; }
 .bar-chart { display: flex; align-items: flex-end; justify-content: space-between; height: 150px; border-bottom: 2px solid var(--border-color); padding-bottom: 4px; gap: 4px; }
 .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; }
@@ -225,14 +240,102 @@ body.dark-mode .deadline-preview { background: #3a1c1c; }
 .heatmap-cell:hover { transform: scale(1.15); z-index: 10; }
 .heatmap-cell.today-cell { outline: 2px solid var(--accent-color); outline-offset: -2px; }
 
-/* 周计划 */
-.week-board { display: flex; gap: 8px; height: 400px; margin-bottom: 24px; flex-shrink: 0; }
+/* 周计划（课表化） */
+.week-board { 
+    display: grid; 
+    grid-template-columns: 60px repeat(7, 1fr); 
+    gap: 2px; 
+    margin-bottom: 24px; 
+    background: var(--border-color); 
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.week-grid-header {
+    text-align: center;
+    font-weight: 600;
+    font-size: var(--font-hint);
+    color: var(--text-muted);
+    padding: 8px 4px;
+    background: var(--bg-sidebar);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.week-grid-header.today-col {
+    color: var(--accent-color);
+    background: var(--hover-bg);
+}
+.week-time-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: var(--font-small);
+    color: var(--text-muted);
+    background: var(--bg-card);
+    line-height: 1.2;
+    padding: 4px;
+    border-right: 1px solid var(--border-color);
+    white-space: pre-wrap;
+}
+.week-grid-cell {
+    background: var(--bg-card);
+    min-height: 50px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: background 0.2s;
+    position: relative;
+}
+.week-grid-cell.drag-over {
+    background: var(--hover-bg);
+    outline: 2px dashed var(--accent-color);
+    outline-offset: -2px;
+}
+.week-grid-cell.unscheduled-cell {
+    min-height: 80px;
+}
+.week-grid-cell.today-col {
+    background: #f4f8fd;
+}
+body.dark-mode .week-grid-cell.today-col {
+    background: #1a2a3a;
+}
+/* 课表卡片样式 */
+.week-grid-cell .task-item.lecture-task {
+    background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: var(--font-small);
+}
+.week-grid-cell .task-item.lecture-task .task-text {
+    font-weight: 600;
+    line-height: 1.4;
+    word-break: break-all;
+    color: #fff;
+    margin-top: 2px;
+}
+.week-grid-cell .task-item.lecture-task input[type="checkbox"] {
+    margin-right: 4px;
+    margin-top: 0;
+}
+
+/* 移动端周计划退化为列表 */
 .week-column { flex: 1; background: var(--bg-sidebar); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; border: 1px dashed transparent; overflow-y: auto; min-height: 0; }
 .week-column.today-col { border-color: var(--accent-color); background: var(--hover-bg); }
 .week-column.drag-over { border-color: var(--accent-color); background: var(--hover-bg); }
 .week-column-header { font-weight: 600; text-align: center; margin-bottom: 12px; font-size: var(--font-hint); color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px; transition: background .2s; }
 .week-column-header:hover { background: var(--border-color); }
 .week-today-badge { display: inline-block; font-size: var(--font-small); color: #fff; background: var(--accent-color); padding: 1px 6px; border-radius: 8px; margin-top: 2px; }
+
 .todo-section { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 16px; flex-shrink: 0; }
 .todo-input { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 12px; outline: none; font-family: inherit; font-size: var(--font-content); background: var(--bg-input); color: var(--text-main); }
 .todo-input:focus { border-color: var(--accent-color); }
@@ -453,9 +556,14 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
     .mini-bar-row span { display: none !important; }
     .mini-bar-bg { height: 4px; margin-bottom: 2px; border-radius: 2px; }
     .reflection-preview, .deadline-preview { display: none; }
-    .week-board { flex-direction: column; height: auto; gap: 12px; }
-    .week-column { min-height: 80px; max-height: 200px; overflow-y: auto; padding: 8px; }
+    
+    /* 移动端周计划退化为列表 */
+    .week-board { display: flex !important; flex-direction: column; gap: 12px; background: transparent; border: none; height: auto; }
+    .week-grid-header, .week-time-cell { display: none !important; }
+    .week-grid-cell { display: none !important; }
+    .week-column { min-height: 80px; max-height: 200px; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; background: var(--bg-sidebar); border-radius: var(--radius); }
     .week-column-header { margin-bottom: 8px; }
+    
     .todo-lists-container { flex-direction: column; }
     .todo-column { width: 100% !important; resize: none; }
     h1 { font-size: var(--font-title); margin-bottom: 12px; }
@@ -508,7 +616,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 </div>
 </div>
 <div class="energy-rpg-panel">
-<div class="rpg-card">
+<div class="rpg-card" id="rpg-card">
 <div class="rpg-energy-section">
 <div class="energy-header"><span>⚡ 今日精力</span><span id="energy-text">100 / 100</span></div>
 <div class="energy-bar-bg"><div class="energy-bar-fill" id="energy-fill" style="width:100%;"></div></div>
@@ -672,6 +780,15 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <button class="btn btn-sm" onclick="resetLevelConfig()" style="margin-top:6px;color:var(--text-muted);margin-left:6px;">🔄 恢复默认</button>
 </div>
 </div>
+<div class="section-box" style="border-color:#c5cae9;">
+<div class="panel-content">
+<h2 style="color:#303f9f;">⏰ 课表时间段设置</h2>
+<p style="font-size:var(--font-hint);color:var(--text-muted);">每行代表一节课，如 08:00-08:50</p>
+<div id="timeslot-config-list" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:200px;overflow-y:auto;"></div>
+<button class="btn btn-sm" onclick="addTimeSlot()" style="margin-top:6px;color:#303f9f;border-color:#c5cae9;">➕ 添加时间段</button>
+<button class="btn btn-sm" onclick="resetTimeSlots()" style="margin-top:6px;margin-left:6px;">🔄 恢复默认</button>
+</div>
+</div>
 <!-- 常用按钮配置 -->
 <div class="section-box" style="border-color:#a5d6a7;">
 <div class="panel-content">
@@ -768,7 +885,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <div class="rpg-modal-title" id="rpg-modal-title">新手</div>
 <div class="rpg-modal-exp" id="rpg-modal-exp">0 / 100 EXP</div>
 </div>
-<div class="rpg-modal-energy">
+<div class="rpg-modal-energy" id="rpg-modal-energy-panel">
 <div class="energy-header"><span>⚡ 今日精力</span><span id="modal-energy-text">100 / 100</span></div>
 <div class="energy-bar-bg"><div class="energy-bar-fill" id="modal-energy-fill" style="width:100%;"></div></div>
 <div class="energy-actions"><button class="btn-energy-restore" onclick="restoreEnergy('nap')">😴 午睡 +40</button><button class="btn-energy-restore" onclick="restoreEnergy('break')">☕ 课间 +15</button></div>
@@ -777,7 +894,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <div class="rpg-modal-grid" id="rpg-modal-grid"></div>
 <div class="rpg-modal-tips">
 💡 <b>经验规则</b>：每完成一次任务获得与精力消耗相同的 EXP。等级越高升级所需经验越多，等级需求可在设置中自定义。<br>
-⚠️ <b>低精力惩罚</b>：精力低于警告阈值时，完成任务获得的经验减半。<br>
+⚠️ <b>低精力惩罚</b>：精力低于警告阈值时，完成任务获得的经验减半。低于 -20 时只加 1 点。<br>
 💡 <b>属性提升</b>：<br>
 &nbsp;&nbsp;&nbsp;· 完成学习任务 → <b>智力 +1</b><br>
 &nbsp;&nbsp;&nbsp;· 完成锻炼任务 → <b>体力 +1</b><br>
@@ -826,6 +943,11 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
    1. 更新日志
    ========================================================= */
 const APP_CHANGELOG = [
+    { version: 'v2.5.0', date: '2026-11-04', changes: [
+        '新增：周计划升级为课表视图，支持拖拽到具体时间段（可在设置自定义时间段）',
+        '新增：精力值下限扩展至 -20，达到 -20 时强制红色警告，且完成任务只获得 1 EXP',
+        '优化：循环任务达成目标后完整保留进度条并结束循环，不再退回'
+    ]},
     { version: 'v2.4.0', date: '2026-11-03', changes: [
         '新增：带有次数的循环任务在达成目标后自动结束循环',
         '新增：次数任务现在支持超量完成（例如 12/10），且依然增加精力与经验',
@@ -860,6 +982,19 @@ const DEFAULT_LEVELS = [
     { name: '传说', needExp: 800 }
 ];
 
+const DEFAULT_TIMESLOTS = [
+    { id: 'ts1', label: '08:00-08:50' },
+    { id: 'ts2', label: '09:00-09:50' },
+    { id: 'ts3', label: '10:10-11:00' },
+    { id: 'ts4', label: '11:10-12:00' },
+    { id: 'ts5', label: '13:30-14:20' },
+    { id: 'ts6', label: '14:30-15:20' },
+    { id: 'ts7', label: '15:40-16:30' },
+    { id: 'ts8', label: '16:40-17:30' },
+    { id: 'ts9', label: '18:30-19:20' },
+    { id: 'ts10', label: '19:30-20:20' }
+];
+
 let appData = {
     tasks: [],
     exercises: [
@@ -887,7 +1022,8 @@ let appData = {
     rpg: { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' },
     panelLayout: { order: ['learning', 'other', 'exercise'], spans: {}, sizes: {} },
     levelConfig: { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) },
-    commonBtns: ['view', 'target', 'loop', 'deadline', 'delete']
+    commonBtns: ['view', 'target', 'loop', 'deadline', 'delete'],
+    timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS))
 };
 
 let peer = null, conn = null;
@@ -1012,10 +1148,13 @@ function getTasksForDate(dateStr) {
     updateTaskCache();
     const directTasks = _taskMapCache[dateStr] || [];
     
-    // 关键修改：如果任务标记为 completed 彻底完成，或者对应的循环已经结束，则不再循环。
     const recurring = appData.tasks.filter(t => {
         if (!t.recurringType || t.date === 'pool' || t.date > dateStr) return false;
-        if (t.completed) return false; // 任务已完成（可能是昨天或今天），以后不再循环
+        // 如果任务有结束日期，并且查询日期大于结束日期，不显示
+        if (t.recurringEndedDate && dateStr > t.recurringEndedDate) return false;
+        // 防止已经彻底完成的旧循环任务无限循环
+        if (t.completed && t.date < dateStr && !t.recurringEndedDate) return false;
+        
         if (directTasks.includes(t)) return false;
         return isRecurringMatch(t.recurringType, t.date, dateStr);
     });
@@ -1130,9 +1269,14 @@ function ensureEnergyData() {
     if (!appData.radius) appData.radius = "8px";
     if (!appData.commonBtns) appData.commonBtns = ['view', 'target', 'loop', 'deadline', 'delete'];
     if (!appData.fonts) appData.fonts = { title: "18px", content: "14px", hint: "12px", small: "10px" };
+    if (!appData.timeSlots) appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
 }
 function getTodayEnergySpent() { ensureEnergyData(); return appData.dailyEnergy[getTodayString()] || 0; }
-function getTodayEnergyRemaining() { ensureEnergyData(); return Math.max(0, appData.energyMax - getTodayEnergySpent()); }
+function getTodayEnergyRemaining() { 
+    ensureEnergyData(); 
+    let remain = appData.energyMax - getTodayEnergySpent();
+    return Math.max(-20, remain); 
+}
 function isLowEnergy() { return getTodayEnergyRemaining() < (appData.energyWarnThreshold || 30); }
 function adjustTodayEnergy(delta) {
     ensureEnergyData();
@@ -1143,7 +1287,14 @@ function adjustTodayEnergy(delta) {
 function adjustExp(delta) {
     ensureEnergyData();
     let finalDelta = delta;
-    if (delta > 0 && isLowEnergy()) finalDelta = Math.max(1, Math.floor(delta * 0.5));
+    if (delta > 0) {
+        const remain = getTodayEnergyRemaining();
+        if (remain <= -20) {
+            finalDelta = 1;
+        } else if (remain < (appData.energyWarnThreshold || 30)) {
+            finalDelta = Math.max(1, Math.floor(delta * 0.5));
+        }
+    }
     appData.rpg.exp = Math.max(0, appData.rpg.exp + finalDelta);
     return finalDelta;
 }
@@ -1204,24 +1355,60 @@ function flashElement(el, cls, ms) {
 function renderEnergyAndRPG() {
     ensureEnergyData();
     const max = appData.energyMax, spent = getTodayEnergySpent();
-    const remaining = Math.max(0, max - spent);
+    const remaining = Math.max(-20, max - spent);
     const pct = max > 0 ? Math.max(0, Math.min(100, (remaining / max) * 100)) : 0;
     const low = remaining < (appData.energyWarnThreshold || 30);
-    const energyColor = remaining / max > 0.6 ? '#27ae60' : (remaining / max > 0.3 ? '#f2994a' : '#eb5757');
+    const critical = remaining <= -20;
+    const energyColor = critical ? '#ff0000' : (remaining < 0 ? '#ff4d4d' : (remaining / max > 0.6 ? '#27ae60' : (remaining / max > 0.3 ? '#f2994a' : '#eb5757')));
 
     const energyTextEl = document.getElementById('energy-text');
     const energyFillEl = document.getElementById('energy-fill');
-    if (energyTextEl) { energyTextEl.innerText = `${remaining} / ${max}`; energyTextEl.style.color = low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309'); }
+    if (energyTextEl) { 
+        energyTextEl.innerText = `${remaining} / ${max}`; 
+        energyTextEl.style.color = critical ? '#ff0000' : (low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309')); 
+    }
     if (energyFillEl) { energyFillEl.style.width = pct + '%'; energyFillEl.style.background = energyColor; }
     const warnEl = document.getElementById('energy-warn');
-    if (warnEl) warnEl.style.display = low ? 'block' : 'none';
+    if (warnEl) {
+        if (critical) {
+            warnEl.style.display = 'block';
+            warnEl.innerText = '🚨 精力耗尽（-20），请立刻休息！获得的经验降为1。';
+            warnEl.style.background = '#ff0000'; warnEl.style.color = '#fff';
+        } else if (low) {
+            warnEl.style.display = 'block';
+            warnEl.innerText = '⚠️ 精力过低，注意休息！';
+            warnEl.style.background = ''; warnEl.style.color = '';
+        } else {
+            warnEl.style.display = 'none';
+        }
+    }
 
     const mEText = document.getElementById('modal-energy-text');
     const mEFill = document.getElementById('modal-energy-fill');
     const mWarn = document.getElementById('modal-energy-warn');
-    if (mEText) { mEText.innerText = `${remaining} / ${max}`; mEText.style.color = low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309'); }
+    if (mEText) { mEText.innerText = `${remaining} / ${max}`; mEText.style.color = critical ? '#ff0000' : (low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309')); }
     if (mEFill) { mEFill.style.width = pct + '%'; mEFill.style.background = energyColor; }
-    if (mWarn) mWarn.style.display = low ? 'block' : 'none';
+    if (mWarn) {
+        if (critical) {
+            mWarn.style.display = 'block';
+            mWarn.innerText = '🚨 精力耗尽（-20），请立刻休息！获得的经验降为1。';
+            mWarn.style.background = '#ff0000'; mWarn.style.color = '#fff';
+        } else if (low) {
+            mWarn.style.display = 'block'; mWarn.innerText = '⚠️ 精力过低，注意休息！'; mWarn.style.background = ''; mWarn.style.color = '';
+        } else {
+            mWarn.style.display = 'none';
+        }
+    }
+
+    const rpgCard = document.getElementById('rpg-card');
+    const modalEnergyPanel = document.getElementById('rpg-modal-energy-panel');
+    if (critical) {
+        if (rpgCard) rpgCard.classList.add('rpg-critical');
+        if (modalEnergyPanel) modalEnergyPanel.classList.add('rpg-critical');
+    } else {
+        if (rpgCard) rpgCard.classList.remove('rpg-critical');
+        if (modalEnergyPanel) modalEnergyPanel.classList.remove('rpg-critical');
+    }
 
     const rpg = appData.rpg;
     const { level, expInLevel, needed } = getLevelInfo(rpg.exp);
@@ -1241,7 +1428,7 @@ function renderEnergyAndRPG() {
     const mLv = document.getElementById('mobile-rpg-lv');
     const mEn = document.getElementById('mobile-rpg-energy');
     if (mLv) mLv.innerText = 'Lv.' + level;
-    if (mEn) { mEn.innerText = '⚡' + remaining; mEn.style.color = low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309'); }
+    if (mEn) { mEn.innerText = '⚡' + remaining; mEn.style.color = critical ? '#ff0000' : (low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309')); }
 
     const maxV = document.getElementById('energy-max-val'), maxS = document.getElementById('energy-max-slider');
     if (maxV) maxV.innerText = max;
@@ -1448,6 +1635,38 @@ window.updateCommonBtn = function(btn, checked) {
         appData.commonBtns = appData.commonBtns.filter(b => b !== btn);
     }
     renderDayPlan(); renderTaskPool(); saveDataToFile(appData);
+};
+
+/* 时间段配置逻辑 */
+function renderTimeSlotConfig() {
+    const list = document.getElementById('timeslot-config-list');
+    if (!list) return;
+    list.innerHTML = appData.timeSlots.map((ts, idx) => `
+        <div class="level-config-row" style="display:flex;gap:6px;align-items:center;">
+            <span style="font-size:var(--font-hint);font-weight:bold;color:var(--text-muted);width:30px;">${idx+1}</span>
+            <input type="text" value="${ts.label}" onchange="updateTimeSlot('${ts.id}', this.value)" style="flex:1;padding:4px;font-size:var(--font-hint);">
+            <button class="btn btn-sm" onclick="deleteTimeSlot('${ts.id}')" style="color:var(--danger-color);border-color:var(--danger-color);padding:2px 6px;">✕</button>
+        </div>
+    `).join('');
+}
+window.updateTimeSlot = function(id, val) {
+    const ts = appData.timeSlots.find(t => t.id === id);
+    if (ts) { ts.label = val.trim() || '00:00'; saveDataToFile(appData); renderWeekBoard(); }
+};
+window.addTimeSlot = function() {
+    appData.timeSlots.push({ id: 'ts_' + Date.now(), label: '00:00-00:00' });
+    renderTimeSlotConfig(); saveDataToFile(appData); renderWeekBoard();
+};
+window.deleteTimeSlot = function(id) {
+    if (!confirm('确定删除该时间段？分配到该时间的任务将变为“未安排”。')) return;
+    appData.timeSlots = appData.timeSlots.filter(t => t.id !== id);
+    appData.tasks.forEach(t => { if (t.timeSlot === id) delete t.timeSlot; });
+    renderTimeSlotConfig(); saveDataToFile(appData); renderWeekBoard(); renderTaskPool();
+};
+window.resetTimeSlots = function() {
+    if (!confirm('恢复默认时间段？已分配的任务可能受影响。')) return;
+    appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
+    renderTimeSlotConfig(); saveDataToFile(appData); renderWeekBoard(); renderTaskPool();
 };
 
 /* =========================================================
@@ -1892,16 +2111,136 @@ function renderWeekBoard() {
     mon.setDate(bd.getDate() - dow + 1);
     const todayStr = getTodayString();
     document.getElementById('week-display').innerText = `${mon.getMonth()+1}月${mon.getDate()}日 那一周`;
-    wd.forEach((dn, i) => {
+    
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
         const cd = new Date(mon); cd.setDate(mon.getDate() + i);
-        const ds = formatDate(cd.getFullYear(), cd.getMonth(), cd.getDate());
+        dates.push(formatDate(cd.getFullYear(), cd.getMonth(), cd.getDate()));
+    }
+
+    // 如果是手机端，退回旧的单列列表视图
+    if (window.innerWidth <= 768) {
+        board.style.gridTemplateColumns = '';
+        wd.forEach((dn, i) => {
+            const ds = dates[i];
+            const isToday = ds === todayStr;
+            const col = document.createElement('div');
+            col.className = 'week-column' + (isToday ? ' today-col' : '');
+            col.innerHTML = `<div class="week-column-header" onclick="jumpToDay('${ds}')">${dn} <br><span style="font-size:var(--font-small);color:var(--text-muted);">${new Date(ds).getMonth()+1}/${new Date(ds).getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
+            getTasksForDate(ds).forEach(t => {
+                const item = createWeekTaskDOM(t, ds);
+                if (t.timeSlot) {
+                    const ts = appData.timeSlots.find(x => x.id === t.timeSlot);
+                    if (ts) {
+                        const tag = document.createElement('span');
+                        tag.style = 'font-size:10px;color:var(--text-muted);margin-left:4px;';
+                        tag.innerText = ts.label.split('-')[0];
+                        item.appendChild(tag);
+                    }
+                }
+                col.appendChild(item);
+            });
+            // 移动端渲染锻炼
+            const manual = appData.exerciseSchedule[ds] || [];
+            const rec = appData.exercises.filter(e => isRecurringMatch(e.recurringType, ds)).map(e => e.name);
+            const names = [...new Set([...manual, ...rec])];
+            const checks = appData.dailyExerciseChecks[ds] || {};
+            names.forEach(n => {
+                const ex = appData.exercises.find(e => e.name === n);
+                let ad = false;
+                if (ex && ex.subTasks.length > 0) ad = ex.subTasks.every(s => checks[`${ex.id}_${s.id}`]);
+                const exDiv = document.createElement('div');
+                exDiv.className = 'exercise-capsule';
+                exDiv.draggable = true;
+                exDiv.ondragstart = (e) => dragExercise(e, n, 'date:' + ds);
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = ad;
+                cb.onchange = (e) => {
+                    const was = isExerciseAllChecked(ds, ex);
+                    if (!appData.dailyExerciseChecks[ds]) appData.dailyExerciseChecks[ds] = {};
+                    const ns = e.target.checked;
+                    if (ex && ex.subTasks) ex.subTasks.forEach(s => { appData.dailyExerciseChecks[ds][`${ex.id}_${s.id}`] = ns; });
+                    if (ex && was !== ns) {
+                        if (ns) { adjustTodayEnergy(ex.energyCost || 15); adjustExp(ex.energyCost || 15); adjustAttr('exercise', 1); updateStreak(); }
+                        else { adjustTodayEnergy(-(ex.energyCost || 15)); adjustExp(-(ex.energyCost || 15)); adjustAttr('exercise', -1); }
+                    }
+                    renderWeekBoard(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
+                };
+                const lbl = document.createElement('span');
+                lbl.innerText = '💪 ' + n;
+                const del = document.createElement('span');
+                del.className = 'ex-del-btn';
+                del.innerText = '✕';
+                del.onclick = (e) => { e.stopPropagation(); removeExerciseFromDate(n, ds); saveDataToFile(appData); renderWeekBoard(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); };
+                exDiv.appendChild(cb); exDiv.appendChild(lbl); exDiv.appendChild(del);
+                col.appendChild(exDiv);
+            });
+            board.appendChild(col);
+        });
+        return;
+    }
+
+    // PC端：课表网格视图
+    board.style.gridTemplateColumns = `60px repeat(7, 1fr)`;
+    
+    // 1. 渲染表头
+    board.appendChild(document.createElement('div')); // 左上角占位
+    wd.forEach((dn, i) => {
+        const ds = dates[i];
         const isToday = ds === todayStr;
-        const col = document.createElement('div');
-        col.className = 'week-column' + (isToday ? ' today-col' : '');
-        col.ondrop = (e) => handleDrop(e, ds);
-        col.ondragover = allowDrop;
-        col.innerHTML = `<div class="week-column-header" onclick="jumpToDay('${ds}')" title="点击跳转到该日的日计划">${dn} <br><span style="font-size:var(--font-small);color:var(--text-muted);">${cd.getMonth()+1}/${cd.getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
-        getTasksForDate(ds).forEach(t => col.appendChild(createWeekTaskDOM(t, ds)));
+        const header = document.createElement('div');
+        header.className = 'week-grid-header' + (isToday ? ' today-col' : '');
+        header.innerHTML = `<span onclick="jumpToDay('${ds}')" style="cursor:pointer">${dn}<br><span style="font-size:var(--font-small);">${new Date(ds).getMonth()+1}/${new Date(ds).getDate()}</span></span>`;
+        board.appendChild(header);
+    });
+
+    // 2. 渲染时间轴和网格
+    appData.timeSlots.forEach(ts => {
+        const timeCell = document.createElement('div');
+        timeCell.className = 'week-time-cell';
+        timeCell.innerText = ts.label.replace('-', '\n');
+        board.appendChild(timeCell);
+
+        dates.forEach(ds => {
+            const isToday = ds === todayStr;
+            const cell = document.createElement('div');
+            cell.className = 'week-grid-cell' + (isToday ? ' today-col' : '');
+            cell.dataset.date = ds;
+            cell.dataset.timeslot = ts.id;
+            cell.ondrop = (e) => handleDrop(e, ds, ts.id);
+            cell.ondragover = allowDrop;
+            
+            // 渲染该时间段的任务
+            const dayTasks = getTasksForDate(ds).filter(t => t.timeSlot === ts.id);
+            dayTasks.forEach(t => {
+                const item = createWeekTaskDOM(t, ds);
+                item.classList.add('lecture-task');
+                cell.appendChild(item);
+            });
+            board.appendChild(cell);
+        });
+    });
+
+    // 3. 渲染“未安排”区域
+    const unscheduledHeader = document.createElement('div');
+    unscheduledHeader.className = 'week-time-cell';
+    unscheduledHeader.innerText = '未安排';
+    board.appendChild(unscheduledHeader);
+    
+    dates.forEach(ds => {
+        const isToday = ds === todayStr;
+        const cell = document.createElement('div');
+        cell.className = 'week-grid-cell unscheduled-cell' + (isToday ? ' today-col' : '');
+        cell.dataset.date = ds;
+        cell.dataset.timeslot = '';
+        cell.ondrop = (e) => handleDrop(e, ds, '');
+        cell.ondragover = allowDrop;
+        
+        const dayTasks = getTasksForDate(ds).filter(t => !t.timeSlot || !appData.timeSlots.find(x => x.id === t.timeSlot));
+        dayTasks.forEach(t => cell.appendChild(createWeekTaskDOM(t, ds)));
+        
+        // 渲染锻炼
         const manual = appData.exerciseSchedule[ds] || [];
         const rec = appData.exercises.filter(e => isRecurringMatch(e.recurringType, ds)).map(e => e.name);
         const names = [...new Set([...manual, ...rec])];
@@ -1935,9 +2274,10 @@ function renderWeekBoard() {
             del.innerText = '✕';
             del.onclick = (e) => { e.stopPropagation(); removeExerciseFromDate(n, ds); saveDataToFile(appData); renderWeekBoard(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); };
             exDiv.appendChild(cb); exDiv.appendChild(lbl); exDiv.appendChild(del);
-            col.appendChild(exDiv);
+            cell.appendChild(exDiv);
         });
-        board.appendChild(col);
+        
+        board.appendChild(cell);
     });
 }
 
@@ -2157,7 +2497,6 @@ function generateTaskDOM(task, ds) {
     
     let headerLeft;
     if (task.target || hasSub) {
-        // 关键修改：允许超量完成，所以即使 taskDone 也显示 +/- 按钮
         const isCountOnly = task.target && !hasSub;
         const pct = Math.min(100, Math.round((mp.done / mp.total) * 100));
         headerLeft = `<div class="progress-task-container">${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}${estL}<div class="progress-task-bar-bg" style="width:80px;margin-left:8px;"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div><span class="progress-text">${mp.done}/${mp.total}</span>${isCountOnly ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}</div>`;
@@ -2441,7 +2780,7 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
         else if (t === 'week') { renderWeekBoard(); renderTaskPool(); renderExercisePool(); }
         else if (t === 'day') { renderDayPlan(); applyPanelLayout(); }
         else if (t === 'settings') {
-            renderP2PHistory(); updateBackupUI(); renderChangelog(); renderLevelConfig(); renderEnergyAndRPG();
+            renderP2PHistory(); updateBackupUI(); renderChangelog(); renderLevelConfig(); renderEnergyAndRPG(); renderTimeSlotConfig();
             const sh = localStorage.getItem('my_p2p_host_id');
             if (sh) document.getElementById('my-peer-id').innerText = sh;
         }
@@ -2456,12 +2795,19 @@ let draggedTaskId = null, draggedExerciseName = null, draggedExerciseSource = nu
 function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
 function drag(ev, id) { draggedTaskId = id; draggedExerciseName = null; draggedExerciseSource = null; }
 function dragExercise(ev, n, s) { draggedExerciseName = n; draggedExerciseSource = s || 'pool'; draggedTaskId = null; }
-function handleDrop(ev, td) {
+
+function handleDrop(ev, td, timeslot) {
     ev.preventDefault();
-    document.querySelectorAll('.week-column, .task-pool-list, #exercise-pool').forEach(c => c.classList.remove('drag-over'));
+    document.querySelectorAll('.week-column, .task-pool-list, #exercise-pool, .week-grid-cell').forEach(c => c.classList.remove('drag-over'));
     if (draggedTaskId) {
         const t = appData.tasks.find(t => t.id === draggedTaskId);
-        if (t) t.date = td;
+        if (t) {
+            t.date = td;
+            if (timeslot !== undefined) {
+                if (timeslot === '') delete t.timeSlot;
+                else t.timeSlot = timeslot;
+            }
+        }
     } else if (draggedExerciseName) {
         const sd = draggedExerciseSource && draggedExerciseSource.startsWith('date:') ? draggedExerciseSource.substring(5) : null;
         if (td === 'pool') {
@@ -2568,7 +2914,6 @@ window.incrementTaskProgress = function(id) {
     const t = appData.tasks.find(t => t.id === id);
     if (!t || !t.target) return;
     
-    // 允许超量完成：移除了 taskDone 和 cur >= target 的限制
     const cur = getTaskCurrent(t, ds);
     const c = t.energyCost || 1;
     setTaskCurrent(t, ds, cur + 1);
@@ -2579,9 +2924,9 @@ window.incrementTaskProgress = function(id) {
         setTaskDone(t, ds, true); 
         if (!wasDone) { adjustAttr(t.type, 1); adjustAttr('focus', 1); updateStreak(); }
         
-        // 如果是循环任务，一旦达到目标，彻底结束循环
-        if (t.recurringType) {
-            t.recurringType = ''; 
+        // 如果是循环任务，一旦达到目标，彻底结束循环（不再生成新的天数，但保留历史进度）
+        if (t.recurringType && !t.recurringEndedDate) {
+            t.recurringEndedDate = ds; 
             alert(`🎉【${t.text}】目标已达成！该循环任务已自动结束。`);
         }
     }
@@ -2629,8 +2974,8 @@ window.incrementSubTaskProgress = function(tid, sid) {
     if (!wt && newT) { adjustAttr('focus', 1); updateStreak(); }
     
     // 如果父任务有循环且这个改动导致父任务彻底完成
-    if (newT && t.recurringType) {
-        t.recurringType = '';
+    if (newT && t.recurringType && !t.recurringEndedDate) {
+        t.recurringEndedDate = ds;
         alert(`🎉【${t.text}】目标已达成！该循环任务已自动结束。`);
     }
     
@@ -2931,7 +3276,7 @@ window.importData = function(e) {
                 if (appData.radius) {
                     document.documentElement.style.setProperty('--radius', appData.radius);
                 }
-                renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG(); renderLevelConfig();
+                renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG(); renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard();
                 saveDataToFile(appData);
                 alert('导入成功！');
             }
@@ -3250,7 +3595,7 @@ function applyRemoteData(payload) {
     lastSavedSignature = getDataSignature(appData);
     lastRpgState = null;
     clearProgressCache();
-    renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG(); renderLevelConfig();
+    renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG(); renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard();
     saveLocalStorage();
     isSyncing = false;
 }
@@ -3343,6 +3688,7 @@ function renderChangelog() {
         appData.tasks.push({ id: '3', text: '复习考试', type: 'learning', date: getTodayString(), completed: false, subTasks: [{id: '3-1', text: '第一章', completed: false, target: 5, current: 0, energyCost: 1}, {id: '3-2', text: '第二章', completed: false, target: 5, current: 0, energyCost: 1}], deadline: '', pinned: false, energyCost: 1 });
     }
     if (!appData._lastModified) appData._lastModified = 1;
+    if (!appData.timeSlots) appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
     ensureEnergyData();
 
     appData.selectedDate = getTodayString();
@@ -3385,7 +3731,7 @@ function renderChangelog() {
 
     applyPanelLayout();
     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
-    initDragAndDrop(); renderPanelNotes(); updateBackupUI(); renderEnergyAndRPG(); renderChangelog(); renderLevelConfig();
+    initDragAndDrop(); renderTimeSlotConfig(); updateBackupUI(); renderEnergyAndRPG(); renderChangelog(); renderLevelConfig();
     renderP2PHistory();
     const sh = localStorage.getItem('my_p2p_host_id');
     if (sh) document.getElementById('my-peer-id').innerText = sh;
