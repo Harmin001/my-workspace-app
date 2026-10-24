@@ -135,7 +135,7 @@ body.dark-mode .rpg-tip { color: var(--text-muted); }
 .rpg-modal, .task-list-modal, .stats-modal, .task-detail-modal { background: var(--bg-card); color: var(--text-main); border-radius: 16px; max-height: 92vh; overflow-y: auto; padding: 20px; position: relative; }
 .rpg-modal { max-width: 560px; width: 100%; }
 .task-list-modal { max-width: 640px; width: 100%; }
-.stats-modal { max-width: 560px; width: 100%; }
+.stats-modal { max-width: 700px; width: 95%; } /* 加大统计窗口 */
 .task-detail-modal { max-width: 900px; width: 95%; }
 
 .rpg-modal-header { text-align: center; margin-bottom: 16px; }
@@ -167,14 +167,22 @@ body.dark-mode .rpg-attr-card .attr-desc { color: var(--text-muted); }
 .task-list-modal-header, .stats-modal-header, .task-detail-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); }
 .task-list-modal-header h3, .stats-modal-header h3, .task-detail-modal-header h3 { font-size: var(--font-title); font-weight: 700; }
 
-/* 统计模态框内容 */
-.stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-.stat-card { background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.stat-value { font-size: 1.8em; font-weight: bold; margin-bottom: 4px; }
-.stat-label { font-size: var(--font-hint); color: var(--text-muted); font-weight: 500; }
-.stat-card.learning { border-top: 4px solid #2383e2; }
-.stat-card.other { border-top: 4px solid #f2994a; }
-.stat-card.exercise { border-top: 4px solid #27ae60; }
+/* 统计弹窗内容新样式 */
+.stats-layout { display: flex; gap: 20px; margin-bottom: 16px; }
+.stats-left { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.stats-right { flex: 1.5; display: flex; flex-direction: column; }
+.stat-bar-row { display: flex; align-items: center; gap: 10px; }
+.stat-bar-label { width: 80px; font-size: var(--font-content); font-weight: 600; flex-shrink: 0; }
+.stat-bar-track { flex: 1; height: 16px; background: var(--bg-sidebar); border-radius: 4px; overflow: hidden; position: relative; }
+.stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.stat-bar-val { width: 40px; text-align: right; font-size: var(--font-content); font-weight: bold; flex-shrink: 0; }
+/* 柱状图样式 */
+.chart-title { text-align: center; font-size: var(--font-hint); color: var(--text-muted); margin-bottom: 8px; }
+.bar-chart { display: flex; align-items: flex-end; justify-content: space-between; height: 150px; border-bottom: 2px solid var(--border-color); padding-bottom: 4px; gap: 4px; }
+.chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; }
+.chart-bar { width: 80%; background: var(--accent-color); border-radius: 4px 4px 0 0; transition: height 0.5s ease; min-height: 2px; position: relative; }
+.chart-bar:hover::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; background: var(--bg-card); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-color); white-space: nowrap; }
+.chart-label { font-size: 10px; color: var(--text-muted); text-align: center; }
 
 /* 主内容区 */
 .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -460,7 +468,8 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
     .mobile-rpg-fab #mobile-rpg-energy { color: #b45309; }
     body.dark-mode .mobile-rpg-fab #mobile-rpg-energy { color: #fbbf24; }
     .task-list-modal, .task-detail-modal, .stats-modal { max-width: 100%; max-height: 92vh; padding: 16px; }
-    .stats-grid { grid-template-columns: 1fr; }
+    .stats-layout { flex-direction: column; }
+    .stats-left, .stats-right { flex: 1; width: 100%; }
     .common-btns-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
@@ -780,11 +789,19 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 </div>
 </div>
 
-<!-- 统计模态框 -->
+<!-- 统计模态框（新版图表） -->
 <div class="stats-modal-overlay" id="stats-modal" onclick="if(event.target===this)closeStatsModal()">
 <div class="stats-modal">
 <div class="stats-modal-header"><h3 id="stats-modal-title">统计</h3><button class="stats-modal-close" onclick="closeStatsModal()">×</button></div>
-<div class="stats-grid" id="stats-modal-content"></div>
+<div class="stats-layout">
+    <!-- 左侧：分类条形图 -->
+    <div class="stats-left" id="stats-left-content"></div>
+    <!-- 右侧：近7天柱状图 -->
+    <div class="stats-right">
+        <div class="chart-title">近期活跃度趋势 (总计)</div>
+        <div class="bar-chart" id="stats-chart-content"></div>
+    </div>
+</div>
 </div>
 </div>
 
@@ -809,12 +826,13 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
    1. 更新日志
    ========================================================= */
 const APP_CHANGELOG = [
-    { version: 'v2.3.0', date: '2026-11-02', changes: [
-        '修复：计数型循环任务（每日/每周等）前一天没完成时，进度自动结转至第二天',
-        '修复：子任务计数的进度也同步支持结转',
-        '优化：继承逻辑会自动识别循环周期，达标后第二天自动清零'
+    { version: 'v2.4.0', date: '2026-11-03', changes: [
+        '新增：带有次数的循环任务在达成目标后自动结束循环',
+        '新增：次数任务现在支持超量完成（例如 12/10），且依然增加精力与经验',
+        '优化：统计窗口改为可视化图表，左侧显示各类别条形图，右侧显示近7天柱状图'
     ]},
-    { version: 'v2.2.0', date: '2026-11-01', changes: ['新增：字体大小细分设置', '新增：子计划拖拽排序', '新增：学习/其他互相拖拽', '优化：弹窗与备注显示'] },
+    { version: 'v2.3.0', date: '2026-11-02', changes: ['修复：计数型循环任务进度自动结转'] },
+    { version: 'v2.2.0', date: '2026-11-01', changes: ['新增：字体大小细分设置', '新增：子计划拖拽排序', '新增：学习/其他互相拖拽'] },
     { version: 'v2.1.0', date: '2026-10-31', changes: ['加宽任务详情', '精简按钮', '自定义常用按钮', '备注直接在底部显示'] },
     { version: 'v2.0.0', date: '2026-10-30', changes: ['母计划独立备注', '移除冗余快照', '统计合并到左侧进度条'] },
     { version: 'v1.9.0', date: '2026-10-29', changes: ['独立逾期任务大类', '待办列表拖拽宽度'] },
@@ -993,9 +1011,16 @@ function updateTaskCache() {
 function getTasksForDate(dateStr) {
     updateTaskCache();
     const directTasks = _taskMapCache[dateStr] || [];
-    const recurring = appData.tasks.filter(t => t.recurringType && t.date !== 'pool' && t.date <= dateStr && !directTasks.includes(t));
-    const matched = recurring.filter(t => isRecurringMatch(t.recurringType, t.date, dateStr));
-    return [...directTasks, ...matched];
+    
+    // 关键修改：如果任务标记为 completed 彻底完成，或者对应的循环已经结束，则不再循环。
+    const recurring = appData.tasks.filter(t => {
+        if (!t.recurringType || t.date === 'pool' || t.date > dateStr) return false;
+        if (t.completed) return false; // 任务已完成（可能是昨天或今天），以后不再循环
+        if (directTasks.includes(t)) return false;
+        return isRecurringMatch(t.recurringType, t.date, dateStr);
+    });
+    
+    return [...directTasks, ...recurring];
 }
 
 function clearProgressCache() { _progressCache = {}; }
@@ -1011,12 +1036,10 @@ function setTaskDone(task, dateStr, val) {
     if (task.date === dateStr) task.completed = val;
 }
 
-// 母任务次数结转读取
+// 次数结转读取
 function getTaskCurrent(task, dateStr) {
-    // 1. 如果当天有明确记录，直接返回
     if (task.currents && task.currents[dateStr] !== undefined) return task.currents[dateStr];
     
-    // 2. 如果是计数任务且有循环规则，尝试往前追溯结转
     if (task.target) {
         if (task.recurringType) {
             let checkDateStr = dateStr;
@@ -1055,7 +1078,6 @@ function setSubTaskDone(sub, dateStr, val) {
     sub.completed = val;
 }
 
-// 子任务次数结转读取（依赖母任务的循环规则）
 function getSubCurrent(sub, dateStr, parentTask) {
     if (sub.currents && sub.currents[dateStr] !== undefined) return sub.currents[dateStr];
     
@@ -1586,7 +1608,7 @@ function getTaskProgress(t, ds) {
     }
     if (t.target) {
         let cur = getTaskCurrent(t, ds);
-        if (done) cur = t.target;
+        if (done && cur < t.target) cur = t.target; // 确保达到目标时进度条满
         return { done: cur, total: t.target };
     }
     return { done: done ? 1 : 0, total: 1 };
@@ -1630,7 +1652,7 @@ function calcProgress(dateStr, type) {
 }
 
 /* =========================================================
-   8. 统计弹窗逻辑
+   8. 统计弹窗逻辑（图表化）
    ========================================================= */
 window.openStatsModal = function(type) {
     let title = '', s = '', e = '';
@@ -1684,11 +1706,66 @@ window.openStatsModal = function(type) {
         cur.setDate(cur.getDate() + 1);
     }
 
-    document.getElementById('stats-modal-content').innerHTML = `
-        <div class="stat-card learning"><div class="stat-value" style="color:#2383e2;">${ld}</div><div class="stat-label">📚 学习完成数</div></div>
-        <div class="stat-card other"><div class="stat-value" style="color:#f2994a;">${od}</div><div class="stat-label">🧺 其他完成数</div></div>
-        <div class="stat-card exercise"><div class="stat-value" style="color:#27ae60;">${ed}</div><div class="stat-label">💪 锻炼完成数</div></div>
+    const maxVal = Math.max(ld, od, ed, 1);
+    // 左侧图表
+    document.getElementById('stats-left-content').innerHTML = `
+        <div class="stat-bar-row">
+            <div class="stat-bar-label">📚 学习</div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${(ld/maxVal)*100}%; background:#2383e2;"></div></div>
+            <div class="stat-bar-val" style="color:#2383e2;">${ld}</div>
+        </div>
+        <div class="stat-bar-row">
+            <div class="stat-bar-label">🧺 其他</div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${(od/maxVal)*100}%; background:#f2994a;"></div></div>
+            <div class="stat-bar-val" style="color:#f2994a;">${od}</div>
+        </div>
+        <div class="stat-bar-row">
+            <div class="stat-bar-label">💪 锻炼</div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${(ed/maxVal)*100}%; background:#27ae60;"></div></div>
+            <div class="stat-bar-val" style="color:#27ae60;">${ed}</div>
+        </div>
+        <div class="stat-bar-row" style="margin-top:auto; border-top:1px dashed var(--border-color); padding-top:12px;">
+            <div class="stat-bar-label">总计</div>
+            <div class="stat-bar-track"></div>
+            <div class="stat-bar-val" style="font-size:1.2em;">${ld+od+ed}</div>
+        </div>
     `;
+
+    // 右侧近7天柱状图 (基于今天往回推7天)
+    let chartHtml = '';
+    const today = new Date(td);
+    let maxDayTotal = 1;
+    const dayData = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const ds = formatDate(d.getFullYear(), d.getMonth(), d.getDate());
+        
+        let dayTotal = 0;
+        const tasks = getTasksForDate(ds);
+        tasks.forEach(t => { const pr = getTaskProgress(t, ds); dayTotal += pr.done; });
+        const checks = appData.dailyExerciseChecks[ds] || {};
+        const manual = appData.exerciseSchedule[ds] || [];
+        const rec = appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex => ex.name);
+        [...new Set([...manual, ...rec])].forEach(n => {
+            const ex = appData.exercises.find(e => e.name === n);
+            if (ex && ex.subTasks) ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) dayTotal++; });
+        });
+        
+        dayData.push({ label: `${d.getMonth()+1}/${d.getDate()}`, val: dayTotal });
+        if (dayTotal > maxDayTotal) maxDayTotal = dayTotal;
+    }
+    
+    dayData.forEach(d => {
+        const hPct = (d.val / maxDayTotal) * 100;
+        chartHtml += `
+            <div class="chart-col">
+                <div class="chart-bar" style="height:${hPct}%;" data-val="${d.val}"></div>
+                <div class="chart-label">${d.label}</div>
+            </div>
+        `;
+    });
+    document.getElementById('stats-chart-content').innerHTML = chartHtml;
     
     document.getElementById('stats-modal').classList.add('active');
 };
@@ -2080,8 +2157,10 @@ function generateTaskDOM(task, ds) {
     
     let headerLeft;
     if (task.target || hasSub) {
+        // 关键修改：允许超量完成，所以即使 taskDone 也显示 +/- 按钮
+        const isCountOnly = task.target && !hasSub;
         const pct = Math.min(100, Math.round((mp.done / mp.total) * 100));
-        headerLeft = `<div class="progress-task-container">${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}${estL}<div class="progress-task-bar-bg" style="width:80px;margin-left:8px;"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div><span class="progress-text">${mp.done}/${mp.total}</span>${!taskDone && !hasSub ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}</div>`;
+        headerLeft = `<div class="progress-task-container">${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}${estL}<div class="progress-task-bar-bg" style="width:80px;margin-left:8px;"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div><span class="progress-text">${mp.done}/${mp.total}</span>${isCountOnly ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}</div>`;
     } else {
         headerLeft = `${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}${estL}`;
     }
@@ -2488,15 +2567,25 @@ window.incrementTaskProgress = function(id) {
     const ds = appData.selectedDate;
     const t = appData.tasks.find(t => t.id === id);
     if (!t || !t.target) return;
+    
+    // 允许超量完成：移除了 taskDone 和 cur >= target 的限制
     const cur = getTaskCurrent(t, ds);
-    if (isTaskDone(t, ds) || cur >= t.target) return;
     const c = t.energyCost || 1;
     setTaskCurrent(t, ds, cur + 1);
     adjustTodayEnergy(c); adjustExp(c);
+    
     if (cur + 1 >= t.target) { 
+        const wasDone = isTaskDone(t, ds);
         setTaskDone(t, ds, true); 
-        adjustAttr(t.type, 1); adjustAttr('focus', 1); updateStreak(); 
+        if (!wasDone) { adjustAttr(t.type, 1); adjustAttr('focus', 1); updateStreak(); }
+        
+        // 如果是循环任务，一旦达到目标，彻底结束循环
+        if (t.recurringType) {
+            t.recurringType = ''; 
+            alert(`🎉【${t.text}】目标已达成！该循环任务已自动结束。`);
+        }
     }
+    
     renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.decrementTaskProgress = function(id) {
@@ -2504,14 +2593,17 @@ window.decrementTaskProgress = function(id) {
     const t = appData.tasks.find(t => t.id === id);
     if (!t || !t.target) return;
     const c = t.energyCost || 1;
-    if (isTaskDone(t, ds)) {
-        const r = getTaskCurrent(t, ds) * c;
-        adjustTodayEnergy(-r); adjustExp(-r); adjustAttr(t.type, -1); adjustAttr('focus', -1);
-        setTaskCurrent(t, ds, Math.max(0, getTaskCurrent(t, ds) - 1)); 
-        setTaskDone(t, ds, false);
-    } else if (getTaskCurrent(t, ds) > 0) {
+    const cur = getTaskCurrent(t, ds);
+    
+    if (cur > 0) {
         adjustTodayEnergy(-c); adjustExp(-c); 
-        setTaskCurrent(t, ds, getTaskCurrent(t, ds) - 1);
+        setTaskCurrent(t, ds, cur - 1);
+        
+        // 如果退回到了目标以下，取消完成状态
+        if (cur - 1 < t.target && isTaskDone(t, ds)) {
+            setTaskDone(t, ds, false);
+            adjustAttr(t.type, -1); adjustAttr('focus', -1);
+        }
     }
     renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
 };
@@ -2521,19 +2613,27 @@ window.incrementSubTaskProgress = function(tid, sid) {
     if (!t || !t.subTasks) return;
     const s = t.subTasks.find(s => s.id === sid);
     if (!s || !s.target) return;
+    
     const cur = getSubCurrent(s, ds, t);
-    if (isSubTaskDone(s, ds) || cur >= s.target) return;
     const wt = isTaskDone(t, ds);
     const c = s.energyCost || 1;
     setSubCurrent(s, ds, cur + 1);
     adjustTodayEnergy(c); adjustExp(c);
+    
     if (cur + 1 >= s.target) { 
+        if (!isSubTaskDone(s, ds)) { adjustAttr(t.type, 1); }
         setSubTaskDone(s, ds, true); 
-        adjustAttr(t.type, 1); 
     }
     syncParentTaskStatus(t, ds);
     const newT = isTaskDone(t, ds);
     if (!wt && newT) { adjustAttr('focus', 1); updateStreak(); }
+    
+    // 如果父任务有循环且这个改动导致父任务彻底完成
+    if (newT && t.recurringType) {
+        t.recurringType = '';
+        alert(`🎉【${t.text}】目标已达成！该循环任务已自动结束。`);
+    }
+    
     renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.decrementSubTaskProgress = function(tid, sid) {
@@ -2544,14 +2644,15 @@ window.decrementSubTaskProgress = function(tid, sid) {
     if (!s || !s.target) return;
     const wt = isTaskDone(t, ds);
     const c = s.energyCost || 1;
-    if (isSubTaskDone(s, ds)) {
-        const r = getSubCurrent(s, ds, t) * c;
-        adjustTodayEnergy(-r); adjustExp(-r); adjustAttr(t.type, -1);
-        setSubCurrent(s, ds, Math.max(0, getSubCurrent(s, ds, t) - 1)); 
-        setSubTaskDone(s, ds, false);
-    } else if (getSubCurrent(s, ds, t) > 0) {
+    const cur = getSubCurrent(s, ds, t);
+    
+    if (cur > 0) {
         adjustTodayEnergy(-c); adjustExp(-c); 
-        setSubCurrent(s, ds, getSubCurrent(s, ds, t) - 1);
+        setSubCurrent(s, ds, cur - 1);
+        if (cur - 1 < s.target && isSubTaskDone(s, ds)) {
+            setSubTaskDone(s, ds, false);
+            adjustAttr(t.type, -1);
+        }
     }
     syncParentTaskStatus(t, ds);
     const newT = isTaskDone(t, ds);
