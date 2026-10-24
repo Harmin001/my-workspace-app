@@ -126,8 +126,12 @@ body.dark-mode .rpg-tip { color: var(--text-muted); }
 /* 通用模态框 */
 .rpg-modal-overlay, .task-list-modal-overlay, .stats-modal-overlay, .task-detail-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
 .rpg-modal-overlay.active, .task-list-modal-overlay.active, .stats-modal-overlay.active, .task-detail-modal-overlay.active { display: flex; }
-.rpg-modal, .task-list-modal, .stats-modal, .task-detail-modal { background: var(--bg-card); color: var(--text-main); border-radius: 16px; max-width: 560px; width: 100%; max-height: 92vh; overflow-y: auto; padding: 20px; position: relative; }
-.task-list-modal, .task-detail-modal { max-width: 640px; }
+.rpg-modal, .task-list-modal, .stats-modal, .task-detail-modal { background: var(--bg-card); color: var(--text-main); border-radius: 16px; max-height: 92vh; overflow-y: auto; padding: 20px; position: relative; }
+.rpg-modal { max-width: 560px; width: 100%; }
+.task-list-modal { max-width: 640px; width: 100%; }
+.stats-modal { max-width: 560px; width: 100%; }
+.task-detail-modal { max-width: 900px; width: 95%; } /* 加大宽度 */
+
 .rpg-modal-header { text-align: center; margin-bottom: 16px; }
 .rpg-modal-level { font-size: 2.2em; font-weight: 800; color: #b45309; }
 body.dark-mode .rpg-modal-level { color: #fbbf24; }
@@ -258,7 +262,8 @@ body.dark-mode .week-column .exercise-capsule { background: #1b3322; border-colo
 .btn-resize { cursor: pointer; color: var(--text-muted); font-size: 1.1em; padding: 2px 6px; border-radius: 4px; }
 .panel-content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px; display: flex; flex-direction: column; min-height: 0; }
 .panel-input-wrapper { flex-shrink: 0; margin-bottom: 12px; }
-.main-task-item { margin-bottom: 12px; padding: 8px; border-bottom: 1px dashed var(--border-color); border-radius: 6px; }
+
+.main-task-item { margin-bottom: 12px; padding: 10px; border-bottom: 1px dashed var(--border-color); border-radius: 6px; background: var(--bg-card); transition: all 0.2s; }
 .main-task-item.pinned-task { background-color: #fff9f0; border-left: 3px solid #f2994a; padding-left: 10px; }
 body.dark-mode .main-task-item.pinned-task { background-color: #2a1e11; }
 .main-task-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
@@ -266,7 +271,6 @@ body.dark-mode .main-task-item.pinned-task { background-color: #2a1e11; }
 .task-checkbox { width: 16px; height: 16px; margin-right: 8px; cursor: pointer; accent-color: var(--accent-color); margin-top: 2px; }
 .task-text-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .task-text { font-weight: 500; word-break: break-all; font-size: .95em; }
-.task-note-text { font-size: .8em; color: var(--text-muted); margin-top: 4px; background: var(--bg-sidebar); padding: 2px 6px; border-radius: 4px; white-space: pre-wrap; word-break: break-all; border-left: 2px solid var(--border-color); }
 .task-completed { text-decoration: line-through; color: var(--text-muted); }
 .progress-task-container { display: flex; align-items: center; gap: 6px; flex: 1; flex-wrap: wrap; }
 .progress-task-bar-bg { flex: 1; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-right: 4px; }
@@ -274,20 +278,38 @@ body.dark-mode .main-task-item.pinned-task { background-color: #2a1e11; }
 .btn-plus-one { background: var(--accent-color); color: #fff; border: none; border-radius: 4px; padding: 2px 7px; font-size: .85em; cursor: pointer; font-weight: bold; }
 .btn-minus-one { background: var(--text-muted); color: #fff; border: none; border-radius: 4px; padding: 2px 7px; font-size: .85em; cursor: pointer; font-weight: bold; }
 .progress-text { font-size: .85em; font-weight: bold; color: var(--text-muted); min-width: 40px; text-align: right; }
-.task-meta { display: flex; align-items: center; gap: 6px; font-size: .85em; }
-.btn-pin { cursor: pointer; color: var(--border-color); font-size: 1.1em; padding: 0 4px; }
+
+/* 任务操作菜单 */
+.task-meta { display: flex; align-items: center; gap: 6px; font-size: .85em; flex-wrap: wrap; }
+.btn-icon { cursor: pointer; color: var(--text-muted); font-size: 1em; padding: 2px 4px; border-radius: 4px; transition: background 0.2s; }
+.btn-icon:hover { background: var(--hover-bg); }
+.btn-icon.active { color: var(--accent-color); }
 .btn-pin.active { color: #f2994a; }
-.btn-loop { font-size: 1.1em; color: var(--border-color); cursor: pointer; }
 .btn-loop.active { color: var(--accent-color); }
-.loop-label { font-size: .75em; color: var(--accent-color); background: var(--hover-bg); padding: 2px 6px; border-radius: 4px; margin-left: 4px; font-weight: bold; white-space: nowrap; }
-.btn-target { cursor: pointer; color: var(--border-color); font-size: 1em; font-weight: bold; padding: 0 4px; }
-.btn-delete-task { cursor: pointer; color: var(--text-muted); font-size: 1em; padding: 0 4px; }
-.deadline-input { font-size: .85em; border: none; outline: none; color: var(--text-muted); font-family: inherit; cursor: pointer; background: transparent; font-weight: 500; max-width: 105px; }
-.estimate-label { font-size: .75em; color: #1976d2; background: #e3f2fd; padding: 1px 6px; border-radius: 4px; cursor: pointer; white-space: nowrap; font-weight: 600; margin-left: 4px; }
-body.dark-mode .estimate-label { background: #1e3a5f; color: #90caf9; }
-.btn-estimate { cursor: pointer; color: var(--text-muted); font-size: .9em; padding: 0 4px; }
-.btn-note { cursor: pointer; color: var(--text-muted); font-size: .9em; padding: 0 4px; }
-.btn-view { cursor: pointer; color: var(--accent-color); font-size: .9em; padding: 0 4px; }
+.btn-delete-task { color: var(--danger-color); }
+
+/* 更多菜单 */
+.more-menu-container { position: relative; display: inline-block; }
+.more-menu {
+    display: none; position: absolute; right: 0; top: 100%; background: var(--bg-card);
+    border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 4px; z-index: 100; min-width: 100px; flex-direction: column; gap: 2px;
+}
+.more-menu.active { display: flex; }
+.more-menu-item { padding: 6px 10px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; font-size: 0.9em; color: var(--text-main); white-space: nowrap; }
+.more-menu-item:hover { background: var(--hover-bg); }
+
+/* 备注区域 */
+.task-note-area {
+    margin-top: 8px; padding: 6px 8px; background: var(--bg-sidebar); border: 1px dashed var(--border-color);
+    border-radius: 4px; font-size: 0.85em; color: var(--text-muted); cursor: pointer;
+    white-space: pre-wrap; word-break: break-word; min-height: 28px; display: flex; align-items: center;
+    transition: all 0.2s;
+}
+.task-note-area:hover { background: var(--hover-bg); border-color: var(--accent-color); }
+.task-note-area.has-note { border-left: 3px solid var(--accent-color); color: var(--text-main); background: #f4f8fd; border-style: solid; }
+body.dark-mode .task-note-area.has-note { background: #1a2a3a; border-color: #3b82f6; }
+
 .sub-task-list { margin-left: 24px; margin-top: 8px; padding-left: 12px; border-left: 2px solid var(--border-color); display: flex; flex-direction: column; gap: 6px; }
 .sub-task-item { display: flex; align-items: center; font-size: .9em; color: var(--text-main); justify-content: space-between; margin-bottom: 2px; }
 .sub-task-left { display: flex; align-items: center; flex: 1; flex-wrap: wrap; gap: 4px; }
@@ -311,6 +333,7 @@ body.dark-mode .estimate-label { background: #1e3a5f; color: #90caf9; }
 .completed-tasks-section[open] summary::before { transform: rotate(90deg); }
 .completed-tasks-list { margin-top: 12px; opacity: .8; }
 .completed-tasks-list .main-task-item { border-bottom: none; padding-bottom: 4px; margin-bottom: 8px; }
+
 .exercise-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
 .exercise-card { background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; min-width: 0; }
 .exercise-card.active-plan { border-color: #4caf50; background: #f1f8e9; }
@@ -383,6 +406,12 @@ details.settings-details[open] summary::before { transform: rotate(90deg); }
 .level-config-row input[type="number"] { width: 80px; padding: 6px; font-size: .9em; }
 .level-badge { font-size: .85em; font-weight: 700; color: #b45309; background: #fde68a; padding: 4px 8px; border-radius: 4px; min-width: 44px; text-align: center; flex-shrink: 0; }
 body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
+
+/* 常用按钮配置 */
+.common-btns-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
+.common-btns-grid label { display: flex; align-items: center; gap: 6px; font-size: 0.9em; color: var(--text-main); cursor: pointer; }
+.common-btns-grid input[type="checkbox"] { accent-color: var(--accent-color); width: 16px; height: 16px; cursor: pointer; }
+
 .mobile-rpg-fab { display: none; }
 .view-all-btn { display: block; width: 100%; margin-top: 8px; padding: 6px; border: 1px dashed var(--border-color); border-radius: 6px; background: var(--bg-sidebar); color: var(--accent-color); font-size: .85em; font-weight: 600; cursor: pointer; text-align: center; }
 .view-all-btn:hover { background: var(--hover-bg); }
@@ -425,6 +454,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
     body.dark-mode .mobile-rpg-fab #mobile-rpg-energy { color: #fbbf24; }
     .task-list-modal, .task-detail-modal, .stats-modal { max-width: 100%; max-height: 92vh; padding: 16px; }
     .stats-grid { grid-template-columns: 1fr; }
+    .common-btns-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 </head>
@@ -611,6 +641,23 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <button class="btn btn-sm" onclick="resetLevelConfig()" style="margin-top:6px;color:var(--text-muted);margin-left:6px;">🔄 恢复默认</button>
 </div>
 </div>
+<!-- 常用按钮配置 -->
+<div class="section-box" style="border-color:#a5d6a7;">
+<div class="panel-content">
+<h2 style="color:#2e7d32;">🔘 任务常用按钮</h2>
+<p>勾选要在日计划卡片上直接显示的按钮，未勾选的将收纳进「⋮」菜单中。</p>
+<div class="common-btns-grid" id="common-btns-config">
+    <label><input type="checkbox" value="view" onchange="updateCommonBtn('view', this.checked)"> 👁️ 查看详情</label>
+    <label><input type="checkbox" value="estimate" onchange="updateCommonBtn('estimate', this.checked)"> ⏱ 预计时长</label>
+    <label><input type="checkbox" value="energy" onchange="updateCommonBtn('energy', this.checked)"> ⚡ 精力消耗</label>
+    <label><input type="checkbox" value="pin" onchange="updateCommonBtn('pin', this.checked)"> 📌 置顶</label>
+    <label><input type="checkbox" value="target" onchange="updateCommonBtn('target', this.checked)"> # 次数</label>
+    <label><input type="checkbox" value="loop" onchange="updateCommonBtn('loop', this.checked)"> 🔁 循环</label>
+    <label><input type="checkbox" value="deadline" onchange="updateCommonBtn('deadline', this.checked)"> 📅 截止日期</label>
+    <label><input type="checkbox" value="delete" onchange="updateCommonBtn('delete', this.checked)"> 🗑️ 删除</label>
+</div>
+</div>
+</div>
 <div class="section-box">
 <div class="panel-content">
 <h2>💾 备份与清理</h2>
@@ -740,15 +787,14 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
    1. 更新日志
    ========================================================= */
 const APP_CHANGELOG = [
-    { version: 'v2.0.0', date: '2026-10-30', changes: [
-        '重构：将日计划的大类备注改为每个母计划独立备注',
-        '新增：点击母计划名字旁的 👁️ 可弹出完整详情窗口',
-        '新增：设置中可自定义卡片圆角大小',
-        '优化：移除设置中冗余的快照功能，保留自动备份',
-        '优化：移除底部统计卡片，点击左侧进度条即可查看详细统计',
-        '新增：左侧进度条增加“周计划完成度”'
+    { version: 'v2.1.0', date: '2026-10-31', changes: [
+        '优化：加宽任务详情弹窗，长标题不再换行',
+        '优化：日计划任务按钮精简，不常用的收纳进「⋮」菜单',
+        '新增：设置中可自定义哪些按钮显示在任务卡片上',
+        '新增：备注直接显示在任务卡片底部，点击即可原地编辑'
     ]},
-    { version: 'v1.9.0', date: '2026-10-29', changes: ['新增：独立逾期任务大类', '修复：待办列表拖拽宽度', '优化：设置界面紧凑'] },
+    { version: 'v2.0.0', date: '2026-10-30', changes: ['新增：母计划独立备注', '新增：完整详情弹窗', '新增：卡片圆角自定义', '优化：移除冗余快照', '优化：统计合并到左侧进度条'] },
+    { version: 'v1.9.0', date: '2026-10-29', changes: ['新增：独立逾期任务大类', '修复：待办列表拖拽宽度'] },
     { version: 'v1.8.0', date: '2026-10-28', changes: ['新增：黑暗模式', '重要修复：优化挂机卡顿'] },
     { version: 'v1.7.0', date: '2026-10-27', changes: ['新增：周计划跳转', '待办拖拽调整'] },
     { version: 'v1.6.0', date: '2026-10-26', changes: ['修复：任务过多不滚动', '修复：循环任务不显示'] },
@@ -799,7 +845,8 @@ let appData = {
     dailyEnergy: {},
     rpg: { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' },
     panelLayout: { order: ['learning', 'other', 'exercise'], spans: {}, sizes: {} },
-    levelConfig: { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) }
+    levelConfig: { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) },
+    commonBtns: ['view', 'target', 'loop', 'deadline', 'delete'] // 默认常用按钮
 };
 
 let peer = null, conn = null;
@@ -978,6 +1025,7 @@ function ensureEnergyData() {
         if (typeof lv.needExp !== 'number' || lv.needExp < 1) lv.needExp = 100;
     });
     if (!appData.radius) appData.radius = "8px";
+    if (!appData.commonBtns) appData.commonBtns = ['view', 'target', 'loop', 'deadline', 'delete'];
 }
 function getTodayEnergySpent() { ensureEnergyData(); return appData.dailyEnergy[getTodayString()] || 0; }
 function getTodayEnergyRemaining() { ensureEnergyData(); return Math.max(0, appData.energyMax - getTodayEnergySpent()); }
@@ -1103,6 +1151,13 @@ function renderEnergyAndRPG() {
         const el = document.getElementById(id);
         if (el && document.activeElement !== el) el.value = editMap[id];
     });
+
+    // 勾选配置
+    if (appData.commonBtns) {
+        document.querySelectorAll('#common-btns-config input[type="checkbox"]').forEach(cb => {
+            cb.checked = appData.commonBtns.includes(cb.value);
+        });
+    }
 
     const cur = { exp: rpg.exp, int: rpg.int, vit: rpg.vit, cre: rpg.cre, foc: rpg.foc, wil: rpg.wil, level: level };
     if (lastRpgState) {
@@ -1271,6 +1326,15 @@ window.resetLevelConfig = function() {
     if (!confirm('恢复默认等级配置？')) return;
     appData.levelConfig = { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) };
     renderLevelConfig(); renderEnergyAndRPG(); saveDataToFile(appData);
+};
+window.updateCommonBtn = function(btn, checked) {
+    if (!appData.commonBtns) appData.commonBtns = [];
+    if (checked) {
+        if (!appData.commonBtns.includes(btn)) appData.commonBtns.push(btn);
+    } else {
+        appData.commonBtns = appData.commonBtns.filter(b => b !== btn);
+    }
+    renderDayPlan(); renderTaskPool(); saveDataToFile(appData);
 };
 
 /* =========================================================
@@ -1806,15 +1870,6 @@ window.setSubTaskEstimate = function(taskId, subId) {
     const v = prompt(`设置【${s.text}】预计完成时长：`, s.estimate || '');
     if (v !== null) { if (v.trim()) s.estimate = v.trim(); else delete s.estimate; renderDayPlan(); renderTaskPool(); renderWeekBoard(); saveDataToFile(appData); }
 };
-window.setTaskNote = function(taskId) {
-    const t = appData.tasks.find(t => t.id === taskId);
-    if (!t) return;
-    const v = prompt(`为【${t.text}】添加/修改备注：`, t.note || '');
-    if (v !== null) { 
-        if (v.trim()) t.note = v.trim(); else delete t.note; 
-        renderDayPlan(); saveDataToFile(appData); 
-    }
-};
 window.toggleSubFold = function(taskId, ev) {
     if (ev) ev.stopPropagation();
     if (expandedSubTasks.has(taskId)) expandedSubTasks.delete(taskId); else expandedSubTasks.add(taskId);
@@ -1840,6 +1895,55 @@ window.openTaskDetailModal = function(taskId) {
     document.getElementById('task-detail-modal').classList.add('active');
 };
 window.closeTaskDetailModal = function() { document.getElementById('task-detail-modal').classList.remove('active'); };
+
+// 点击菜单外部关闭
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.more-menu-container')) {
+        document.querySelectorAll('.more-menu').forEach(menu => menu.classList.remove('active'));
+    }
+});
+window.toggleMoreMenu = function(btn, ev) {
+    ev.stopPropagation();
+    const menu = btn.nextElementSibling;
+    const isActive = menu.classList.contains('active');
+    document.querySelectorAll('.more-menu').forEach(m => m.classList.remove('active'));
+    if (!isActive) menu.classList.add('active');
+};
+
+// 备注原地编辑
+window.editTaskNote = function(taskId, el) {
+    if (el.dataset.editing === '1') return;
+    el.dataset.editing = '1';
+    const t = appData.tasks.find(t => t.id === taskId);
+    if (!t) return;
+    const orig = t.note || '';
+    
+    const textarea = document.createElement('textarea');
+    textarea.value = orig;
+    textarea.style.cssText = 'width:100%; min-height:60px; padding:6px; font-size:0.85em; border:1px solid var(--accent-color); border-radius:4px; background:var(--bg-input); color:var(--text-main); outline:none; resize:vertical;';
+    
+    el.innerHTML = '';
+    el.appendChild(textarea);
+    textarea.focus();
+    
+    let fin = false;
+    const finish = (save) => {
+        if (fin) return; fin = true;
+        const nv = textarea.value.trim();
+        if (save && nv !== orig) {
+            if (nv) t.note = nv; else delete t.note;
+            saveDataToFile(appData);
+        }
+        el.dataset.editing = '0';
+        // 重新渲染所在卡片或列表
+        renderDayPlan(); renderTaskPool(); 
+        if (currentTaskModalCategory) renderTaskListModalContent(currentTaskModalCategory);
+    };
+    textarea.addEventListener('blur', () => finish(true));
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+};
 
 const SUB_FOLD_THRESHOLD = 3;
 function renderSubTaskHtml(task, sub, ds) {
@@ -1873,6 +1977,7 @@ function renderSubTaskHtml(task, sub, ds) {
             </div>
         </div>`;
 }
+
 function generateTaskDOM(task, ds) {
     const div = document.createElement('div');
     div.className = `main-task-item ${task.pinned ? 'pinned-task' : ''}`;
@@ -1886,32 +1991,64 @@ function generateTaskDOM(task, ds) {
     const mp = getTaskProgress(task, ds);
     const mainCb = `<input type="checkbox" class="task-checkbox" ${taskDone ? 'checked' : ''} onchange="toggleMainTask('${task.id}')">`;
     
-    // 备注文本展示
-    const noteHtml = task.note ? `<div class="task-note-text">📝 ${task.note}</div>` : '';
-    
     const editT = `<span class="task-text ${taskDone ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;">${task.text}</span>`;
     const estL = task.estimate ? `<span class="estimate-label" ondblclick="setTaskEstimate('${task.id}')" title="双击修改">⏱ ${task.estimate}</span>` : '';
     
     let headerLeft;
     if (task.target || hasSub) {
         const pct = Math.min(100, Math.round((mp.done / mp.total) * 100));
-        headerLeft = `<div class="progress-task-container">${mainCb}<div class="task-text-wrap">${editT}${noteHtml}</div>${loopL}${estL}<div class="progress-task-bar-bg" style="width:80px;margin-left:8px;"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div><span class="progress-text">${mp.done}/${mp.total}</span>${!taskDone && !hasSub ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}</div>`;
+        headerLeft = `<div class="progress-task-container">${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}${estL}<div class="progress-task-bar-bg" style="width:80px;margin-left:8px;"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div><span class="progress-text">${mp.done}/${mp.total}</span>${!taskDone && !hasSub ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}</div>`;
     } else {
-        headerLeft = `${mainCb}<div class="task-text-wrap">${editT}${noteHtml}</div>${loopL}${estL}`;
+        headerLeft = `${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}${estL}`;
     }
+    
     const defEC = task.target ? 1 : 10;
     const ec = task.energyCost !== undefined ? task.energyCost : defEC;
     
+    // 常用按钮判断
+    const cbSet = new Set(appData.commonBtns);
+    
+    let btnsHtml = '';
+    let moreBtnsHtml = '';
+    
+    // 遍历所有按钮，决定是放在表面还是收进菜单
+    const allBtns = [
+        { key: 'view', icon: '👁️', title: '查看详情', action: `onclick="openTaskDetailModal('${task.id}')"` },
+        { key: 'estimate', icon: '⏱', title: '预计时长', action: `onclick="setTaskEstimate('${task.id}')"` },
+        { key: 'energy', icon: '⚡', title: '精力消耗', label: `⚡${ec}`, action: `onclick="setTaskEnergyCost('${task.id}')"` },
+        { key: 'pin', icon: '📌', title: '置顶', cls: pinC, action: `onclick="togglePinTask('${task.id}')"` },
+        { key: 'target', icon: '#', title: '次数', action: `onclick="setTaskTarget('${task.id}')"` },
+        { key: 'loop', icon: '🔁', title: '循环', cls: loopC, action: `onclick="toggleRecurring('${task.id}')"` },
+        { key: 'deadline', icon: '📅', title: dlT, custom: `<input type="date" class="deadline-input ${dlC}" value="${task.deadline || ''}" onchange="setDeadline('${task.id}', this.value)">`, action: `title="${dlT}"` },
+        { key: 'delete', icon: '🗑️', title: '删除', cls: 'btn-delete-task', action: `onclick="deleteTask('${task.id}')"` }
+    ];
+
+    allBtns.forEach(btn => {
+        let inner = btn.label || btn.icon;
+        if (btn.custom) inner = `<span style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9em;color:var(--text-muted);">📅</span>${btn.custom}</span>`;
+        
+        const fullBtn = `<span class="btn-icon ${btn.cls||''}" ${btn.action} ${btn.title ? `title="${btn.title}"` : ''} style="font-weight:bold;">${inner}</span>`;
+        
+        if (cbSet.has(btn.key)) {
+            btnsHtml += fullBtn;
+        } else {
+            moreBtnsHtml += `<div class="more-menu-item" ${btn.action}>${btn.icon} ${btn.title}</div>`;
+        }
+    });
+
+    let moreMenuHtml = '';
+    if (moreBtnsHtml) {
+        moreMenuHtml = `
+            <div class="more-menu-container">
+                <span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span>
+                <div class="more-menu">${moreBtnsHtml}</div>
+            </div>
+        `;
+    }
+
     let html = `<div class="main-task-header"><div class="main-task-left">${headerLeft}</div><div class="task-meta">
-        <span class="btn-view" title="查看详情" onclick="openTaskDetailModal('${task.id}')">👁️</span>
-        <span class="btn-note" title="备注" onclick="setTaskNote('${task.id}')">📝</span>
-        <span class="btn-estimate" title="预计完成时长" onclick="setTaskEstimate('${task.id}')">⏱</span>
-        <span class="btn-energy" title="精力消耗" onclick="setTaskEnergyCost('${task.id}')">⚡${ec}</span>
-        <span class="btn-pin ${pinC}" title="置顶" onclick="togglePinTask('${task.id}')">📌</span>
-        <span class="btn-target" title="次数" onclick="setTaskTarget('${task.id}')">#</span>
-        <span class="btn-loop ${loopC}" title="循环" onclick="toggleRecurring('${task.id}')">🔁</span>
-        <div style="display:flex;align-items:center;gap:4px;" title="${dlT}"><span style="font-size:1em;color:var(--text-muted);">📅</span><input type="date" class="deadline-input ${dlC}" value="${task.deadline || ''}" onchange="setDeadline('${task.id}', this.value)"></div>
-        <span class="btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span>
+        ${btnsHtml}
+        ${moreMenuHtml}
     </div></div>`;
 
     html += `<div class="sub-task-list">`;
@@ -1939,6 +2076,12 @@ function generateTaskDOM(task, ds) {
         }
     }
     html += `</div><span class="btn-add-sub" onclick="showSubInput('${task.id}')">➕ 添加步骤</span><input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')">`;
+    
+    // 备注直接显示在最下方
+    const noteText = task.note ? task.note : '📝 点击添加备注...';
+    const hasNote = !!task.note;
+    html += `<div class="task-note-area ${hasNote?'has-note':''}" id="note-area-${task.id}" onclick="editTaskNote('${task.id}', this)">${noteText}</div>`;
+
     div.innerHTML = html;
     return div;
 }
@@ -2525,7 +2668,6 @@ window.importData = function(e) {
             if (d.tasks && d.exercises && confirm('导入数据？会覆盖当前数据！')) {
                 appData = d;
                 if (!appData._lastModified) appData._lastModified = 1;
-                if (!appData.panelNotes) appData.panelNotes = { learning: '', other: '', exercise: '' };
                 ensureEnergyData();
                 lastSavedSignature = '';
                 lastRpgState = null;
