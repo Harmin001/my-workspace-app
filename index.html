@@ -53,7 +53,7 @@ body {
     display: flex;
     height: 100vh;
     overflow: hidden;
-    font-size: var(--font-content); /* 默认正文大小 */
+    font-size: var(--font-content);
     transition: background-color 0.3s, color 0.3s, font-size 0.2s;
 }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -616,7 +616,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">直角</span><input type="range" id="radius-slider" min="0" max="20" step="2" value="8" oninput="changeRadius(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">圆润</span></div>
 </div>
 </div>
-<!-- 新增：细分字体大小设置 -->
+<!-- 细分字体大小设置 -->
 <div class="section-box" style="border-color:#a5d6a7;">
 <div class="panel-content">
 <h2 style="color:#2e7d32;">🔠 字体大小设置</h2>
@@ -809,13 +809,12 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
    1. 更新日志
    ========================================================= */
 const APP_CHANGELOG = [
-    { version: 'v2.2.0', date: '2026-11-01', changes: [
-        '新增：字体大小细分设置（标题/正文/提示/次要），在设置页独立可调',
-        '新增：子计划支持上下拖拽排序',
-        '新增：学习计划与其他计划之间支持互相拖拽移动',
-        '优化：任务详情弹窗加宽，备注直接显示在底部',
-        '优化：常用按钮自定义收纳'
+    { version: 'v2.3.0', date: '2026-11-02', changes: [
+        '修复：计数型循环任务（每日/每周等）前一天没完成时，进度自动结转至第二天',
+        '修复：子任务计数的进度也同步支持结转',
+        '优化：继承逻辑会自动识别循环周期，达标后第二天自动清零'
     ]},
+    { version: 'v2.2.0', date: '2026-11-01', changes: ['新增：字体大小细分设置', '新增：子计划拖拽排序', '新增：学习/其他互相拖拽', '优化：弹窗与备注显示'] },
     { version: 'v2.1.0', date: '2026-10-31', changes: ['加宽任务详情', '精简按钮', '自定义常用按钮', '备注直接在底部显示'] },
     { version: 'v2.0.0', date: '2026-10-30', changes: ['母计划独立备注', '移除冗余快照', '统计合并到左侧进度条'] },
     { version: 'v1.9.0', date: '2026-10-29', changes: ['独立逾期任务大类', '待办列表拖拽宽度'] },
@@ -893,7 +892,7 @@ let _taskMapCache = {};
 let _progressCache = {};
 
 /* =========================================================
-   3. 工具函数
+   3. 工具函数与结转逻辑
    ========================================================= */
 function getTodayString() {
     const d = new Date();
@@ -965,6 +964,19 @@ function isRecurringMatch(type, startDateStr, targetDateStr) {
     return false;
 }
 
+function getPrevRecurringDate(type, dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    if (type === '每日') d.setDate(d.getDate() - 1);
+    else if (type === '每周') d.setDate(d.getDate() - 7);
+    else if (type === '每月') d.setMonth(d.getMonth() - 1);
+    else {
+        const m = type.match(/自定义(\d+)天/);
+        if (m) d.setDate(d.getDate() - parseInt(m[1]));
+        else return null;
+    }
+    return formatDate(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 function updateTaskCache() {
     if (appData.tasks.length === _cachedTasksLength && appData._lastModified === _cachedTasksModified) return;
     _cachedTasksLength = appData.tasks.length;
@@ -998,8 +1010,32 @@ function setTaskDone(task, dateStr, val) {
     task.completions[dateStr] = val;
     if (task.date === dateStr) task.completed = val;
 }
+
+// 母任务次数结转读取
 function getTaskCurrent(task, dateStr) {
+    // 1. 如果当天有明确记录，直接返回
     if (task.currents && task.currents[dateStr] !== undefined) return task.currents[dateStr];
+    
+    // 2. 如果是计数任务且有循环规则，尝试往前追溯结转
+    if (task.target) {
+        if (task.recurringType) {
+            let checkDateStr = dateStr;
+            for (let i = 0; i < 50; i++) {
+                const prev = getPrevRecurringDate(task.recurringType, checkDateStr);
+                if (!prev) break; 
+                if (prev < task.date) break; 
+                
+                if (task.currents && task.currents[prev] !== undefined) {
+                    const prevVal = task.currents[prev];
+                    return prevVal < task.target ? prevVal : 0;
+                }
+                checkDateStr = prev;
+            }
+            if (task.date <= dateStr && task.current !== undefined) {
+                return task.current < task.target ? task.current : 0;
+            }
+        }
+    }
     if (task.date === dateStr) return task.current || 0;
     return 0;
 }
@@ -1008,6 +1044,7 @@ function setTaskCurrent(task, dateStr, val) {
     task.currents[dateStr] = val;
     if (task.date === dateStr) task.current = val;
 }
+
 function isSubTaskDone(sub, dateStr) {
     if (sub.completions && sub.completions[dateStr] !== undefined) return sub.completions[dateStr];
     return !!sub.completed;
@@ -1017,8 +1054,28 @@ function setSubTaskDone(sub, dateStr, val) {
     sub.completions[dateStr] = val;
     sub.completed = val;
 }
-function getSubCurrent(sub, dateStr) {
+
+// 子任务次数结转读取（依赖母任务的循环规则）
+function getSubCurrent(sub, dateStr, parentTask) {
     if (sub.currents && sub.currents[dateStr] !== undefined) return sub.currents[dateStr];
+    
+    if (sub.target && parentTask && parentTask.recurringType) {
+        let checkDateStr = dateStr;
+        for (let i = 0; i < 50; i++) {
+            const prev = getPrevRecurringDate(parentTask.recurringType, checkDateStr);
+            if (!prev) break;
+            if (prev < parentTask.date) break;
+            
+            if (sub.currents && sub.currents[prev] !== undefined) {
+                const prevVal = sub.currents[prev];
+                return prevVal < sub.target ? prevVal : 0;
+            }
+            checkDateStr = prev;
+        }
+        if (parentTask.date <= dateStr && sub.current !== undefined) {
+            return sub.current < sub.target ? sub.current : 0;
+        }
+    }
     return sub.current || 0;
 }
 function setSubCurrent(sub, dateStr, val) {
@@ -1511,10 +1568,10 @@ window.jumpToDay = function(ds) {
     document.querySelector('.nav-item[data-target="day"]').click();
 };
 
-function getSubTaskProgress(s, ds) {
+function getSubTaskProgress(s, ds, parentTask) {
     const done = isSubTaskDone(s, ds);
     if (s.target) {
-        let cur = getSubCurrent(s, ds);
+        let cur = getSubCurrent(s, ds, parentTask);
         if (done) cur = s.target;
         return { done: cur, total: s.target };
     }
@@ -1524,7 +1581,7 @@ function getTaskProgress(t, ds) {
     const done = isTaskDone(t, ds);
     if (t.subTasks && t.subTasks.length > 0) {
         let d = 0, tot = 0;
-        t.subTasks.forEach(s => { const p = getSubTaskProgress(s, ds); d += p.done; tot += p.total; });
+        t.subTasks.forEach(s => { const p = getSubTaskProgress(s, ds, t); d += p.done; tot += p.total; });
         return { done: d, total: tot };
     }
     if (t.target) {
@@ -1537,7 +1594,7 @@ function getTaskProgress(t, ds) {
 function syncParentTaskStatus(t, ds) {
     if (!t.subTasks || t.subTasks.length === 0) return;
     const allDone = t.subTasks.every(s => {
-        if (s.target) return getSubCurrent(s, ds) >= s.target;
+        if (s.target) return getSubCurrent(s, ds, t) >= s.target;
         return isSubTaskDone(s, ds);
     });
     setTaskDone(t, ds, allDone);
@@ -1973,7 +2030,7 @@ window.editTaskNote = function(taskId, el) {
 
 const SUB_FOLD_THRESHOLD = 3;
 function renderSubTaskHtml(task, sub, ds) {
-    const sp = getSubTaskProgress(sub, ds);
+    const sp = getSubTaskProgress(sub, ds, task);
     const done = isSubTaskDone(sub, ds);
     const isCount = sub.target > 0;
     const pct = isCount ? Math.min(100, Math.round((sp.done / sp.total) * 100)) : 0;
@@ -2007,7 +2064,7 @@ function renderSubTaskHtml(task, sub, ds) {
 function generateTaskDOM(task, ds) {
     const div = document.createElement('div');
     div.className = `main-task-item ${task.pinned ? 'pinned-task' : ''}`;
-    div.dataset.taskId = task.id; // 用于拖拽识别
+    div.dataset.taskId = task.id;
     const taskDone = isTaskDone(task, ds);
     const loopC = task.recurringType ? 'active' : '';
     const loopL = task.recurringType ? `<span class="loop-label">${task.recurringType}</span>` : '';
@@ -2150,7 +2207,6 @@ function renderDayPlan() {
     saveDataToFile(appData);
     if (currentTaskModalCategory) renderTaskListModalContent(currentTaskModalCategory);
     
-    // 初始化拖拽
     setTimeout(initTaskAndSubTaskDrag, 0);
 }
 
@@ -2189,14 +2245,12 @@ function renderTaskListModalContent(type) {
 }
 
 /* 拖拽逻辑集中处理 */
-let isDragInited = false;
 function initTaskAndSubTaskDrag() {
-    // 母任务拖拽
     const zones = document.querySelectorAll('.task-drop-zone');
     zones.forEach(zone => {
         if (zone._sortable) zone._sortable.destroy();
         zone._sortable = new Sortable(zone, {
-            group: 'shared-tasks', // 允许跨列表拖动
+            group: 'shared-tasks', 
             animation: 150,
             ghostClass: 'sortable-ghost',
             draggable: '.main-task-item',
@@ -2207,18 +2261,14 @@ function initTaskAndSubTaskDrag() {
                 const task = appData.tasks.find(t => t.id === taskId);
                 if (!task) return;
 
-                // 获取目标列表的类型和完成状态
                 const toZone = evt.to;
-                const newType = toZone.dataset.type; // 'learning' 或 'other'
+                const newType = toZone.dataset.type; 
                 const isCompleted = toZone.dataset.completed === 'true';
 
-                // 更新任务类型和完成状态
                 task.type = newType;
                 setTaskDone(task, appData.selectedDate, isCompleted);
 
-                // 更新任务顺序
                 const newOrderIds = Array.from(toZone.querySelectorAll('.main-task-item')).map(el => el.dataset.taskId).filter(Boolean);
-                // 将 tasks 数组里的当前项移动到新位置
                 appData.tasks = appData.tasks.filter(t => t.id !== taskId);
                 const insertIndex = appData.tasks.findIndex(t => newOrderIds.includes(t.id));
                 if (insertIndex !== -1) {
@@ -2228,17 +2278,16 @@ function initTaskAndSubTaskDrag() {
                 }
 
                 saveDataToFile(appData);
-                renderDayPlan(); // 重新渲染以应用排序和样式
+                renderDayPlan(); 
             }
         });
     });
 
-    // 子任务拖拽
     const subLists = document.querySelectorAll('.sub-task-list');
     subLists.forEach(list => {
         if (list._sortable) list._sortable.destroy();
         list._sortable = new Sortable(list, {
-            group: 'subtasks', // 限制组内，如果希望跨母任务拖拽子任务可以去掉自定义限制
+            group: 'subtasks', 
             animation: 150,
             ghostClass: 'sortable-ghost',
             draggable: '.sub-task-item',
@@ -2248,11 +2297,8 @@ function initTaskAndSubTaskDrag() {
                 const task = appData.tasks.find(t => t.id === taskId);
                 if (!task) return;
                 
-                // 获取排序后的子任务ID列表
                 const newSubIds = Array.from(evt.to.querySelectorAll('.sub-task-item')).map(el => el.dataset.subId).filter(Boolean);
-                // 按照新顺序重新排列 task.subTasks
                 const reordered = newSubIds.map(id => task.subTasks.find(s => s.id === id)).filter(Boolean);
-                // 把不在当前列表的子任务（如折叠起来的已完成子任务）放回末尾
                 const others = task.subTasks.filter(s => !newSubIds.includes(s.id));
                 task.subTasks = [...reordered, ...others];
 
@@ -2389,14 +2435,14 @@ function toggleTaskCompletion(t, ds) {
             const sw = isSubTaskDone(s, ds);
             if (s.target) {
                 if (will) {
-                    const cur = getSubCurrent(s, ds);
+                    const cur = getSubCurrent(s, ds, t);
                     const d = s.target - cur;
                     if (d > 0) { adjustTodayEnergy(d * (s.energyCost || 1)); adjustExp(d * (s.energyCost || 1)); }
                     setSubCurrent(s, ds, s.target); 
                     setSubTaskDone(s, ds, true); 
                     if (!sw) adjustAttr(t.type, 1);
                 } else {
-                    const r = getSubCurrent(s, ds) * (s.energyCost || 1);
+                    const r = getSubCurrent(s, ds, t) * (s.energyCost || 1);
                     adjustTodayEnergy(-r); adjustExp(-r); 
                     setSubCurrent(s, ds, 0); 
                     setSubTaskDone(s, ds, false); 
@@ -2475,7 +2521,7 @@ window.incrementSubTaskProgress = function(tid, sid) {
     if (!t || !t.subTasks) return;
     const s = t.subTasks.find(s => s.id === sid);
     if (!s || !s.target) return;
-    const cur = getSubCurrent(s, ds);
+    const cur = getSubCurrent(s, ds, t);
     if (isSubTaskDone(s, ds) || cur >= s.target) return;
     const wt = isTaskDone(t, ds);
     const c = s.energyCost || 1;
@@ -2499,13 +2545,13 @@ window.decrementSubTaskProgress = function(tid, sid) {
     const wt = isTaskDone(t, ds);
     const c = s.energyCost || 1;
     if (isSubTaskDone(s, ds)) {
-        const r = getSubCurrent(s, ds) * c;
+        const r = getSubCurrent(s, ds, t) * c;
         adjustTodayEnergy(-r); adjustExp(-r); adjustAttr(t.type, -1);
-        setSubCurrent(s, ds, Math.max(0, getSubCurrent(s, ds) - 1)); 
+        setSubCurrent(s, ds, Math.max(0, getSubCurrent(s, ds, t) - 1)); 
         setSubTaskDone(s, ds, false);
-    } else if (getSubCurrent(s, ds) > 0) {
+    } else if (getSubCurrent(s, ds, t) > 0) {
         adjustTodayEnergy(-c); adjustExp(-c); 
-        setSubCurrent(s, ds, getSubCurrent(s, ds) - 1);
+        setSubCurrent(s, ds, getSubCurrent(s, ds, t) - 1);
     }
     syncParentTaskStatus(t, ds);
     const newT = isTaskDone(t, ds);
@@ -2535,7 +2581,7 @@ window.setSubTaskTarget = function(tid, sid) {
     if (isNaN(n) || n < 0) return;
     s.target = n;
     if (n === 0) { delete s.target; delete s.current; delete s.currents; setSubTaskDone(s, appData.selectedDate, false); }
-    else { if (!s.current) s.current = 0; if (getSubCurrent(s, appData.selectedDate) >= s.target) setSubTaskDone(s, appData.selectedDate, true); }
+    else { if (!s.current) s.current = 0; if (getSubCurrent(s, appData.selectedDate, t) >= s.target) setSubTaskDone(s, appData.selectedDate, true); }
     syncParentTaskStatus(t, appData.selectedDate); renderDayPlan(); renderCalendar();
 };
 function handleAddInput(e, type, dateStr, isPool) {
@@ -2657,13 +2703,13 @@ window.toggleSubTask = function(tid, sid) {
     
     if (s.target) {
         if (will) {
-            const d = s.target - getSubCurrent(s, ds);
+            const d = s.target - getSubCurrent(s, ds, t);
             if (d > 0) { adjustTodayEnergy(d * (s.energyCost || 1)); adjustExp(d * (s.energyCost || 1)); }
             setSubCurrent(s, ds, s.target); 
             setSubTaskDone(s, ds, true); 
             adjustAttr(t.type, 1);
         } else {
-            const r = getSubCurrent(s, ds) * (s.energyCost || 1);
+            const r = getSubCurrent(s, ds, t) * (s.energyCost || 1);
             adjustTodayEnergy(-r); adjustExp(-r); 
             setSubCurrent(s, ds, 0); 
             setSubTaskDone(s, ds, false); 
