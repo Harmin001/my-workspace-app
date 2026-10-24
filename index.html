@@ -44,16 +44,37 @@
         .prog-bar-fill { height:100%; border-radius:4px; transition:width 0.3s; }
 
         /* =========================================================
-           3. 精力与 RPG 面板
+           3. RPG + 精力合并卡片
            ========================================================= */
         .energy-rpg-panel { padding:0 8px; margin-top:10px; padding-bottom:10px; }
-        .energy-card { background:#fff; border:1px solid var(--border-color); border-radius:8px; padding:8px 10px; margin-bottom:10px; }
-        .energy-header { display:flex; justify-content:space-between; font-size:0.82em; font-weight:700; color:#555; margin-bottom:6px; }
-        .energy-header #energy-text { color:#333; }
-        .energy-bar-bg { width:100%; height:8px; background:#e9e9e7; border-radius:4px; overflow:hidden; }
+        .rpg-card {
+            background:linear-gradient(135deg,#fff8e7 0%,#ffefc2 100%);
+            border:1px solid #e8c26a; border-radius:8px; padding:8px 10px;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);
+        }
+        .rpg-energy-section {
+            padding-bottom:8px; margin-bottom:8px;
+            border-bottom:1px dashed rgba(180,83,9,0.25);
+            cursor:default;
+        }
+        .energy-header { display:flex; justify-content:space-between; font-size:0.82em; font-weight:700; color:#78350f; margin-bottom:6px; }
+        .energy-header #energy-text { color:#b45309; }
+        .energy-bar-bg { width:100%; height:8px; background:rgba(146,64,14,0.15); border-radius:4px; overflow:hidden; }
         .energy-bar-fill { height:100%; border-radius:4px; transition:width 0.3s, background 0.3s; background:#27ae60; }
-        .rpg-card { background:linear-gradient(135deg,#fff8e7 0%,#ffefc2 100%); border:1px solid #e8c26a; border-radius:8px; padding:8px 10px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.6); cursor:pointer; transition:transform 0.15s, box-shadow 0.15s; }
-        .rpg-card:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(180,83,9,0.15); }
+        .energy-actions { display:flex; gap:6px; margin-top:6px; }
+        .btn-energy-restore {
+            flex:1; padding:4px 6px; font-size:0.75em; font-weight:700;
+            background:#fff; border:1px solid #fcd34d; border-radius:6px;
+            color:#b45309; cursor:pointer; transition:all 0.15s;
+        }
+        .btn-energy-restore:hover { background:#fef3c7; }
+        .energy-warn {
+            margin-top:6px; padding:4px 8px; font-size:0.75em;
+            background:#ffebee; color:#c62828; border-radius:4px;
+            border-left:3px solid #eb5757; font-weight:600;
+        }
+        .rpg-card-main { cursor:pointer; }
+        .rpg-card-main:hover .rpg-header::after { opacity:1; }
         .rpg-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
         .rpg-level { font-size:0.95em; font-weight:800; color:#b45309; letter-spacing:0.5px; }
         .rpg-title { font-size:0.72em; color:#78350f; background:#fde68a; padding:2px 6px; border-radius:10px; font-weight:700; }
@@ -69,19 +90,26 @@
         /* RPG 模态框 */
         .rpg-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; padding:20px; }
         .rpg-modal-overlay.active { display:flex; }
-        .rpg-modal { background:#fff; border-radius:16px; max-width:560px; width:100%; max-height:90vh; overflow-y:auto; padding:24px; position:relative; }
-        .rpg-modal-header { text-align:center; margin-bottom:20px; }
+        .rpg-modal { background:#fff; border-radius:16px; max-width:560px; width:100%; max-height:92vh; overflow-y:auto; padding:20px; position:relative; }
+        .rpg-modal-header { text-align:center; margin-bottom:16px; }
         .rpg-modal-level { font-size:2.2em; font-weight:800; color:#b45309; }
         .rpg-modal-title { font-size:1em; color:#78350f; margin-top:4px; font-weight:600; }
         .rpg-modal-exp { margin-top:12px; display:inline-block; background:#fef3c7; border-radius:6px; padding:8px 16px; font-size:0.9em; color:#92400e; font-weight:700; }
+        .rpg-modal-energy {
+            background:#fff8e7; border:1px solid #fde68a; border-radius:8px;
+            padding:12px; margin-bottom:16px;
+        }
+        .rpg-modal-energy .energy-header { color:#92400e; }
+        .rpg-modal-energy .energy-header #modal-energy-text { color:#b45309; }
+        .rpg-modal-energy .energy-bar-bg { background:rgba(146,64,14,0.15); }
         .rpg-modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
         .rpg-attr-card { background:#fff8e7; border:1px solid #fde68a; border-radius:8px; padding:12px; }
         .rpg-attr-card .attr-row { display:flex; justify-content:space-between; align-items:center; }
         .rpg-attr-card .attr-name { font-weight:600; color:#78350f; font-size:0.9em; }
         .rpg-attr-card .attr-value { font-size:1.6em; font-weight:800; color:#b45309; }
         .rpg-attr-card .attr-desc { font-size:0.75em; color:#92400e; margin-top:4px; }
-        .rpg-modal-tips { margin-top:20px; padding:12px; background:#f5f5f5; border-radius:8px; font-size:0.85em; color:#666; line-height:1.7; }
-        .rpg-modal-close { margin-top:20px; width:100%; padding:10px; border:none; border-radius:8px; background:#b45309; color:#fff; font-weight:700; cursor:pointer; font-size:0.95em; }
+        .rpg-modal-tips { margin-top:16px; padding:12px; background:#f5f5f5; border-radius:8px; font-size:0.82em; color:#666; line-height:1.7; }
+        .rpg-modal-close { margin-top:16px; width:100%; padding:10px; border:none; border-radius:8px; background:#b45309; color:#fff; font-weight:700; cursor:pointer; font-size:0.95em; }
 
         /* =========================================================
            4. 主内容区通用
@@ -162,11 +190,17 @@
         .week-column .exercise-capsule .ex-del-btn:hover { opacity:1; }
 
         /* =========================================================
-           8. 日计划面板
+           8. 日计划面板（默认三列 + 持久化布局）
            ========================================================= */
         .day-panels-grid { display:flex; flex-wrap:wrap; gap:20px; flex:1; align-items:flex-start; margin-bottom:24px; }
-        .section-box { width:calc(50% - 10px); min-width:300px; border:1px solid var(--border-color); border-radius:8px; display:flex; flex-direction:column; background:#fff; position:relative; height:350px; resize:both; overflow:hidden; min-height:200px; }
-        .section-box.span-full { width:100%; }
+        .section-box {
+            width:calc((100% - 40px) / 3);
+            min-width:220px;
+            border:1px solid var(--border-color); border-radius:8px;
+            display:flex; flex-direction:column; background:#fff;
+            position:relative; height:350px; resize:both; overflow:hidden; min-height:200px;
+        }
+        .section-box.span-full { width:100% !important; }
         .panel-header { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--border-color); background:#fafafa; border-radius:8px 8px 0 0; flex-shrink:0; cursor:grab; }
         .panel-header h2 { margin:0; font-size:1.1em; display:flex; align-items:center; gap:6px; }
         .drag-handle-icon { color:#aaa; margin-right:6px; font-size:1.1em; user-select:none; }
@@ -222,7 +256,7 @@
         .completed-tasks-section[open] summary::before { transform:rotate(90deg); }
         .completed-tasks-list { margin-top:12px; opacity:0.8; }
         .completed-tasks-list .main-task-item { border-bottom:none; padding-bottom:4px; margin-bottom:8px; }
-        .exercise-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+        .exercise-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; }
         .exercise-card { background:var(--bg-sidebar); border:1px solid var(--border-color); border-radius:8px; padding:12px; display:flex; flex-direction:column; min-width:0; }
         .exercise-card.active-plan { border-color:#4caf50; background:#f1f8e9; }
         .exercise-card-header { font-weight:600; margin-bottom:8px; color:var(--text-muted); font-size:1em; display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; gap:4px; }
@@ -254,6 +288,7 @@
         .btn-sm { font-size:0.85em; padding:4px 8px; }
         input[type="range"] { -webkit-appearance:none; width:100%; height:6px; background:#e9e9e7; border-radius:3px; outline:none; margin-top:10px; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%; background:var(--accent-color); cursor:pointer; }
+        input[type="number"] { padding:6px 8px; border:1px solid var(--border-color); border-radius:6px; font-family:inherit; outline:none; font-size:0.95em; width:100%; }
         .snapshot-list { margin-top:16px; display:flex; flex-direction:column; gap:8px; }
         .snapshot-item { display:flex; justify-content:space-between; align-items:center; background:var(--bg-sidebar); padding:8px 12px; border-radius:6px; border:1px solid var(--border-color); }
         .snapshot-actions { display:flex; gap:8px; }
@@ -262,6 +297,7 @@
         .settings-grid > .section-box { width:100% !important; height:auto !important; resize:none !important; margin-bottom:0 !important; }
         .settings-grid > .section-box.span-full { grid-column:1 / -1; }
         .backup-status { font-size:0.85em; color:var(--text-muted); margin-top:8px; line-height:1.6; }
+
         /* 日志列表 */
         .log-list { max-height:400px; overflow-y:auto; margin-top:12px; }
         .log-item { display:flex; gap:10px; padding:6px 4px; border-bottom:1px dashed #eee; font-size:0.85em; align-items:flex-start; }
@@ -269,10 +305,21 @@
         .log-type { font-weight:600; flex-shrink:0; padding:0 6px; border-radius:4px; font-size:0.9em; }
         .log-detail { color:#555; flex:1; word-break:break-all; }
 
+        /* RPG 编辑网格 */
+        .rpg-edit-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:12px; }
+        .rpg-edit-grid label { display:flex; flex-direction:column; gap:4px; font-size:0.85em; color:#555; }
+        .rpg-edit-grid span { font-weight:600; color:#92400e; }
+
+        /* 手机端 RPG 浮动按钮 */
+        .mobile-rpg-fab { display:none; }
+
         /* =========================================================
            10. 响应式
            ========================================================= */
-        @media (max-width:900px) { .settings-grid { grid-template-columns:1fr; gap:16px; } }
+        @media (max-width:900px) {
+            .settings-grid { grid-template-columns:1fr; gap:16px; }
+            .rpg-edit-grid { grid-template-columns:repeat(2,1fr); }
+        }
         @media (max-width:768px) {
             body { flex-direction:column; }
             .sidebar { width:100%; height:auto; order:2; border-right:none; border-top:1px solid var(--border-color); padding:8px 4px; flex-direction:row; justify-content:space-around; align-items:center; position:fixed; bottom:0; left:0; z-index:100; background:rgba(247,247,245,0.95); backdrop-filter:blur(10px); }
@@ -299,6 +346,19 @@
             h1 { font-size:1.4em; margin-bottom:12px; }
             .exercise-grid { grid-template-columns:1fr; }
             .rpg-modal-grid { grid-template-columns:1fr; }
+            .rpg-edit-grid { grid-template-columns:repeat(2,1fr); }
+            /* 手机端 RPG 浮动按钮 */
+            .mobile-rpg-fab {
+                display:flex; position:fixed; right:12px; bottom:78px; z-index:99;
+                background:linear-gradient(135deg,#fff8e7,#ffefc2);
+                border:1px solid #e8c26a; border-radius:22px;
+                padding:8px 14px; gap:8px; align-items:center;
+                font-size:0.85em; font-weight:800; color:#b45309;
+                box-shadow:0 4px 12px rgba(180,83,9,0.25); cursor:pointer;
+                user-select:none;
+            }
+            .mobile-rpg-fab:active { transform:scale(0.96); }
+            .mobile-rpg-fab #mobile-rpg-energy { color:#b45309; }
         }
     </style>
 </head>
@@ -338,37 +398,52 @@
                     <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-day-fill" style="background:#27ae60;"></div></div>
                 </div>
             </div>
-            <!-- 今日精力 + RPG 属性（点击卡片可查看大页面） -->
+            <!-- 精力 + RPG 合并卡片 -->
             <div class="energy-rpg-panel">
-                <div class="energy-card">
-                    <div class="energy-header">
-                        <span>⚡ 今日精力</span>
-                        <span id="energy-text">100 / 100</span>
+                <div class="rpg-card">
+                    <!-- 精力区 -->
+                    <div class="rpg-energy-section">
+                        <div class="energy-header">
+                            <span>⚡ 今日精力</span>
+                            <span id="energy-text">100 / 100</span>
+                        </div>
+                        <div class="energy-bar-bg">
+                            <div class="energy-bar-fill" id="energy-fill" style="width:100%;"></div>
+                        </div>
+                        <div class="energy-actions">
+                            <button class="btn-energy-restore" onclick="restoreEnergy('nap')" title="恢复 40 点精力">😴 午睡 +40</button>
+                            <button class="btn-energy-restore" onclick="restoreEnergy('break')" title="恢复 15 点精力">☕ 课间 +15</button>
+                        </div>
+                        <div class="energy-warn" id="energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
                     </div>
-                    <div class="energy-bar-bg">
-                        <div class="energy-bar-fill" id="energy-fill" style="width:100%;"></div>
+                    <!-- RPG 主区 -->
+                    <div class="rpg-card-main" onclick="openRPGModal()">
+                        <div class="rpg-header">
+                            <span class="rpg-level" id="rpg-level">Lv.1</span>
+                            <span class="rpg-title" id="rpg-title">新手</span>
+                        </div>
+                        <div class="rpg-exp-bar">
+                            <div class="rpg-exp-fill" id="rpg-exp-fill" style="width:0%;"></div>
+                        </div>
+                        <div class="rpg-exp-text" id="rpg-exp-text">0 / 100 EXP</div>
+                        <div class="rpg-attrs">
+                            <div class="rpg-attr"><span>📚 智力</span><b id="rpg-int">0</b></div>
+                            <div class="rpg-attr"><span>💪 体力</span><b id="rpg-vit">0</b></div>
+                            <div class="rpg-attr"><span>🎨 创造力</span><b id="rpg-cre">0</b></div>
+                            <div class="rpg-attr"><span>🎯 专注</span><b id="rpg-foc">0</b></div>
+                            <div class="rpg-attr"><span>🔥 毅力</span><b id="rpg-wil">0</b></div>
+                        </div>
+                        <div class="rpg-tip">👉 点击查看详细属性</div>
                     </div>
-                </div>
-                <div class="rpg-card" onclick="openRPGModal()">
-                    <div class="rpg-header">
-                        <span class="rpg-level" id="rpg-level">Lv.1</span>
-                        <span class="rpg-title" id="rpg-title">新手</span>
-                    </div>
-                    <div class="rpg-exp-bar">
-                        <div class="rpg-exp-fill" id="rpg-exp-fill" style="width:0%;"></div>
-                    </div>
-                    <div class="rpg-exp-text" id="rpg-exp-text">0 / 100 EXP</div>
-                    <div class="rpg-attrs">
-                        <div class="rpg-attr"><span>📚 智力</span><b id="rpg-int">0</b></div>
-                        <div class="rpg-attr"><span>💪 体力</span><b id="rpg-vit">0</b></div>
-                        <div class="rpg-attr"><span>🎨 创造力</span><b id="rpg-cre">0</b></div>
-                        <div class="rpg-attr"><span>🎯 专注</span><b id="rpg-foc">0</b></div>
-                        <div class="rpg-attr"><span>🔥 毅力</span><b id="rpg-wil">0</b></div>
-                    </div>
-                    <div class="rpg-tip">👉 点击查看详细属性</div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- 手机端浮动 RPG 按钮 -->
+    <div class="mobile-rpg-fab" id="mobile-rpg-fab" onclick="openRPGModal()">
+        <span id="mobile-rpg-lv">Lv.1</span>
+        <span id="mobile-rpg-energy">⚡100</span>
     </div>
 
     <!-- =========================================================
@@ -376,7 +451,7 @@
          ========================================================= -->
     <div class="main-content">
 
-        <!-- ========== 视图：全年总览 ========== -->
+        <!-- 全年总览 -->
         <div class="view-container" id="view-year">
             <div class="year-header">
                 <h1>📊 全年总览</h1>
@@ -394,7 +469,7 @@
             </div>
         </div>
 
-        <!-- ========== 视图：月计划 ========== -->
+        <!-- 月计划 -->
         <div class="view-container active" id="view-month">
             <h1>📅 月计划</h1>
             <div class="calendar-wrapper" id="calendar-wrapper">
@@ -412,7 +487,7 @@
             </div>
         </div>
 
-        <!-- ========== 视图：周计划 ========== -->
+        <!-- 周计划 -->
         <div class="view-container" id="view-week">
             <div class="year-header">
                 <h1>🗓️ 周计划</h1>
@@ -448,7 +523,7 @@
             <div class="stats-container" id="stats-week"></div>
         </div>
 
-        <!-- ========== 视图：日计划 ========== -->
+        <!-- 日计划 -->
         <div class="view-container" id="view-day">
             <h1 id="day-title">📝 日计划</h1>
             <div class="day-panels-grid" id="day-panels-grid">
@@ -484,7 +559,7 @@
                         <div id="other-completed"></div>
                     </div>
                 </div>
-                <div class="section-box span-full" data-panel="exercise">
+                <div class="section-box" data-panel="exercise">
                     <div class="panel-header">
                         <h2><span class="drag-handle-icon">⠿</span> 💪 锻炼</h2>
                         <div class="panel-controls">
@@ -504,7 +579,7 @@
             </div>
         </div>
 
-        <!-- ========== 视图：设置 ========== -->
+        <!-- 设置 -->
         <div class="view-container" id="view-settings">
             <h1>⚙️ 设置</h1>
             <div class="settings-grid">
@@ -524,12 +599,23 @@
                             <input type="range" id="font-size-slider" min="12" max="22" step="1" value="14" oninput="changeFontSize(this.value + 'px')">
                             <span style="font-size:18px; color:#999;">大</span>
                         </div>
-                        <hr style="border:none; border-top:1px dashed var(--border-color); margin:20px 0;">
-                        <h2 style="font-size:1.1em; margin-bottom:8px;">今日精力上限 (<span id="energy-max-val">100</span>)</h2>
+                    </div>
+                </div>
+                <div class="section-box" style="border-color:#fde68a;">
+                    <div class="panel-content">
+                        <h2 style="color:#b45309;">⚡ 精力设置</h2>
+                        <h2 style="font-size:1.05em; margin:12px 0 8px;">今日精力上限 (<span id="energy-max-val">100</span>)</h2>
                         <div style="display:flex; align-items:center; gap:12px; width:100%;">
                             <span style="font-size:12px; color:#999;">50</span>
                             <input type="range" id="energy-max-slider" min="50" max="200" step="10" value="100" oninput="changeEnergyMax(this.value)">
                             <span style="font-size:18px; color:#999;">200</span>
+                        </div>
+                        <h2 style="font-size:1.05em; margin:20px 0 8px;">精力警告阈值 (<span id="energy-warn-val">30</span>)</h2>
+                        <p style="color:var(--text-muted); font-size:0.8em; margin-bottom:8px;">精力低于此值时提示休息，且完成任务获得的经验减半。</p>
+                        <div style="display:flex; align-items:center; gap:12px; width:100%;">
+                            <span style="font-size:12px; color:#999;">10</span>
+                            <input type="range" id="energy-warn-slider" min="10" max="100" step="5" value="30" oninput="changeEnergyWarn(this.value)">
+                            <span style="font-size:18px; color:#999;">100</span>
                         </div>
                     </div>
                 </div>
@@ -560,12 +646,30 @@
                         <button class="btn btn-danger" onclick="resetAllData()">🚨 清空数据</button>
                     </div>
                 </div>
+                <!-- RPG 编辑 -->
+                <div class="section-box span-full" style="border-color:#c5cae9;">
+                    <div class="panel-content">
+                        <h2 style="color:#303f9f;">🎮 RPG 属性编辑</h2>
+                        <p style="color:var(--text-muted); margin:8px 0; font-size:0.9em;">
+                            直接修改当前各属性值（也可作为初始值设定）。修改「毅力」会同步「连续天数」。
+                        </p>
+                        <div class="rpg-edit-grid">
+                            <label><span>📈 累计经验</span><input type="number" id="rpg-edit-exp" min="0" onchange="editRPGValue('exp', this.value)"></label>
+                            <label><span>📚 智力</span><input type="number" id="rpg-edit-int" min="0" onchange="editRPGValue('int', this.value)"></label>
+                            <label><span>💪 体力</span><input type="number" id="rpg-edit-vit" min="0" onchange="editRPGValue('vit', this.value)"></label>
+                            <label><span>🎨 创造力</span><input type="number" id="rpg-edit-cre" min="0" onchange="editRPGValue('cre', this.value)"></label>
+                            <label><span>🎯 专注</span><input type="number" id="rpg-edit-foc" min="0" onchange="editRPGValue('foc', this.value)"></label>
+                            <label><span>🔥 毅力</span><input type="number" id="rpg-edit-wil" min="0" onchange="editRPGValue('wil', this.value)"></label>
+                        </div>
+                    </div>
+                </div>
+                <!-- 自动备份 -->
                 <div class="section-box span-full" style="border-color:#90caf9;">
                     <div class="panel-content">
                         <h2 style="color:#1565c0;">📁 自动备份到文件夹</h2>
                         <p style="color:var(--text-muted); margin:12px 0; font-size:0.9em; line-height:1.6;">
                             选择文件夹后，网页会每隔几分钟自动把数据覆盖写入该文件夹下的 <code>myWorkspace_backup.json</code>。关闭网页前会提示是否已备份。<br>
-                            <span style="color:#e65100;">需要 Chrome / Edge 最新版，且页面通过 https 或 localhost 打开（file:// 打开无法使用）。</span>
+                            <span style="color:#e65100;">需要 Chrome / Edge 最新版，且页面通过 https 或 localhost 打开。</span>
                         </p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
                             <button class="btn btn-primary" onclick="chooseBackupFolder()">📂 选择文件夹并开启自动备份</button>
@@ -589,16 +693,20 @@
                         <div id="last-backup-time" class="backup-status"></div>
                     </div>
                 </div>
-                <!-- 操作日志 -->
+                <!-- 代码修改日志 -->
                 <div class="section-box span-full" style="border-color:#c5cae9;">
                     <div class="panel-content">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h2 style="color:#303f9f;">📋 操作日志（最近 100 条）</h2>
-                            <button class="btn btn-sm" onclick="clearLogs()" style="color:#eb5757; border-color:#ffcccc;">清空日志</button>
+                            <h2 style="color:#303f9f;">📝 代码修改日志（最近 100 条）</h2>
+                            <button class="btn btn-sm" onclick="clearCodeLogs()" style="color:#eb5757; border-color:#ffcccc;">清空日志</button>
                         </div>
-                        <div class="log-list" id="log-list"></div>
+                        <p style="color:var(--text-muted); margin:8px 0; font-size:0.85em;">
+                            记录每次数据字段发生变化的时间和具体字段名（非手动操作日志）。
+                        </p>
+                        <div class="log-list" id="code-log-list"></div>
                     </div>
                 </div>
+                <!-- P2P 同步 -->
                 <div class="section-box span-full" style="border-color:#ff9800;">
                     <div class="panel-content">
                         <h2 style="color:#e65100;">📡 局域网点对点同步</h2>
@@ -635,7 +743,7 @@
     </div>
 
     <!-- =========================================================
-         RPG 属性详情模态框
+         RPG 属性详情模态框（含精力与休息按钮）
          ========================================================= -->
     <div class="rpg-modal-overlay" id="rpg-modal" onclick="if(event.target===this)closeRPGModal()">
         <div class="rpg-modal">
@@ -645,9 +753,23 @@
                 <div class="rpg-modal-title" id="rpg-modal-title">新手</div>
                 <div class="rpg-modal-exp" id="rpg-modal-exp">0 / 100 EXP</div>
             </div>
+            <!-- 精力与休息 -->
+            <div class="rpg-modal-energy">
+                <div class="energy-header">
+                    <span>⚡ 今日精力</span>
+                    <span id="modal-energy-text">100 / 100</span>
+                </div>
+                <div class="energy-bar-bg"><div class="energy-bar-fill" id="modal-energy-fill" style="width:100%;"></div></div>
+                <div class="energy-actions">
+                    <button class="btn-energy-restore" onclick="restoreEnergy('nap')">😴 午睡 +40</button>
+                    <button class="btn-energy-restore" onclick="restoreEnergy('break')">☕ 课间 +15</button>
+                </div>
+                <div class="energy-warn" id="modal-energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
+            </div>
             <div class="rpg-modal-grid" id="rpg-modal-grid"></div>
             <div class="rpg-modal-tips">
-                💡 <b>经验规则</b>：每完成一次任务获得与精力消耗相同的 EXP；每 100 EXP 升一级。<br>
+                💡 <b>经验规则</b>：每完成一次任务获得与精力消耗相同的 EXP。等级越高升级所需经验越多：Lv1→2 需 100，Lv2→3 需 200，Lv3→4 需 300……依此类推。<br>
+                ⚠️ <b>低精力惩罚</b>：精力低于警告阈值时，完成任务获得的经验减半。<br>
                 💡 <b>属性提升</b>：<br>
                 &nbsp;&nbsp;&nbsp;· 完成学习任务 → <b>智力 +1</b><br>
                 &nbsp;&nbsp;&nbsp;· 完成锻炼任务 → <b>体力 +1</b><br>
@@ -684,9 +806,10 @@
             viewWeekBaseDate: getTodayString(),
             _lastModified: 1,
             energyMax: 100,
+            energyWarnThreshold: 30,
             dailyEnergy: {},
             rpg: { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' },
-            logs: []
+            panelLayout: { order: ['learning', 'other', 'exercise'], spans: {}, sizes: {} }
         };
 
         /* =========================================================
@@ -704,6 +827,8 @@
         const p2pIndicator = document.getElementById('p2p-indicator');
         const isMobileDevice = window.innerWidth <= 768;
         let lastSavedSignature = '';
+        let lastAppDataSnapshot = null;
+        let resizeObserver = null;
 
         /* =========================================================
            3. 基础工具函数
@@ -758,34 +883,39 @@
         }
 
         /* =========================================================
-           4. 操作日志
+           4. 代码修改日志（记录字段变化，不是操作日志）
            ========================================================= */
-        function logOperation(type, detail) {
-            if (!appData.logs) appData.logs = [];
+        function getCodeLogs() {
+            try { return JSON.parse(localStorage.getItem('myWorkspaceCodeLogs') || '[]'); }
+            catch (e) { return []; }
+        }
+        function saveCodeLogs(logs) {
+            localStorage.setItem('myWorkspaceCodeLogs', JSON.stringify(logs));
+        }
+        function logCodeChange(type, detail) {
+            let logs = getCodeLogs();
             const now = new Date();
             const pad = n => String(n).padStart(2, '0');
             const timeStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            appData.logs.unshift({ time: timeStr, type, detail });
-            if (appData.logs.length > 200) appData.logs = appData.logs.slice(0, 200);
-            // 若日志面板正打开则刷新
-            if (document.getElementById('view-settings').classList.contains('active')) {
-                renderLogs();
+            logs.unshift({ time: timeStr, type, detail });
+            if (logs.length > 300) logs = logs.slice(0, 300);
+            saveCodeLogs(logs);
+            if (document.getElementById('view-settings') && document.getElementById('view-settings').classList.contains('active')) {
+                renderCodeLogs();
             }
         }
         function getLogTypeColor(type) {
-            if (type.includes('添加')) return '#27ae60';
-            if (type.includes('删除')) return '#eb5757';
-            if (type.includes('完成')) return '#2383e2';
-            if (type.includes('设置') || type.includes('调整')) return '#f2994a';
+            if (type.includes('字段变更')) return '#2383e2';
+            if (type.includes('重置')) return '#eb5757';
             if (type.includes('恢复') || type.includes('导入')) return '#9b51e0';
             return '#666';
         }
-        function renderLogs() {
-            const list = document.getElementById('log-list');
+        function renderCodeLogs() {
+            const list = document.getElementById('code-log-list');
             if (!list) return;
-            const logs = (appData.logs || []).slice(0, 100);
+            const logs = getCodeLogs().slice(0, 100);
             if (logs.length === 0) {
-                list.innerHTML = '<div style="color:#999; text-align:center; padding:16px; font-size:0.9em;">暂无操作记录</div>';
+                list.innerHTML = '<div style="color:#999; text-align:center; padding:16px; font-size:0.9em;">暂无代码修改日志</div>';
                 return;
             }
             list.innerHTML = logs.map(log => {
@@ -797,12 +927,24 @@
                 </div>`;
             }).join('');
         }
-        window.clearLogs = function() {
-            if (!confirm('确定清空操作日志吗？')) return;
-            appData.logs = [];
-            saveDataToFile(appData);
-            renderLogs();
+        window.clearCodeLogs = function() {
+            if (!confirm('确定清空代码修改日志吗？')) return;
+            saveCodeLogs([]);
+            renderCodeLogs();
         };
+
+        // 对比顶层字段，返回发生变化的字段名
+        function diffTopFields(prev, next) {
+            if (!prev) return [];
+            const result = [];
+            const keys = ['tasks', 'exercises', 'exerciseSchedule', 'dailyExerciseChecks', 'dailyReflections', 'yearlyGoals', 'panelNotes', 'themeColor', 'fontSize', 'energyMax', 'energyWarnThreshold', 'dailyEnergy', 'rpg', 'panelLayout'];
+            keys.forEach(k => {
+                const a = JSON.stringify(prev[k] || null);
+                const b = JSON.stringify(next[k] || null);
+                if (a !== b) result.push(k);
+            });
+            return result;
+        }
 
         /* =========================================================
            5. 精力与 RPG 系统
@@ -810,12 +952,27 @@
         function ensureEnergyData() {
             if (!appData.dailyEnergy) appData.dailyEnergy = {};
             if (!appData.energyMax) appData.energyMax = 100;
-            if (!appData.rpg) appData.rpg = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
-            if (!appData.logs) appData.logs = [];
+            if (appData.energyWarnThreshold === undefined) appData.energyWarnThreshold = 30;
+            const defaultRpg = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
+            if (!appData.rpg) appData.rpg = { ...defaultRpg };
+            else Object.keys(defaultRpg).forEach(k => {
+                if (appData.rpg[k] === undefined) appData.rpg[k] = defaultRpg[k];
+            });
+            if (!appData.panelLayout) appData.panelLayout = { order: ['learning', 'other', 'exercise'], spans: {}, sizes: {} };
+            if (!appData.panelLayout.order) appData.panelLayout.order = ['learning', 'other', 'exercise'];
+            if (!appData.panelLayout.spans) appData.panelLayout.spans = {};
+            if (!appData.panelLayout.sizes) appData.panelLayout.sizes = {};
         }
         function getTodayEnergySpent() {
             ensureEnergyData();
             return appData.dailyEnergy[getTodayString()] || 0;
+        }
+        function getTodayEnergyRemaining() {
+            ensureEnergyData();
+            return Math.max(0, appData.energyMax - getTodayEnergySpent());
+        }
+        function isLowEnergy() {
+            return getTodayEnergyRemaining() < (appData.energyWarnThreshold || 30);
         }
         function adjustTodayEnergy(delta) {
             ensureEnergyData();
@@ -823,9 +980,15 @@
             const cur = appData.dailyEnergy[today] || 0;
             appData.dailyEnergy[today] = Math.max(0, cur + delta);
         }
+        // 增加经验；低精力时正经验减半
         function adjustExp(delta) {
             ensureEnergyData();
-            appData.rpg.exp = Math.max(0, appData.rpg.exp + delta);
+            let finalDelta = delta;
+            if (delta > 0 && isLowEnergy()) {
+                finalDelta = Math.max(1, Math.floor(delta * 0.5));
+            }
+            appData.rpg.exp = Math.max(0, appData.rpg.exp + finalDelta);
+            return finalDelta;
         }
         function adjustAttr(type, sign) {
             ensureEnergyData();
@@ -848,9 +1011,16 @@
             }
             rpg.wil = rpg.streak;
         }
-        function getLevelInfo(exp) {
-            const level = Math.floor(exp / 100) + 1;
-            return { level, expInLevel: exp % 100, needed: 100 };
+        // 等级经验递增：Lv1→2 需 100，Lv2→3 需 200，Lv3→4 需 300……
+        function getLevelInfo(totalExp) {
+            let level = 1;
+            let remaining = totalExp;
+            while (remaining >= 100 * level) {
+                remaining -= 100 * level;
+                level++;
+                if (level > 999) break;
+            }
+            return { level, expInLevel: remaining, needed: 100 * level };
         }
         function getLevelTitle(level) {
             if (level <= 2) return '新手';
@@ -867,16 +1037,38 @@
             const spent = getTodayEnergySpent();
             const remaining = Math.max(0, max - spent);
             const pct = max > 0 ? Math.max(0, Math.min(100, (remaining / max) * 100)) : 0;
+            const low = remaining < (appData.energyWarnThreshold || 30);
+            const energyColor = remaining / max > 0.6 ? '#27ae60' : (remaining / max > 0.3 ? '#f2994a' : '#eb5757');
+
+            // 侧边栏
             const energyTextEl = document.getElementById('energy-text');
             const energyFillEl = document.getElementById('energy-fill');
             if (energyTextEl) {
                 energyTextEl.innerText = `${remaining} / ${max}`;
-                energyTextEl.style.color = remaining <= 0 ? '#eb5757' : (remaining / max < 0.3 ? '#f2994a' : '#333');
+                energyTextEl.style.color = low ? '#eb5757' : '#b45309';
             }
             if (energyFillEl) {
                 energyFillEl.style.width = pct + '%';
-                energyFillEl.style.background = remaining / max > 0.6 ? '#27ae60' : (remaining / max > 0.3 ? '#f2994a' : '#eb5757');
+                energyFillEl.style.background = energyColor;
             }
+            const warnEl = document.getElementById('energy-warn');
+            if (warnEl) warnEl.style.display = low ? 'block' : 'none';
+
+            // Modal
+            const modalEnergyText = document.getElementById('modal-energy-text');
+            const modalEnergyFill = document.getElementById('modal-energy-fill');
+            const modalWarn = document.getElementById('modal-energy-warn');
+            if (modalEnergyText) {
+                modalEnergyText.innerText = `${remaining} / ${max}`;
+                modalEnergyText.style.color = low ? '#eb5757' : '#b45309';
+            }
+            if (modalEnergyFill) {
+                modalEnergyFill.style.width = pct + '%';
+                modalEnergyFill.style.background = energyColor;
+            }
+            if (modalWarn) modalWarn.style.display = low ? 'block' : 'none';
+
+            // RPG 数据
             const rpg = appData.rpg;
             const { level, expInLevel, needed } = getLevelInfo(rpg.exp);
             const title = getLevelTitle(level);
@@ -891,15 +1083,62 @@
             setText('rpg-wil', rpg.wil);
             const expFill = document.getElementById('rpg-exp-fill');
             if (expFill) expFill.style.width = ((expInLevel / needed) * 100) + '%';
+
+            // 手机端浮动按钮
+            const mobileLv = document.getElementById('mobile-rpg-lv');
+            const mobileEnergy = document.getElementById('mobile-rpg-energy');
+            if (mobileLv) mobileLv.innerText = 'Lv.' + level;
+            if (mobileEnergy) {
+                mobileEnergy.innerText = '⚡' + remaining;
+                mobileEnergy.style.color = low ? '#eb5757' : '#b45309';
+            }
+
+            // 设置页数值显示
             const maxValEl = document.getElementById('energy-max-val');
             const maxSlider = document.getElementById('energy-max-slider');
             if (maxValEl) maxValEl.innerText = max;
             if (maxSlider) maxSlider.value = max;
+            const warnValEl = document.getElementById('energy-warn-val');
+            const warnSlider = document.getElementById('energy-warn-slider');
+            if (warnValEl) warnValEl.innerText = appData.energyWarnThreshold;
+            if (warnSlider) warnSlider.value = appData.energyWarnThreshold;
+
+            // 设置页 RPG 编辑框
+            const editMap = { 'rpg-edit-exp': rpg.exp, 'rpg-edit-int': rpg.int, 'rpg-edit-vit': rpg.vit, 'rpg-edit-cre': rpg.cre, 'rpg-edit-foc': rpg.foc, 'rpg-edit-wil': rpg.wil };
+            Object.keys(editMap).forEach(id => {
+                const el = document.getElementById(id);
+                if (el && document.activeElement !== el) el.value = editMap[id];
+            });
         }
+        window.restoreEnergy = function(type) {
+            const amounts = { nap: 40, break: 15 };
+            const amt = amounts[type] || 15;
+            const today = getTodayString();
+            const cur = appData.dailyEnergy[today] || 0;
+            appData.dailyEnergy[today] = Math.max(0, cur - amt);
+            logCodeChange('恢复精力', `${type === 'nap' ? '午睡' : '课间'} +${amt}`);
+            renderEnergyAndRPG();
+            saveDataToFile(appData);
+        };
         window.changeEnergyMax = function(val) {
             ensureEnergyData();
             appData.energyMax = parseInt(val) || 100;
-            logOperation('调整精力上限', `→ ${appData.energyMax}`);
+            renderEnergyAndRPG();
+            saveDataToFile(appData);
+        };
+        window.changeEnergyWarn = function(val) {
+            ensureEnergyData();
+            appData.energyWarnThreshold = parseInt(val) || 30;
+            renderEnergyAndRPG();
+            saveDataToFile(appData);
+        };
+        window.editRPGValue = function(key, val) {
+            ensureEnergyData();
+            const num = parseInt(val);
+            if (isNaN(num) || num < 0) return;
+            appData.rpg[key] = num;
+            if (key === 'wil') appData.rpg.streak = num;
+            logCodeChange('编辑RPG', `${key} → ${num}`);
             renderEnergyAndRPG();
             saveDataToFile(appData);
         };
@@ -913,7 +1152,6 @@
             const num = parseInt(val);
             if (!isNaN(num) && num >= 0) {
                 task.energyCost = num;
-                logOperation('设置精力消耗', `${task.text} → ${num}`);
                 renderDayPlan(); renderTaskPool(); renderWeekBoard();
                 saveDataToFile(appData);
             }
@@ -930,7 +1168,6 @@
             const num = parseInt(val);
             if (!isNaN(num) && num >= 0) {
                 sub.energyCost = num;
-                logOperation('设置精力消耗', `子任务「${sub.text}」→ ${num}`);
                 renderDayPlan(); saveDataToFile(appData);
             }
         };
@@ -943,7 +1180,6 @@
             const num = parseInt(val);
             if (!isNaN(num) && num >= 0) {
                 ex.energyCost = num;
-                logOperation('设置精力消耗', `锻炼「${ex.name}」→ ${num}`);
                 renderDayExercises();
                 saveDataToFile(appData);
             }
@@ -973,6 +1209,7 @@
                     <div class="attr-desc">${a.desc}</div>
                 </div>
             `).join('');
+            renderEnergyAndRPG();
             document.getElementById('rpg-modal').classList.add('active');
         };
         window.closeRPGModal = function() {
@@ -1048,7 +1285,6 @@
                 if (conn) { try { conn.close(); } catch(e){} conn = null; }
                 document.getElementById('my-peer-id').innerText = '未生成';
                 initPeer(true);
-                logOperation('重置连接码', '已生成新连接码');
             }
         };
         window.initPeer = function(isHost, isAutoConnect = false) {
@@ -1084,7 +1320,6 @@
                     document.getElementById('my-peer-id').innerText = id;
                     document.getElementById('p2p-status').innerText = "✅ 主机已就绪，请复制连接码给手机。";
                     document.getElementById('p2p-status').style.color = "#f2994a";
-                    logOperation('开启主机', id);
                 } else if (isAutoConnect) {
                     isAutoReconnecting = true; startAutoConnectLoop();
                 }
@@ -1174,7 +1409,6 @@
             appData = payload;
             if (!appData._lastModified) appData._lastModified = 1;
             if (!appData.panelNotes) appData.panelNotes = { learning: '', other: '', exercise: '' };
-            if (!appData.logs) appData.logs = [];
             ensureEnergyData();
             if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
             if (appData.fontSize) {
@@ -1186,6 +1420,7 @@
                 if (valEl) valEl.innerText = sizeNum;
             }
             lastSavedSignature = getDataSignature(appData);
+            lastAppDataSnapshot = JSON.parse(JSON.stringify(appData));
             renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderPanelNotes(); renderEnergyAndRPG();
             saveLocalStorage();
             isSyncing = false;
@@ -1260,6 +1495,11 @@
             const sig = getDataSignature(data);
             const changed = sig !== lastSavedSignature;
             if (!isSyncing && changed) {
+                if (lastAppDataSnapshot) {
+                    const fields = diffTopFields(lastAppDataSnapshot, data);
+                    if (fields.length > 0) logCodeChange('字段变更', fields.join('、'));
+                }
+                lastAppDataSnapshot = JSON.parse(JSON.stringify(data));
                 data._lastModified = Date.now();
                 lastSavedSignature = getDataSignature(data);
             }
@@ -1283,10 +1523,7 @@
         function changeTheme(color) {
             appData.themeColor = color;
             document.documentElement.style.setProperty('--accent-color', color);
-            if (!isSyncing) {
-                logOperation('切换主题', color);
-                saveDataToFile(appData);
-            }
+            if (!isSyncing) saveDataToFile(appData);
         }
         function changeFontSize(sizeStr) {
             const sizeNum = parseInt(sizeStr);
@@ -1309,86 +1546,87 @@
         };
 
         /* =========================================================
-           9. 存档点
+           9. 面板布局持久化
            ========================================================= */
-        function getSnapshots() { return JSON.parse(localStorage.getItem('myWorkspaceSnapshots') || '[]'); }
-        function saveSnapshots(snapshots) { localStorage.setItem('myWorkspaceSnapshots', JSON.stringify(snapshots)); }
-        window.createSnapshot = function() {
-            let snapshots = getSnapshots();
-            const now = new Date();
-            const pad = n => String(n).padStart(2, '0');
-            const timeStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-            snapshots.unshift({ time: timeStr, data: JSON.parse(JSON.stringify(appData)) });
-            if (snapshots.length > 10) snapshots = snapshots.slice(0, 10);
-            saveSnapshots(snapshots);
-            logOperation('创建存档', timeStr);
-            renderSnapshots();
-            alert('📸 存档成功！');
-        };
-        window.restoreSnapshot = function(index) {
-            if (!confirm('⚠️ 确定要恢复吗？当前未保存的数据会丢失。')) return;
-            const snapshots = getSnapshots();
-            if (index >= 0 && index < snapshots.length) {
-                appData = JSON.parse(JSON.stringify(snapshots[index].data));
-                if (!appData._lastModified) appData._lastModified = 1;
-                if (!appData.panelNotes) appData.panelNotes = { learning: '', other: '', exercise: '' };
-                if (!appData.logs) appData.logs = [];
-                ensureEnergyData();
-                lastSavedSignature = '';
-                if(appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
-                if(appData.fontSize) {
-                    document.documentElement.style.setProperty('--base-font-size', appData.fontSize);
-                    const slider = document.getElementById('font-size-slider');
-                    const valEl = document.getElementById('font-size-val');
-                    const sizeNum = parseInt(appData.fontSize);
-                    if (slider) slider.value = sizeNum;
-                    if (valEl) valEl.innerText = sizeNum;
+        function applyPanelLayout() {
+            ensureEnergyData();
+            const layout = appData.panelLayout;
+            const grid = document.getElementById('day-panels-grid');
+            if (!grid) return;
+            const panels = {};
+            grid.querySelectorAll('[data-panel]').forEach(p => {
+                panels[p.getAttribute('data-panel')] = p;
+            });
+            layout.order.forEach(key => {
+                if (panels[key]) grid.appendChild(panels[key]);
+            });
+            Object.keys(panels).forEach(key => {
+                const p = panels[key];
+                if (layout.spans[key]) p.classList.add('span-full');
+                else p.classList.remove('span-full');
+                const size = layout.sizes[key];
+                if (size) {
+                    if (size.w) p.style.width = size.w; else p.style.removeProperty('width');
+                    if (size.h) p.style.height = size.h; else p.style.removeProperty('height');
                 }
-                logOperation('恢复存档', snapshots[index].time);
-                renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderPanelNotes(); renderEnergyAndRPG();
-                saveDataToFile(appData);
-                alert('✅ 已恢复！');
-            }
-        };
-        window.deleteSnapshot = function(index) {
-            if (!confirm('确定删除该存档吗？')) return;
-            let snapshots = getSnapshots();
-            snapshots.splice(index, 1);
-            saveSnapshots(snapshots);
-            renderSnapshots();
-        };
-        function renderSnapshots() {
-            const list = document.getElementById('snapshot-list');
-            if(!list) return;
-            const snapshots = getSnapshots();
-            list.innerHTML = '';
-            if (snapshots.length === 0) {
-                list.innerHTML = '<div style="color:#999; font-size:0.9em; text-align:center; padding:12px;">暂无存档点。</div>';
-                return;
-            }
-            snapshots.forEach((snap, idx) => {
-                const div = document.createElement('div');
-                div.className = 'snapshot-item';
-                div.innerHTML = `<div>📁 ${snap.time}</div>
-                    <div class="snapshot-actions">
-                        <button class="btn btn-sm" style="color:var(--accent-color); border-color:var(--accent-color);" onclick="restoreSnapshot(${idx})">恢复</button>
-                        <button class="btn btn-sm" style="color:var(--danger-color); border-color:var(--danger-color);" onclick="deleteSnapshot(${idx})">删除</button>
-                    </div>`;
-                list.appendChild(div);
             });
         }
+        function savePanelOrder() {
+            const grid = document.getElementById('day-panels-grid');
+            if (!grid) return;
+            ensureEnergyData();
+            const order = [];
+            grid.querySelectorAll('[data-panel]').forEach(p => {
+                order.push(p.getAttribute('data-panel'));
+            });
+            appData.panelLayout.order = order;
+            saveDataToFile(appData);
+        }
+        function setupResizeObserver() {
+            if (resizeObserver) resizeObserver.disconnect();
+            if (!window.ResizeObserver) return;
+            const grid = document.getElementById('day-panels-grid');
+            if (!grid) return;
+            ensureEnergyData();
+            resizeObserver = new ResizeObserver(entries => {
+                let changed = false;
+                entries.forEach(entry => {
+                    const p = entry.target;
+                    const key = p.getAttribute('data-panel');
+                    if (!key) return;
+                    // 只记录用户主动 resize 后产生的 inline style
+                    const w = p.style.width;
+                    const h = p.style.height;
+                    if (!appData.panelLayout.sizes[key]) appData.panelLayout.sizes[key] = {};
+                    if (w && appData.panelLayout.sizes[key].w !== w) { appData.panelLayout.sizes[key].w = w; changed = true; }
+                    if (h && appData.panelLayout.sizes[key].h !== h) { appData.panelLayout.sizes[key].h = h; changed = true; }
+                });
+                if (changed) saveDataToFile(appData);
+            });
+            grid.querySelectorAll('[data-panel]').forEach(p => resizeObserver.observe(p));
+        }
+        window.togglePanelWidth = function(btn) {
+            const box = btn.closest('.section-box');
+            const key = box.getAttribute('data-panel');
+            ensureEnergyData();
+            box.classList.toggle('span-full');
+            appData.panelLayout.spans[key] = box.classList.contains('span-full');
+            saveDataToFile(appData);
+        };
 
         /* =========================================================
            10. 拖拽与面板排序
            ========================================================= */
         function initDragAndDrop() {
             const grid = document.getElementById('day-panels-grid');
-            new Sortable(grid, { animation: 200, handle: '.panel-header', ghostClass: 'sortable-ghost' });
+            new Sortable(grid, {
+                animation: 200,
+                handle: '.panel-header',
+                ghostClass: 'sortable-ghost',
+                onEnd: function() { savePanelOrder(); }
+            });
+            setupResizeObserver();
         }
-        window.togglePanelWidth = function(btn) {
-            const box = btn.closest('.section-box');
-            box.classList.toggle('span-full');
-        };
 
         /* =========================================================
            11. 时间导航
@@ -1601,6 +1839,11 @@
             appData.exerciseSchedule[dateStr] = appData.exerciseSchedule[dateStr].filter(n => n !== exName);
             if (appData.exerciseSchedule[dateStr].length === 0) delete appData.exerciseSchedule[dateStr];
         }
+        function isExerciseAllChecked(dateStr, ex) {
+            if (!ex || !ex.subTasks || ex.subTasks.length === 0) return false;
+            const checks = appData.dailyExerciseChecks[dateStr] || {};
+            return ex.subTasks.every(sub => checks[`${ex.id}_${sub.id}`]);
+        }
         function renderWeekBoard() {
             const board = document.getElementById('week-board');
             board.innerHTML = '';
@@ -1641,7 +1884,6 @@
                         if (!appData.dailyExerciseChecks[dateStr]) appData.dailyExerciseChecks[dateStr] = {};
                         const newState = e.target.checked;
                         if (ex && ex.subTasks) ex.subTasks.forEach(sub => { appData.dailyExerciseChecks[dateStr][`${ex.id}_${sub.id}`] = newState; });
-                        // 精力按大类 energyCost 调整
                         if (ex && wasAll !== newState) {
                             if (newState) {
                                 adjustTodayEnergy(ex.energyCost || 15);
@@ -1665,7 +1907,6 @@
                     delBtn.onclick = (e) => {
                         e.stopPropagation();
                         removeExerciseFromDate(exName, dateStr);
-                        logOperation('取消锻炼排期', `${exName} @ ${dateStr}`);
                         saveDataToFile(appData);
                         renderWeekBoard(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
                     };
@@ -1677,11 +1918,6 @@
             const sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6);
             renderStats('stats-week', formatDate(monday.getFullYear(), monday.getMonth(), monday.getDate()), formatDate(sunday.getFullYear(), sunday.getMonth(), sunday.getDate()), '周');
-        }
-        function isExerciseAllChecked(dateStr, ex) {
-            if (!ex || !ex.subTasks || ex.subTasks.length === 0) return false;
-            const checks = appData.dailyExerciseChecks[dateStr] || {};
-            return ex.subTasks.every(sub => checks[`${ex.id}_${sub.id}`]);
         }
         function renderExercisePool() {
             const pool = document.getElementById('exercise-pool');
@@ -1741,10 +1977,10 @@
                     if (subId) {
                         const task = appData.tasks.find(t => t.id === taskId);
                         const sub = task && task.subTasks.find(s => s.id === subId);
-                        if (sub) { sub.text = newText; logOperation('编辑子任务', `${originalText} → ${newText}`); }
+                        if (sub) sub.text = newText;
                     } else {
                         const task = appData.tasks.find(t => t.id === taskId);
-                        if (task) { task.text = newText; logOperation('编辑任务', `${originalText} → ${newText}`); }
+                        if (task) task.text = newText;
                     }
                     if (input.parentNode) input.parentNode.removeChild(input);
                     renderDayPlan(); renderTaskPool(); renderWeekBoard();
@@ -1767,7 +2003,6 @@
             const val = prompt('预计完成时长（例如 30分钟、1小时，留空清除）：', task.estimate || '');
             if (val !== null) {
                 if (val.trim()) task.estimate = val.trim(); else delete task.estimate;
-                logOperation('设置时长', `${task.text} → ${task.estimate || '已清除'}`);
                 renderDayPlan(); renderTaskPool(); renderWeekBoard();
                 saveDataToFile(appData);
             }
@@ -1780,7 +2015,6 @@
             const val = prompt(`设置【${sub.text}】预计完成时长（留空清除）：`, sub.estimate || '');
             if (val !== null) {
                 if (val.trim()) sub.estimate = val.trim(); else delete sub.estimate;
-                logOperation('设置时长', `子任务「${sub.text}」→ ${sub.estimate || '已清除'}`);
                 renderDayPlan(); renderTaskPool(); renderWeekBoard();
                 saveDataToFile(appData);
             }
@@ -1959,12 +2193,13 @@
                 if (target === 'month') renderCalendar();
                 else if (target === 'year') renderYearHeatmap();
                 else if (target === 'week') { renderWeekBoard(); renderTaskPool(); renderExercisePool(); }
-                else if (target === 'day') { renderDayPlan(); renderPanelNotes(); }
+                else if (target === 'day') { renderDayPlan(); renderPanelNotes(); applyPanelLayout(); }
                 else if (target === 'settings') {
                     renderSnapshots();
                     renderP2PHistory();
                     updateBackupUI();
-                    renderLogs();
+                    renderCodeLogs();
+                    renderEnergyAndRPG();
                     const savedHost = localStorage.getItem('my_p2p_host_id');
                     if (savedHost) document.getElementById('my-peer-id').innerText = savedHost;
                 }
@@ -1988,31 +2223,22 @@
         function handleDrop(ev, targetDate) {
             ev.preventDefault();
             document.querySelectorAll('.week-column, .task-pool-list, #exercise-pool').forEach(c => c.classList.remove('drag-over'));
-            let logMsg = '';
             if (draggedTaskId) {
                 const task = appData.tasks.find(t => t.id === draggedTaskId);
-                if (task) {
-                    logMsg = `任务「${task.text}」→ ${targetDate === 'pool' ? '待办池' : targetDate}`;
-                    task.date = targetDate;
-                }
+                if (task) task.date = targetDate;
             } else if (draggedExerciseName) {
                 const sourceIsDate = draggedExerciseSource && draggedExerciseSource.startsWith('date:');
                 const sourceDate = sourceIsDate ? draggedExerciseSource.substring(5) : null;
                 if (targetDate === 'pool') {
-                    if (sourceIsDate && sourceDate) {
-                        removeExerciseFromDate(draggedExerciseName, sourceDate);
-                        logMsg = `取消锻炼排期「${draggedExerciseName}」@ ${sourceDate}`;
-                    }
+                    if (sourceIsDate && sourceDate) removeExerciseFromDate(draggedExerciseName, sourceDate);
                 } else {
                     if (!(sourceIsDate && sourceDate === targetDate)) {
                         if (sourceIsDate && sourceDate) removeExerciseFromDate(draggedExerciseName, sourceDate);
                         if (!appData.exerciseSchedule[targetDate]) appData.exerciseSchedule[targetDate] = [];
                         if (!appData.exerciseSchedule[targetDate].includes(draggedExerciseName)) appData.exerciseSchedule[targetDate].push(draggedExerciseName);
-                        logMsg = `排期锻炼「${draggedExerciseName}」→ ${targetDate}`;
                     }
                 }
             }
-            if (logMsg) logOperation('排期调整', logMsg);
             saveDataToFile(appData);
             renderWeekBoard(); renderTaskPool(); renderExercisePool(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
             draggedTaskId = null; draggedExerciseName = null; draggedExerciseSource = null;
@@ -2020,30 +2246,18 @@
 
         /* =========================================================
            17. 任务 / 子任务 / 锻炼 交互操作
-           【精力规则】
-           - 非计数型任务（无子任务、无 target）：完成时 ±energyCost 精力/EXP，属性 ±1
-           - 计数型任务（有 target、无子任务）：
-               · +1/-1 每次 ±energyCost 精力/EXP
-               · 达到目标时属性 +1（INT/VIT/CRE 和 FOC）
-               · 取消完成时退回已消耗的 current * energyCost
-           - 有子任务的父任务：本身不消耗，由子任务消耗
-           - 子任务同理
            ========================================================= */
         window.deleteTask = function(taskId) {
-            const task = appData.tasks.find(t => t.id === taskId);
             if (confirm('确定要删除这个任务吗？')) {
                 appData.tasks = appData.tasks.filter(t => t.id !== taskId);
-                if (task) logOperation('删除任务', task.text);
                 renderDayPlan(); renderCalendar(); renderTaskPool(); renderYearHeatmap(); updateFixedProgressBars(); saveDataToFile(appData);
             }
         };
         window.deleteSubTask = function(taskId, subId) {
             const task = appData.tasks.find(t => t.id === taskId);
             if (task && task.subTasks) {
-                const sub = task.subTasks.find(s => s.id === subId);
                 task.subTasks = task.subTasks.filter(s => s.id !== subId);
                 if (task.subTasks.length > 0) { syncParentTaskStatus(task); } else { task.completed = false; }
-                if (sub) logOperation('删除子任务', sub.text);
                 renderDayPlan(); renderCalendar(); updateFixedProgressBars(); saveDataToFile(appData);
             }
         };
@@ -2054,19 +2268,15 @@
         window.toggleMainTaskFromWeek = function(taskId) {
             const task = appData.tasks.find(t => t.id === taskId);
             if (!task) return;
-            // 周计划勾选也走统一的完成逻辑
             toggleTaskCompletion(task);
             renderWeekBoard(); renderCalendar(); renderTaskPool(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
         };
-
-        // 统一的完成状态切换（含精力/EXP/属性处理）
         function toggleTaskCompletion(task) {
             const wasCompleted = task.completed;
             const nowWillComplete = !wasCompleted;
             const hasSubTasks = task.subTasks && task.subTasks.length > 0;
             const isCountTask = !!task.target && !hasSubTasks;
             if (hasSubTasks) {
-                // 有子任务：批量切换子任务
                 task.subTasks.forEach(sub => {
                     const subWasCompleted = sub.completed;
                     if (sub.target) {
@@ -2139,9 +2349,7 @@
                     task.completed = false;
                 }
             }
-            logOperation(task.completed ? '完成任务' : '取消完成', task.text);
         }
-
         window.incrementTaskProgress = function(taskId) {
             const task = appData.tasks.find(t => t.id === taskId);
             if (!task || !task.target) return;
@@ -2156,7 +2364,6 @@
                 adjustAttr(task.type, 1);
                 adjustAttr('focus', 1);
                 updateStreak();
-                logOperation('完成任务', task.text);
             }
             renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
         };
@@ -2172,7 +2379,6 @@
                 adjustAttr('focus', -1);
                 task.current = Math.max(0, (task.current || task.target) - 1);
                 task.completed = false;
-                logOperation('取消完成', task.text);
             } else if (task.current > 0) {
                 adjustTodayEnergy(-cost);
                 adjustExp(-cost);
@@ -2197,12 +2403,10 @@
                 adjustAttr(task.type, 1);
             }
             syncParentTaskStatus(task);
-            // 父任务从"未完成→完成"时给 FOC +1
             if (!wasTaskCompleted && task.completed) {
                 adjustAttr('focus', 1);
                 updateStreak();
             }
-            logOperation('子任务次数+1', `${sub.text} (${sub.current}/${sub.target})`);
             renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
         };
         window.decrementSubTaskProgress = function(taskId, subId) {
@@ -2225,10 +2429,7 @@
                 sub.current = sub.current - 1;
             }
             syncParentTaskStatus(task);
-            if (wasTaskCompleted && !task.completed) {
-                adjustAttr('focus', -1);
-            }
-            logOperation('子任务次数-1', `${sub.text} (${sub.current}/${sub.target})`);
+            if (wasTaskCompleted && !task.completed) adjustAttr('focus', -1);
             renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
         };
         window.setTaskTarget = function(taskId) {
@@ -2241,7 +2442,6 @@
                     task.target = num;
                     if (num === 0) { delete task.target; delete task.current; task.completed = false; }
                     else { if (!task.current) task.current = 0; if (task.current >= task.target) task.completed = true; }
-                    logOperation('设置次数', `${task.text} → ${num === 0 ? '取消' : num}`);
                     renderDayPlan();
                 }
             }
@@ -2258,9 +2458,7 @@
                     sub.target = num;
                     if (num === 0) { delete sub.target; delete sub.current; sub.completed = false; }
                     else { if (!sub.current) sub.current = 0; if (sub.current >= sub.target) sub.completed = true; }
-                    syncParentTaskStatus(task);
-                    logOperation('设置次数', `子任务「${sub.text}」→ ${num === 0 ? '取消' : num}`);
-                    renderDayPlan(); renderCalendar();
+                    syncParentTaskStatus(task); renderDayPlan(); renderCalendar();
                 }
             }
         };
@@ -2282,7 +2480,6 @@
                 };
                 if (target > 0) { newTask.target = target; newTask.current = 0; }
                 appData.tasks.push(newTask); e.target.value = '';
-                logOperation('添加任务', `${text}${target > 0 ? ` (目标 ${target} 次)` : ''}`);
                 if (isPool) { renderTaskPool(); saveDataToFile(appData); } else { renderDayPlan(); }
             }
         }
@@ -2294,13 +2491,11 @@
             const task = appData.tasks.find(t => t.id === taskId);
             if (!task) return;
             const choice = prompt("输入循环天数 (1=每日, 7=每周, 30=每月，其他数字=自定义)：\n(留空取消循环)");
-            if (choice === null || choice.trim() === '') { task.recurringType = ''; logOperation('取消循环', task.text); renderDayPlan(); return; }
+            if (choice === null || choice.trim() === '') { task.recurringType = ''; renderDayPlan(); return; }
             const days = parseInt(choice);
             if (isNaN(days) || days <= 0) { alert('无效数字'); return; }
             let type = days === 1 ? '每日' : days === 7 ? '每周' : days === 30 ? '每月' : `自定义${days}天`;
-            task.recurringType = type;
-            logOperation('设置循环', `${task.text} → ${type}`);
-            renderDayPlan();
+            task.recurringType = type; renderDayPlan();
         };
         window.toggleExerciseRecurring = function(exId) {
             const ex = appData.exercises.find(e => e.id === exId);
@@ -2310,23 +2505,16 @@
             const days = parseInt(choice);
             if (isNaN(days) || days <= 0) { alert('无效数字'); return; }
             let type = days === 1 ? '每日' : days === 7 ? '每周' : days === 30 ? '每月' : `自定义${days}天`;
-            ex.recurringType = type;
-            logOperation('设置循环', `锻炼「${ex.name}」→ ${type}`);
-            renderDayExercises(); renderWeekBoard(); saveDataToFile(appData);
+            ex.recurringType = type; renderDayExercises(); renderWeekBoard(); saveDataToFile(appData);
         };
         window.setDeadline = function(taskId, dateVal) {
             const task = appData.tasks.find(t => t.id === taskId);
-            if (task) {
-                task.deadline = dateVal;
-                if (dateVal) logOperation('设置截止日', `${task.text} → ${dateVal}`);
-                renderDayPlan();
-            }
+            if (task) { task.deadline = dateVal; renderDayPlan(); }
         };
         window.addExerciseCategory = function() {
             const name = prompt("请输入新锻炼大类名称：");
             if (name && name.trim() !== '') {
                 appData.exercises.push({ id: 'ex_' + Date.now(), name: name.trim(), subTasks: [], recurringType: '', energyCost: 15 });
-                logOperation('添加锻炼大类', name.trim());
                 renderExercisePool(); renderDayExercises(); saveDataToFile(appData);
             }
         };
@@ -2337,7 +2525,6 @@
             if (newName && newName.trim() !== '' && newName !== ex.name) {
                 const oldName = ex.name; ex.name = newName.trim();
                 for (let date in appData.exerciseSchedule) { const idx = appData.exerciseSchedule[date].indexOf(oldName); if (idx !== -1) appData.exerciseSchedule[date][idx] = ex.name; }
-                logOperation('重命名锻炼', `${oldName} → ${ex.name}`);
                 renderExercisePool(); renderDayExercises(); renderWeekBoard(); saveDataToFile(appData);
             }
         };
@@ -2347,28 +2534,18 @@
                 if (!ex) return;
                 appData.exercises = appData.exercises.filter(e => e.id !== exId);
                 for (let date in appData.exerciseSchedule) { appData.exerciseSchedule[date] = appData.exerciseSchedule[date].filter(name => name !== ex.name); }
-                logOperation('删除锻炼大类', ex.name);
                 renderExercisePool(); renderDayExercises(); renderWeekBoard(); saveDataToFile(appData);
             }
         };
         window.addExerciseTask = function(event, exId) {
             if (event.key === 'Enter' && event.target.value.trim() !== '') {
                 const ex = appData.exercises.find(e => e.id === exId);
-                if (ex) {
-                    ex.subTasks.push({ id: Date.now().toString(), text: event.target.value.trim() });
-                    logOperation('添加锻炼动作', `${ex.name}：${event.target.value.trim()}`);
-                    event.target.value = ''; renderDayExercises(); saveDataToFile(appData);
-                }
+                if (ex) { ex.subTasks.push({ id: Date.now().toString(), text: event.target.value.trim() }); event.target.value = ''; renderDayExercises(); saveDataToFile(appData); }
             }
         };
         window.deleteExerciseAction = function(exId, subId) {
             const ex = appData.exercises.find(e => e.id === exId);
-            if (ex) {
-                const sub = ex.subTasks.find(s => s.id === subId);
-                ex.subTasks = ex.subTasks.filter(s => s.id !== subId);
-                if (sub) logOperation('删除锻炼动作', sub.text);
-                renderDayExercises(); saveDataToFile(appData);
-            }
+            if (ex) { ex.subTasks = ex.subTasks.filter(s => s.id !== subId); renderDayExercises(); saveDataToFile(appData); }
         };
         window.toggleExerciseCategory = function(exId) {
             const dateStr = appData.selectedDate;
@@ -2390,7 +2567,6 @@
                     adjustAttr('exercise', -1);
                 }
             }
-            logOperation(newState ? '完成锻炼' : '取消锻炼', ex.name);
             renderDayExercises(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
         };
         window.toggleExerciseTask = function(exId, subId) {
@@ -2433,7 +2609,6 @@
             const wasSubCompleted = sub.completed;
             const willBeCompleted = !wasSubCompleted;
             if (sub.target) {
-                // 计数型：勾选时把次数补齐/清零
                 if (willBeCompleted) {
                     const delta = sub.target - (sub.current || 0);
                     if (delta > 0) {
@@ -2489,9 +2664,7 @@
                     if (target > 0) { newSub.target = target; newSub.current = 0; }
                     task.subTasks.push(newSub);
                     event.target.value = ''; event.target.style.display = 'none';
-                    syncParentTaskStatus(task);
-                    logOperation('添加子任务', `${task.text}：${text}${target > 0 ? ` (目标 ${target} 次)` : ''}`);
-                    renderDayPlan(); renderCalendar();
+                    syncParentTaskStatus(task); renderDayPlan(); renderCalendar();
                 }
             }
         };
@@ -2543,7 +2716,6 @@
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", `backup_${getTodayString()}.json`);
             document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove();
-            logOperation('导出备份', getTodayString());
         };
         window.importData = function(event) {
             const file = event.target.files[0]; if (!file) return;
@@ -2555,9 +2727,9 @@
                         appData = importedData;
                         if (!appData._lastModified) appData._lastModified = 1;
                         if (!appData.panelNotes) appData.panelNotes = { learning: '', other: '', exercise: '' };
-                        if (!appData.logs) appData.logs = [];
                         ensureEnergyData();
                         lastSavedSignature = '';
+                        lastAppDataSnapshot = JSON.parse(JSON.stringify(appData));
                         if(appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
                         if(appData.fontSize) {
                             document.documentElement.style.setProperty('--base-font-size', appData.fontSize);
@@ -2567,7 +2739,7 @@
                             if (slider) slider.value = sizeNum;
                             if (valEl) valEl.innerText = sizeNum;
                         }
-                        logOperation('导入数据', file.name);
+                        logCodeChange('导入数据', file.name);
                         renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderPanelNotes(); renderEnergyAndRPG();
                         saveDataToFile(appData); alert('导入成功！');
                     }
@@ -2629,7 +2801,6 @@
                 await idbPut('backupDir', handle);
                 startAutoBackupTimer();
                 updateBackupUI();
-                logOperation('开启自动备份', '已选择文件夹');
                 alert('✅ 已选择备份文件夹，自动备份已开启。');
             } catch (e) {
                 if (e.name !== 'AbortError') alert('选择文件夹失败：' + e.message);
@@ -2654,7 +2825,6 @@
             backupDirHandle = null;
             pendingBackupHandle = null;
             updateBackupUI();
-            logOperation('停止自动备份', '');
         };
         window.changeBackupInterval = function(val) {
             autoBackupIntervalMin = parseInt(val) || 3;
@@ -2767,15 +2937,15 @@
         }
         if (!appData._lastModified) appData._lastModified = 1;
         if (!appData.panelNotes) appData.panelNotes = { learning: '', other: '', exercise: '' };
-        if (!appData.logs) appData.logs = [];
         ensureEnergyData();
-        // 补全旧任务缺失的 energyCost（计数型默认 1，非计数型默认 10/5）
+        // 补全旧任务缺失的 energyCost
         appData.tasks.forEach(t => {
             if (t.energyCost === undefined) t.energyCost = t.target ? 1 : 10;
             if (t.subTasks) t.subTasks.forEach(s => { if (s.energyCost === undefined) s.energyCost = s.target ? 1 : 5; });
         });
         appData.exercises.forEach(ex => { if (ex.energyCost === undefined) ex.energyCost = 15; });
         lastSavedSignature = getDataSignature(appData);
+        lastAppDataSnapshot = JSON.parse(JSON.stringify(appData));
         lastBackupModified = appData._lastModified || 0;
         const savedInterval = localStorage.getItem('myWorkspaceBackupInterval');
         if (savedInterval) autoBackupIntervalMin = parseInt(savedInterval) || 3;
@@ -2792,8 +2962,10 @@
             if (slider) slider.value = sizeNum;
             if (valEl) valEl.innerText = sizeNum;
         }
+        // 首次渲染
+        applyPanelLayout();
         renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
-        initDragAndDrop(); renderSnapshots(); renderPanelNotes(); updateBackupUI(); renderEnergyAndRPG();
+        initDragAndDrop(); renderSnapshots(); renderPanelNotes(); updateBackupUI(); renderEnergyAndRPG(); renderCodeLogs();
         renderP2PHistory();
         const savedHost = localStorage.getItem('my_p2p_host_id');
         if (savedHost) document.getElementById('my-peer-id').innerText = savedHost;
@@ -2802,6 +2974,8 @@
             document.getElementById('target-peer-id').value = localStorage.getItem('last_connected_peer');
             setTimeout(() => { initPeer(false, true); }, 500);
         }
+        // 切换日期后精力会按天刷新
+        setInterval(() => { renderEnergyAndRPG(); }, 60000);
     </script>
 </body>
 </html>
