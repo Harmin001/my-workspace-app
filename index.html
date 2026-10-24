@@ -120,17 +120,19 @@ h2{font-size:1.15em;font-weight:600;margin-bottom:0;display:flex;align-items:cen
 .stat-card.other{border-top:4px solid #f2994a}
 .stat-card.exercise{border-top:4px solid #27ae60}
 .week-board{display:flex;gap:8px;height:400px;margin-bottom:24px;flex-shrink:0}
-/* 修复：添加 overflow-y: auto 和 min-height: 0 让超出部分内部滚动 */
 .week-column{flex:1;background:var(--bg-sidebar);border-radius:8px;padding:8px;display:flex;flex-direction:column;border:1px dashed transparent;overflow-y:auto;min-height:0;}
 .week-column.today-col{border-color:var(--accent-color);background:#eef5fc}
 .week-column.drag-over{border-color:var(--accent-color);background:#eef5fc}
-.week-column-header{font-weight:600;text-align:center;margin-bottom:12px;font-size:.9em;color:#555}
+.week-column-header{font-weight:600;text-align:center;margin-bottom:12px;font-size:.9em;color:#555;cursor:pointer;padding:4px;border-radius:4px;transition:background .2s}
+.week-column-header:hover{background:#e3e2e0}
 .week-today-badge{display:inline-block;font-size:.7em;color:#fff;background:var(--accent-color);padding:1px 6px;border-radius:8px;margin-top:2px}
 .todo-section{background:#fff;border:1px solid var(--border-color);border-radius:8px;padding:16px;flex-shrink:0}
 .todo-input{width:100%;padding:10px 12px;border:1px solid var(--border-color);border-radius:6px;margin-bottom:12px;outline:none;font-family:inherit;font-size:.95em}
 .todo-input:focus{border-color:var(--accent-color)}
-.todo-lists-container{display:flex;gap:16px;margin-bottom:24px}
-.todo-column{flex:1}
+/* 支持自定义拖拽宽度的待办列 */
+.todo-lists-container{display:flex;gap:16px;margin-bottom:24px;align-items:flex-start}
+.todo-column{flex:1;min-width:200px;resize:horizontal;overflow:auto;padding-bottom:4px;border-bottom:1px dashed transparent}
+.todo-column:hover{border-bottom-color:#ccc}
 .todo-column h3{font-size:1em;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:4px}
 .task-pool-list{display:flex;flex-wrap:wrap;gap:8px;min-height:60px;padding:8px;border:2px dashed var(--border-color);border-radius:6px;background:#fafafa}
 .task-item{background:#fff;border:1px solid var(--border-color);padding:6px 12px;border-radius:6px;cursor:grab;display:inline-flex;align-items:center;gap:6px;font-size:.9em}
@@ -242,29 +244,36 @@ input[type="number"]{padding:6px 8px;border:1px solid var(--border-color);border
 .snapshot-item{display:flex;justify-content:space-between;align-items:center;background:var(--bg-sidebar);padding:6px 10px;border-radius:6px;border:1px solid var(--border-color);font-size:.85em}
 .snapshot-actions{display:flex;gap:6px}
 .bottom-summary{flex-shrink:0;margin-top:auto}
-.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;align-items:stretch;margin-bottom:20px}
-.settings-grid>.section-box{width:100%!important;height:auto!important;resize:none!important;margin-bottom:0!important}
+/* 极度紧凑的设置界面 */
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;align-items:stretch;margin-bottom:20px}
+.settings-grid>.section-box{width:100%!important;height:auto!important;resize:none!important;margin-bottom:0!important;padding:0}
 .settings-grid>.section-box.span-full{grid-column:1/-1}
-.settings-grid .panel-content{padding:12px 14px}
-.settings-grid .panel-content h2{font-size:1em;margin-bottom:8px}
-.settings-grid .panel-content p{font-size:.82em!important;margin:6px 0!important}
-.settings-grid .panel-content .btn{padding:5px 10px;font-size:.85em}
-.settings-grid .panel-content .btn-sm{padding:3px 7px;font-size:.8em}
-.backup-status{font-size:.8em;color:var(--text-muted);margin-top:6px;line-height:1.5}
-.log-list{max-height:340px;overflow-y:auto;margin-top:8px}
-.log-item{display:flex;gap:10px;padding:5px 4px;border-bottom:1px dashed #eee;font-size:.82em;align-items:flex-start}
-.log-time{color:#999;font-family:ui-monospace,Menlo,monospace;flex-shrink:0;min-width:140px;font-size:.9em}
-.log-type{font-weight:600;flex-shrink:0;padding:0 6px;border-radius:4px;font-size:.9em}
+.settings-grid .panel-content{padding:10px 12px}
+.settings-grid .panel-content h2{font-size:.95em;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #eee}
+.settings-grid .panel-content p{font-size:.78em!important;margin:4px 0!important;color:#888}
+.settings-grid .panel-content .btn{padding:4px 8px;font-size:.8em}
+.settings-grid .panel-content .btn-sm{padding:3px 6px;font-size:.75em}
+/* 折叠面板样式 */
+details.settings-details summary{font-size:.95em;font-weight:600;color:#303f9f;cursor:pointer;outline:none;user-select:none;display:flex;align-items:center;gap:6px;padding-bottom:4px;list-style:none}
+details.settings-details summary::-webkit-details-marker{display:none}
+details.settings-details summary::before{content:'▶';font-size:.8em;transition:transform .2s}
+details.settings-details[open] summary::before{transform:rotate(90deg)}
+.settings-details .panel-content{padding-top:8px}
+.backup-status{font-size:.75em;color:var(--text-muted);margin-top:4px;line-height:1.4}
+.log-list{max-height:200px;overflow-y:auto;margin-top:8px}
+.log-item{display:flex;gap:6px;padding:4px 0;border-bottom:1px dashed #eee;font-size:.78em;align-items:flex-start}
+.log-time{color:#999;font-family:ui-monospace,Menlo,monospace;flex-shrink:0;min-width:125px}
+.log-type{font-weight:600;flex-shrink:0;padding:0 4px;border-radius:4px;font-size:.9em}
 .log-detail{color:#555;flex:1;word-break:break-all}
-.rpg-edit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
-.rpg-edit-grid label{display:flex;flex-direction:column;gap:3px;font-size:.82em;color:#555}
+.rpg-edit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.rpg-edit-grid label{display:flex;flex-direction:column;gap:2px;font-size:.78em;color:#555}
 .rpg-edit-grid span{font-weight:600;color:#92400e}
-.rpg-edit-grid input{padding:5px 8px;font-size:.85em}
-.level-config-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:340px;overflow-y:auto;padding-right:4px}
-.level-config-row{display:flex;gap:8px;align-items:center}
-.level-config-row input[type="text"]{flex:1;padding:5px 8px;font-size:.85em}
-.level-config-row input[type="number"]{width:90px;padding:5px 8px;font-size:.85em}
-.level-badge{font-size:.78em;font-weight:700;color:#b45309;background:#fde68a;padding:3px 8px;border-radius:4px;min-width:44px;text-align:center;flex-shrink:0}
+.rpg-edit-grid input{padding:4px 6px;font-size:.8em}
+.level-config-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;max-height:260px;overflow-y:auto;padding-right:4px}
+.level-config-row{display:flex;gap:6px;align-items:center}
+.level-config-row input[type="text"]{flex:1;padding:4px 6px;font-size:.8em}
+.level-config-row input[type="number"]{width:70px;padding:4px 6px;font-size:.8em}
+.level-badge{font-size:.75em;font-weight:700;color:#b45309;background:#fde68a;padding:2px 6px;border-radius:4px;min-width:38px;text-align:center;flex-shrink:0}
 .mobile-rpg-fab{display:none}
 .task-list-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1001;align-items:center;justify-content:center;padding:20px}
 .task-list-modal-overlay.active{display:flex}
@@ -275,7 +284,7 @@ input[type="number"]{padding:6px 8px;border:1px solid var(--border-color);border
 .task-list-modal-body{display:flex;flex-direction:column;gap:4px}
 .view-all-btn{display:block;width:100%;margin-top:8px;padding:6px;border:1px dashed var(--border-color);border-radius:6px;background:#fafafa;color:var(--accent-color);font-size:.85em;font-weight:600;cursor:pointer;text-align:center}
 .view-all-btn:hover{background:#eef5fc}
-@media(max-width:900px){.settings-grid{grid-template-columns:1fr;gap:14px}.rpg-edit-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.settings-grid{grid-template-columns:1fr;gap:12px}.rpg-edit-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
 body{flex-direction:column}
 .sidebar{width:100%;height:auto;order:2;border-right:none;border-top:1px solid var(--border-color);padding:8px 4px;flex-direction:row;justify-content:space-around;align-items:center;position:fixed;bottom:0;left:0;z-index:100;background:rgba(247,247,245,.95);backdrop-filter:blur(10px)}
@@ -435,23 +444,23 @@ h1{font-size:1.4em;margin-bottom:12px}
 <div class="section-box">
 <div class="panel-content">
 <h2>🎨 主题与字体</h2>
-<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
 <button class="btn btn-sm" onclick="changeTheme('#2383e2')">经典蓝</button>
 <button class="btn btn-sm" onclick="changeTheme('#f2994a')">活力橙</button>
 <button class="btn btn-sm" onclick="changeTheme('#27ae60')">护眼绿</button>
 <button class="btn btn-sm" onclick="changeTheme('#9b51e0')">浪漫紫</button>
 </div>
-<div style="margin-top:12px;font-size:.85em;font-weight:600;color:#555;">字体大小 (<span id="font-size-val">14</span>px)</div>
-<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:#999;">小</span><input type="range" id="font-size-slider" min="12" max="22" step="1" value="14" oninput="changeFontSize(this.value + 'px')"><span style="font-size:16px;color:#999;">大</span></div>
+<div style="margin-top:8px;font-size:.8em;font-weight:600;color:#555;">字体大小 (<span id="font-size-val">14</span>px)</div>
+<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:#999;">小</span><input type="range" id="font-size-slider" min="12" max="22" step="1" value="14" oninput="changeFontSize(this.value + 'px')"><span style="font-size:14px;color:#999;">大</span></div>
 </div>
 </div>
 <div class="section-box" style="border-color:#fde68a;">
 <div class="panel-content">
 <h2 style="color:#b45309;">⚡ 精力设置</h2>
-<div style="margin-top:8px;font-size:.85em;font-weight:600;color:#555;">今日精力上限 (<span id="energy-max-val">100</span>)</div>
-<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:#999;">50</span><input type="range" id="energy-max-slider" min="50" max="200" step="10" value="100" oninput="changeEnergyMax(this.value)"><span style="font-size:16px;color:#999;">200</span></div>
-<div style="margin-top:12px;font-size:.85em;font-weight:600;color:#555;">精力警告阈值 (<span id="energy-warn-val">30</span>)</div>
-<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:#999;">10</span><input type="range" id="energy-warn-slider" min="10" max="100" step="5" value="30" oninput="changeEnergyWarn(this.value)"><span style="font-size:16px;color:#999;">100</span></div>
+<div style="margin-top:6px;font-size:.8em;font-weight:600;color:#555;">今日精力上限 (<span id="energy-max-val">100</span>)</div>
+<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:#999;">50</span><input type="range" id="energy-max-slider" min="50" max="200" step="10" value="100" oninput="changeEnergyMax(this.value)"><span style="font-size:14px;color:#999;">200</span></div>
+<div style="margin-top:8px;font-size:.8em;font-weight:600;color:#555;">精力警告阈值 (<span id="energy-warn-val">30</span>)</div>
+<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:#999;">10</span><input type="range" id="energy-warn-slider" min="10" max="100" step="5" value="30" oninput="changeEnergyWarn(this.value)"><span style="font-size:14px;color:#999;">100</span></div>
 </div>
 </div>
 <div class="section-box" style="border-color:#c5cae9;">
@@ -470,83 +479,81 @@ h1{font-size:1.4em;margin-bottom:12px}
 <div class="section-box span-full" style="border-color:#fde68a;">
 <div class="panel-content">
 <h2 style="color:#b45309;">🏆 等级配置</h2>
-<p style="color:var(--text-muted);margin:6px 0 8px;font-size:.82em;">自定义每级名称和升到下一级所需经验。超过配置等级后沿用最后一级。</p>
 <div class="level-config-list" id="level-config-list"></div>
-<button class="btn btn-sm" onclick="addLevelConfig()" style="margin-top:8px;color:#b45309;border-color:#fcd34d;">➕ 添加等级</button>
-<button class="btn btn-sm" onclick="resetLevelConfig()" style="margin-top:8px;color:#666;margin-left:6px;">🔄 恢复默认</button>
+<button class="btn btn-sm" onclick="addLevelConfig()" style="margin-top:6px;color:#b45309;border-color:#fcd34d;">➕ 添加等级</button>
+<button class="btn btn-sm" onclick="resetLevelConfig()" style="margin-top:6px;color:#666;margin-left:6px;">🔄 恢复默认</button>
 </div>
 </div>
 <div class="section-box" style="border-color:#a5d6a7;">
 <div class="panel-content">
 <h2 style="color:#2e7d32;">⏱️ 存档点</h2>
-<button class="btn btn-primary" style="background:#4caf50;border-color:#4caf50;margin-top:8px;" onclick="createSnapshot()">📸 创建存档</button>
+<button class="btn btn-primary" style="background:#4caf50;border-color:#4caf50;margin-top:6px;" onclick="createSnapshot()">📸 创建存档</button>
 <div class="snapshot-list" id="snapshot-list"></div>
 </div>
 </div>
 <div class="section-box">
 <div class="panel-content">
-<h2>💾 手动备份</h2>
-<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+<h2>💾 备份与清理</h2>
+<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
 <button class="btn btn-sm" onclick="exportData()">📤 导出</button>
 <label class="btn btn-sm" style="cursor:pointer;">📥 导入<input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)"></label>
+<button class="btn btn-danger btn-sm" onclick="resetAllData()" style="margin-left:auto;">🚨 清空</button>
 </div>
-</div>
-</div>
-<div class="section-box" style="border-color:#ffcccc;">
-<div class="panel-content">
-<h2 style="color:var(--danger-color);">⚠️ 危险操作</h2>
-<p style="color:var(--text-muted);margin:6px 0;font-size:.82em;">清空后将无法恢复！</p>
-<button class="btn btn-danger btn-sm" onclick="resetAllData()">🚨 清空所有数据</button>
 </div>
 </div>
 <div class="section-box span-full" style="border-color:#90caf9;">
-<div class="panel-content">
-<h2 style="color:#1565c0;">📁 自动备份到文件夹</h2>
-<p style="color:var(--text-muted);margin:6px 0;font-size:.82em;line-height:1.6;">每 N 分钟把数据覆盖写入所选文件夹的 <code>myWorkspace_backup.json</code>。<br><span style="color:#e65100;">需 Chrome / Edge，页面通过 https 或 localhost 打开。</span></p>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+<details class="settings-details">
+<summary style="color:#1565c0;padding:10px 12px;">📁 自动备份到文件夹</summary>
+<div class="panel-content" style="padding-top:0;">
+<p>每 N 分钟把数据覆盖写入所选文件夹的 <code>myWorkspace_backup.json</code>。<br><span style="color:#e65100;">需 Chrome / Edge，通过 https 或 localhost 打开。</span></p>
+<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;">
 <button class="btn btn-sm btn-primary" onclick="chooseBackupFolder()">📂 选择文件夹</button>
 <button class="btn btn-sm" id="btn-restore-backup-folder" style="display:none;color:#1565c0;border-color:#90caf9;" onclick="restoreBackupFolder()">🔄 恢复文件夹</button>
 <button class="btn btn-sm" onclick="performBackup(false)">💾 立即备份</button>
 <button class="btn btn-sm btn-danger" id="btn-stop-auto-backup" style="display:none;" onclick="stopAutoBackup()">⏹ 停止</button>
-<select id="backup-interval" onchange="changeBackupInterval(this.value)" style="padding:5px 8px;border:1px solid var(--border-color);border-radius:6px;font-size:.85em;">
+<select id="backup-interval" onchange="changeBackupInterval(this.value)" style="padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;font-size:.8em;">
 <option value="1">1 分钟</option><option value="2">2 分钟</option><option value="3" selected>3 分钟</option><option value="5">5 分钟</option><option value="10">10 分钟</option><option value="15">15 分钟</option><option value="30">30 分钟</option>
 </select>
 </div>
 <div id="backup-status-text" class="backup-status">状态：未开启</div>
 <div id="last-backup-time" class="backup-status"></div>
 </div>
-</div>
-<div class="section-box span-full" style="border-color:#c5cae9;">
-<div class="panel-content">
-<h2 style="color:#303f9f;">📝 更新日志</h2>
-<div class="log-list" id="changelog-list"></div>
-</div>
+</details>
 </div>
 <div class="section-box span-full" style="border-color:#ff9800;">
-<div class="panel-content">
-<h2 style="color:#e65100;">📡 局域网点对点同步</h2>
-<p style="color:var(--text-muted);margin:6px 0;font-size:.82em;">连接后自动比较两端修改时间，用较新的一端覆盖较旧的一端；之后实时推送。</p>
+<details class="settings-details">
+<summary style="color:#e65100;padding:10px 12px;">📡 局域网点对点同步</summary>
+<div class="panel-content" style="padding-top:0;">
 <div style="display:flex;gap:12px;flex-wrap:wrap;">
-<div style="flex:1;min-width:260px;background:#fff3e0;padding:10px;border-radius:8px;">
-<h3 style="font-size:.9em;margin-bottom:6px;">💻 我是主机</h3>
+<div style="flex:1;min-width:260px;background:#fff3e0;padding:8px;border-radius:8px;">
+<h3 style="font-size:.85em;margin-bottom:4px;">💻 我是主机</h3>
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-<span style="font-weight:bold;font-size:.9em;color:#e65100;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace;" id="my-peer-id">未生成</span>
+<span style="font-weight:bold;font-size:.85em;color:#e65100;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace;" id="my-peer-id">未生成</span>
 <button class="btn btn-sm btn-primary" onclick="initPeer(true)">开启</button>
 <button class="btn btn-sm" onclick="copyHostId()">📋 复制</button>
 <button class="btn btn-sm btn-danger" onclick="resetHostId()">🔄 重置</button>
 </div>
 </div>
-<div style="flex:1;min-width:260px;background:#e3f2fd;padding:10px;border-radius:8px;">
-<h3 style="font-size:.9em;margin-bottom:6px;">📱 我是客户端</h3>
-<div style="display:flex;gap:6px;"><input type="text" id="target-peer-id" placeholder="粘贴连接码" style="padding:5px 8px;font-size:.85em;"><button class="btn btn-sm btn-primary" onclick="connectToPeer()">连接</button></div>
-<div id="p2p-status" style="font-size:.8em;color:#666;margin-top:6px;">未连接</div>
-<div style="margin-top:8px;border-top:1px dashed #bbdefb;padding-top:6px;">
-<span style="font-size:.8em;color:#1976d2;font-weight:bold;display:block;margin-bottom:4px;">历史记录</span>
-<div id="p2p-history-list" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+<div style="flex:1;min-width:260px;background:#e3f2fd;padding:8px;border-radius:8px;">
+<h3 style="font-size:.85em;margin-bottom:4px;">📱 我是客户端</h3>
+<div style="display:flex;gap:6px;"><input type="text" id="target-peer-id" placeholder="粘贴连接码" style="padding:4px 6px;font-size:.8em;"><button class="btn btn-sm btn-primary" onclick="connectToPeer()">连接</button></div>
+<div id="p2p-status" style="font-size:.8em;color:#666;margin-top:4px;">未连接</div>
+<div style="margin-top:6px;border-top:1px dashed #bbdefb;padding-top:4px;">
+<span style="font-size:.75em;color:#1976d2;font-weight:bold;display:block;margin-bottom:4px;">历史记录</span>
+<div id="p2p-history-list" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
 </div>
 </div>
 </div>
 </div>
+</details>
+</div>
+<div class="section-box span-full" style="border-color:#c5cae9;">
+<details class="settings-details">
+<summary style="color:#303f9f;padding:10px 12px;">📝 更新日志</summary>
+<div class="panel-content" style="padding-top:0;">
+<div class="log-list" id="changelog-list"></div>
+</div>
+</details>
 </div>
 </div>
 </div>
@@ -593,6 +600,11 @@ h1{font-size:1.4em;margin-bottom:12px}
    1. 更新日志
    ========================================================= */
 const APP_CHANGELOG = [
+    { version: 'v1.7.0', date: '2026-10-27', changes: [
+        '新增：点击周计划表头可直接跳转到对应日计划',
+        '新增：待办列表支持拖拽右下角自由调整左右宽度',
+        '优化：设置界面改为紧凑网格，长面板改为折叠抽屉'
+    ]},
     { version: 'v1.6.0', date: '2026-10-26', changes: [
         '修复：周计划任务过多时超出框，现可在列内滚动',
         '修复：每日循环、每周循环等任务在之后的日期能正常显示',
@@ -605,15 +617,10 @@ const APP_CHANGELOG = [
         '新增：日期显示"今天 / 昨天 / 明天 / N天前"等笼统名字',
         '新增：月历今天格子标注"今天"徽章，周计划今天列高亮'
     ]},
-    { version: 'v1.4.0', date: '2026-10-24', changes: [
-        '新增：RPG 属性变动动画（数字跳动 + 飘出 +N 提示）',
-        '新增：自定义等级名称和升级所需经验',
-        '新增：日计划子任务超过 3 个时折叠',
-        '优化：设置页改为自适应网格布局，更紧凑'
-    ]},
-    { version: 'v1.3.0', date: '2026-10-24', changes: ['新增：日计划任务超过 5 个时折叠，可弹框查看全部', '优化：更新日志改为版本更新记录'] },
-    { version: 'v1.2.0', date: '2026-10-24', changes: ['新增：今日精力系统', '新增：精力警告阈值设置', '新增：RPG 属性编辑', '优化：等级经验递增', '优化：日计划默认三列显示'] },
-    { version: 'v1.1.0', date: '2026-10-23', changes: ['新增：预计时长、大类备注、-1 减少、拖回锻炼池等功能'] },
+    { version: 'v1.4.0', date: '2026-10-24', changes: ['新增：RPG 属性变动动画', '新增：自定义等级名称', '新增：子任务折叠', '优化：设置页紧凑'] },
+    { version: 'v1.3.0', date: '2026-10-24', changes: ['新增：任务折叠弹框', '优化：更新日志'] },
+    { version: 'v1.2.0', date: '2026-10-24', changes: ['新增：今日精力系统', '新增：精力警告设置', '新增：RPG编辑', '优化：等级经验递增'] },
+    { version: 'v1.1.0', date: '2026-10-23', changes: ['新增：预计时长、大类备注、-1 减少、拖回锻炼池等'] },
     { version: 'v1.0.0', date: '2026-10-22', changes: ['初始版本'] }
 ];
 
@@ -730,7 +737,6 @@ function copyTextToClipboard(text, successMsg) {
     if (fallbackCopy(text)) done(); else alert('复制失败');
 }
 
-// 循环匹配逻辑：传入开始日期和目标日期
 function isRecurringMatch(type, startDateStr, targetDateStr) {
     if (!type) return false;
     if (type === '每日') return true;
@@ -751,7 +757,6 @@ function isRecurringMatch(type, startDateStr, targetDateStr) {
     return false;
 }
 
-// 获取指定日期应该显示的所有任务
 function getTasksForDate(dateStr) {
     return appData.tasks.filter(t => {
         if (t.date === dateStr) return true;
@@ -762,7 +767,6 @@ function getTasksForDate(dateStr) {
     });
 }
 
-// 任务/子任务的每日独立状态读写
 function isTaskDone(task, dateStr) {
     if (task.completions && task.completions[dateStr] !== undefined) return task.completions[dateStr];
     if (task.date === dateStr) return !!task.completed;
@@ -1085,7 +1089,7 @@ function renderLevelConfig() {
             <span class="level-badge">Lv.${idx + 1}</span>
             <input type="text" value="${escapeHtml(lv.name)}" onchange="updateLevelName(${idx}, this.value)" placeholder="等级名称">
             <input type="number" value="${lv.needExp}" onchange="updateLevelExp(${idx}, this.value)" min="1" placeholder="所需经验" title="升到下一级所需经验">
-            <button class="btn btn-sm" onclick="deleteLevelConfig(${idx})" style="color:#eb5757;border-color:#ffcccc;padding:3px 8px;">✕</button>
+            <button class="btn btn-sm" onclick="deleteLevelConfig(${idx})" style="color:#eb5757;border-color:#ffcccc;padding:2px 6px;font-size:.75em;">✕</button>
         </div>
     `).join('');
 }
@@ -1120,7 +1124,7 @@ window.resetLevelConfig = function() {
 };
 
 /* =========================================================
-   7. 数据签名与保存
+   7. 数据保存
    ========================================================= */
 function getDataSignature(data) {
     const copy = JSON.parse(JSON.stringify(data));
@@ -1467,7 +1471,7 @@ function initDragAndDrop() {
 }
 
 /* =========================================================
-   11. 时间导航
+   11. 时间导航 & 跳转
    ========================================================= */
 window.changeMonth = function(o) {
     appData.viewMonth += o;
@@ -1481,6 +1485,11 @@ window.changeWeek = function(o) {
     b.setDate(b.getDate() + o * 7);
     appData.viewWeekBaseDate = `${b.getFullYear()}-${String(b.getMonth()+1).padStart(2,'0')}-${String(b.getDate()).padStart(2,'0')}`;
     renderWeekBoard(); renderTaskPool();
+};
+window.jumpToDay = function(ds) {
+    appData.selectedDate = ds;
+    userPickedDate = true;
+    document.querySelector('.nav-item[data-target="day"]').click();
 };
 
 /* =========================================================
@@ -1585,7 +1594,7 @@ function renderYearHeatmap() {
             else { const hue = pct * 1.2; div.style.backgroundColor = `hsl(${hue}, 70%, 60%)`; div.style.color = hue > 50 ? '#333' : '#fff'; }
         } else { div.style.backgroundColor = '#ebedf0'; div.style.color = '#999'; }
         if (ds === td) div.classList.add('today-cell');
-        div.onclick = () => { appData.selectedDate = ds; userPickedDate = true; appData.viewYear = d.getFullYear(); appData.viewMonth = d.getMonth(); document.querySelector('.nav-item[data-target="day"]').click(); };
+        div.onclick = () => { jumpToDay(ds); appData.viewYear = d.getFullYear(); appData.viewMonth = d.getMonth(); };
         h.appendChild(div);
     }
     renderStats('stats-year', formatDate(y, 0, 1), formatDate(y, 11, 31), '年');
@@ -1637,7 +1646,7 @@ function renderCalendar() {
         }
         const todayBadge = isToday ? '<span class="today-badge">今天</span>' : '';
         div.innerHTML = `<div class="day-number">${i}${todayBadge}</div>${sHtml}${refl}${dHtml}`;
-        div.onclick = () => { appData.selectedDate = ds; userPickedDate = true; document.querySelector('.nav-item[data-target="day"]').click(); };
+        div.onclick = () => { jumpToDay(ds); };
         grid.appendChild(div);
     }
     renderStats('stats-month', formatDate(y, m, 1), formatDate(y, m, dim), '月');
@@ -1688,7 +1697,8 @@ function renderWeekBoard() {
         col.className = 'week-column' + (isToday ? ' today-col' : '');
         col.ondrop = (e) => handleDrop(e, ds);
         col.ondragover = allowDrop;
-        col.innerHTML = `<div class="week-column-header">${dn} <br><span style="font-size:0.85em;color:#999">${cd.getMonth()+1}/${cd.getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
+        // 添加点击表头跳转逻辑
+        col.innerHTML = `<div class="week-column-header" onclick="jumpToDay('${ds}')" title="点击跳转到该日的日计划">${dn} <br><span style="font-size:0.85em;color:#999">${cd.getMonth()+1}/${cd.getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
         getTasksForDate(ds).forEach(t => col.appendChild(createWeekTaskDOM(t, ds)));
         const manual = appData.exerciseSchedule[ds] || [];
         const rec = appData.exercises.filter(e => isRecurringMatch(e.recurringType, ds)).map(e => e.name);
@@ -2502,7 +2512,7 @@ function renderSnapshots() {
     s.forEach((sn, i) => {
         const d = document.createElement('div');
         d.className = 'snapshot-item';
-        d.innerHTML = `<div>📁 ${sn.time}</div><div class="snapshot-actions"><button class="btn btn-sm" style="color:var(--accent-color);border-color:var(--accent-color);" onclick="restoreSnapshot(${i})">恢复</button><button class="btn btn-sm" style="color:var(--danger-color);border-color:var(--danger-color);" onclick="deleteSnapshot(${i})">删除</button></div>`;
+        d.innerHTML = `<div>📁 ${sn.time}</div><div class="snapshot-actions"><button class="btn btn-sm" style="color:var(--accent-color);border-color:var(--accent-color);padding:2px 6px;font-size:.75em;" onclick="restoreSnapshot(${i})">恢复</button><button class="btn btn-sm" style="color:var(--danger-color);border-color:var(--danger-color);padding:2px 6px;font-size:.75em;" onclick="deleteSnapshot(${i})">删除</button></div>`;
         l.appendChild(d);
     });
 }
@@ -2685,12 +2695,12 @@ function renderChangelog() {
     const list = document.getElementById('changelog-list');
     if (!list) return;
     list.innerHTML = APP_CHANGELOG.map(v => `
-        <div style="padding:8px 0;border-bottom:1px dashed #eee;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                <span style="font-weight:700;color:#303f9f;font-size:.9em;">${v.version}</span>
-                <span style="color:#999;font-size:.78em;">${v.date}</span>
+        <div style="padding:6px 0;border-bottom:1px dashed #eee;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                <span style="font-weight:700;color:#303f9f;font-size:.85em;">${v.version}</span>
+                <span style="color:#999;font-size:.75em;">${v.date}</span>
             </div>
-            <ul style="margin:0;padding-left:16px;color:#555;font-size:.82em;line-height:1.7;">
+            <ul style="margin:0;padding-left:14px;color:#555;font-size:.8em;line-height:1.6;">
                 ${v.changes.map(c => `<li>${c}</li>`).join('')}
             </ul>
         </div>
