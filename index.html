@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>我的专属工作台</title>
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#2383e2">
-    
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    
     <style>
         :root { --bg-main: #ffffff; --bg-sidebar: #f7f7f5; --text-main: #37352f; --text-muted: #9b9a97; --border-color: #e9e9e7; --hover-bg: #efefed; --accent-color: #2383e2; --danger-color: #eb5757; --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; --base-font-size: 14px; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -70,10 +67,13 @@
         .task-tag { font-size: 0.75em; padding: 2px 6px; border-radius: 4px; background: #eee; font-weight: bold;} .task-tag.today { background: #e3f2fd; color: #1976d2; } .task-tag.overdue { background: #ffebee; color: var(--danger-color); }
         .exercise-pool-wrapper { margin-top: 24px; border-top: 1px dashed var(--border-color); padding-top: 16px; }
         .exercise-pool-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .exercise-pool { display: flex; gap: 8px; flex-wrap: wrap; }
+        .exercise-pool { display: flex; gap: 8px; flex-wrap: wrap; min-height: 40px; padding: 4px; border: 2px dashed transparent; border-radius: 6px; transition: all 0.2s; }
+        .exercise-pool.drag-over { border-color: var(--accent-color); background: #eef5fc; }
         .exercise-capsule { padding: 8px 16px; background: #fff; border: 1px solid var(--border-color); border-radius: 20px; cursor: grab; font-size: 0.9em; font-weight: 600; color: #444; display: flex; align-items: center; gap: 6px; }
-        .week-column .exercise-capsule { width: 100%; justify-content: flex-start; margin-bottom: 4px; background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; cursor: default; padding: 4px 8px;}
+        .week-column .exercise-capsule { width: 100%; justify-content: flex-start; margin-bottom: 4px; background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; cursor: grab; padding: 4px 8px; user-select: none;}
         .week-column .exercise-capsule input[type="checkbox"] { margin-right: 4px; cursor: pointer; accent-color: #4caf50;}
+        .week-column .exercise-capsule .ex-del-btn { margin-left: auto; cursor: pointer; color: #eb5757; font-weight: bold; padding: 0 4px; opacity: 0.5; transition: opacity 0.2s;}
+        .week-column .exercise-capsule .ex-del-btn:hover { opacity: 1; }
         .day-panels-grid { display: flex; flex-wrap: wrap; gap: 20px; flex: 1; align-items: flex-start; margin-bottom: 24px; }
         .section-box { width: calc(50% - 10px); min-width: 300px; border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; background: #fff; position: relative; height: 350px; resize: both; overflow: hidden; min-height: 200px; }
         .section-box.span-full { width: 100%; }
@@ -117,28 +117,10 @@
         input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; background: #e9e9e7; border-radius: 3px; outline: none; margin-top: 10px; } input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-color); cursor: pointer; }
         .snapshot-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px;} .snapshot-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-sidebar); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);} .snapshot-actions { display: flex; gap: 8px;}
         .bottom-summary { flex-shrink: 0; margin-top: auto; }
-
-        /* ====== 设置界面两列布局 ====== */
-        .settings-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            align-items: stretch;
-            margin-bottom: 24px;
-        }
-        .settings-grid > .section-box {
-            width: 100% !important;
-            height: auto !important;
-            resize: none !important;
-            margin-bottom: 0 !important;
-        }
-        .settings-grid > .section-box.span-full {
-            grid-column: 1 / -1;
-        }
-        @media (max-width: 900px) {
-            .settings-grid { grid-template-columns: 1fr; gap: 16px; }
-        }
-
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: stretch; margin-bottom: 24px; }
+        .settings-grid > .section-box { width: 100% !important; height: auto !important; resize: none !important; margin-bottom: 0 !important; }
+        .settings-grid > .section-box.span-full { grid-column: 1 / -1; }
+        @media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; gap: 16px; } }
         @media (max-width: 768px) {
             body { flex-direction: column; } .sidebar { width: 100%; height: auto; order: 2; border-right: none; border-top: 1px solid var(--border-color); padding: 8px 4px; flex-direction: row; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; z-index: 100; background: rgba(247, 247, 245, 0.95); backdrop-filter: blur(10px);}
             .sidebar-title, .sidebar-footer { display: none; } .nav-item { flex-direction: column; padding: 6px 0; font-size: 0.75em; gap: 2px; flex: 1; text-align: center; margin-bottom: 0; border-radius: 8px; } .nav-item:hover { transform: none; background-color: transparent;} .nav-item.active { background-color: #e3e2e0; color: var(--accent-color); font-weight: bold;}
@@ -170,7 +152,6 @@
                 <div class="sidebar-goal-title">🎯 我的目标</div>
                 <div class="sidebar-goal-input" id="yearly-goals" contenteditable="true" placeholder="写下核心目标..."></div>
             </div>
-            
             <div class="fixed-progress-bars">
                 <div class="prog-row">
                     <div class="prog-label-row"><span>年计划完成度</span><span id="prog-year-text">0%</span></div>
@@ -189,8 +170,6 @@
     </div>
 
     <div class="main-content">
-        
-        <!-- 视图：全年总览 -->
         <div class="view-container" id="view-year">
             <div class="year-header">
                 <h1>📊 全年总览</h1>
@@ -208,7 +187,6 @@
             </div>
         </div>
 
-        <!-- 视图：月计划 -->
         <div class="view-container active" id="view-month">
             <h1>📅 月计划</h1>
             <div class="calendar-wrapper" id="calendar-wrapper">
@@ -226,7 +204,6 @@
             </div>
         </div>
 
-        <!-- 视图：周计划 -->
         <div class="view-container" id="view-week">
             <div class="year-header">
                 <h1>🗓️ 周计划</h1>
@@ -237,7 +214,6 @@
                 </div>
             </div>
             <div class="week-board" id="week-board"></div>
-            
             <div class="todo-section">
                 <div class="todo-lists-container">
                     <div class="todo-column">
@@ -256,19 +232,16 @@
                         <h2 style="margin:0;">🏋️ 锻炼排期</h2>
                         <button class="btn btn-sm btn-primary" onclick="addExerciseCategory()">➕ 添加</button>
                     </div>
-                    <div class="exercise-pool" id="exercise-pool"></div>
+                    <div class="exercise-pool" id="exercise-pool" ondrop="handleDrop(event, 'pool')" ondragover="allowDrop(event)"></div>
+                    <p style="font-size:0.8em; color:var(--text-muted); margin-top:8px;">💡 拖拽锻炼胶囊到某天即可排期；把已排期的锻炼拖回这里，或点 ✕ 即可取消排期。</p>
                 </div>
             </div>
             <div class="stats-container" id="stats-week"></div>
         </div>
 
-        <!-- 视图：日计划 -->
         <div class="view-container" id="view-day">
             <h1 id="day-title">📝 日计划</h1>
-            
             <div class="day-panels-grid" id="day-panels-grid">
-                
-                <!-- 学习 -->
                 <div class="section-box" data-panel="learning">
                     <div class="panel-header">
                         <h2><span class="drag-handle-icon">⠿</span> 📚 学习</h2>
@@ -284,8 +257,6 @@
                         <div id="learning-completed"></div>
                     </div>
                 </div>
-        
-                <!-- 其他 -->
                 <div class="section-box" data-panel="other">
                     <div class="panel-header">
                         <h2><span class="drag-handle-icon">⠿</span> 🧺 其他</h2>
@@ -301,8 +272,6 @@
                         <div id="other-completed"></div>
                     </div>
                 </div>
-
-                <!-- 锻炼 -->
                 <div class="section-box span-full" data-panel="exercise">
                     <div class="panel-header">
                         <h2><span class="drag-handle-icon">⠿</span> 💪 锻炼</h2>
@@ -315,22 +284,16 @@
                         <div class="exercise-grid" id="exercise-grid"></div>
                     </div>
                 </div>
-
             </div>
-
             <div class="bottom-summary">
                 <h2>💭 今日反思</h2>
                 <textarea id="daily-reflection-textarea" placeholder="今天过得怎么样？有什么想记录的？" oninput="handleReflectionInput(this.value)"></textarea>
             </div>
         </div>
 
-        <!-- 视图：设置 -->
         <div class="view-container" id="view-settings">
             <h1>⚙️ 设置</h1>
-
             <div class="settings-grid">
-
-                <!-- 1. 个性化 -->
                 <div class="section-box">
                     <div class="panel-content">
                         <h2>🎨 主题与字体</h2>
@@ -349,8 +312,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- 3. 存档点管理 -->
                 <div class="section-box" style="border-color: #a5d6a7;">
                     <div class="panel-content">
                         <h2 style="color: #2e7d32;">⏱️ 存档点</h2>
@@ -359,8 +320,6 @@
                         <div class="snapshot-list" id="snapshot-list"></div>
                     </div>
                 </div>
-
-                <!-- 4. 本地备份 -->
                 <div class="section-box">
                     <div class="panel-content">
                         <h2>💾 手动备份</h2>
@@ -373,8 +332,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- 5. 危险操作 -->
                 <div class="section-box" style="border-color: #ffcccc;">
                     <div class="panel-content">
                         <h2 style="color: var(--danger-color);">⚠️ 危险操作</h2>
@@ -382,18 +339,13 @@
                         <button class="btn btn-danger" onclick="resetAllData()">🚨 清空数据</button>
                     </div>
                 </div>
-
-                <!-- 2. 局域网点对点同步（全宽） -->
                 <div class="section-box span-full" style="border-color: #ff9800;">
                     <div class="panel-content">
                         <h2 style="color: #e65100;">📡 局域网点对点同步</h2>
                         <p style="color: var(--text-muted); margin: 12px 0; font-size: 0.9em; line-height: 1.6;">
-                            连接成功后，任何修改都会自动推送到另一端。
+                            连接后会自动比较两端修改时间，用较新的一端覆盖较旧的一端；之后任何修改都会实时推送。
                         </p>
-                        
                         <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            
-                            <!-- 主机模式 -->
                             <div style="flex: 1; min-width: 300px; background: #fff3e0; padding: 12px; border-radius: 8px;">
                                 <h3 style="font-size: 0.95em; margin-bottom: 8px;">💻 我是主机 (固定码)</h3>
                                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -403,8 +355,6 @@
                                     <button class="btn btn-sm btn-danger" onclick="resetHostId()">🔄 重置码</button>
                                 </div>
                             </div>
-
-                            <!-- 客户端模式 -->
                             <div style="flex: 1; min-width: 300px; background: #e3f2fd; padding: 12px; border-radius: 8px;">
                                 <h3 style="font-size: 0.95em; margin-bottom: 8px;">📱 我是客户端 (手机)</h3>
                                 <div style="display: flex; gap: 8px;">
@@ -412,22 +362,16 @@
                                     <button class="btn btn-sm btn-primary" onclick="connectToPeer()">连接</button>
                                 </div>
                                 <div id="p2p-status" style="font-size: 0.85em; color: #666; margin-top: 8px;">未连接</div>
-                                
-                                <!-- 历史记录区域 -->
                                 <div style="margin-top: 12px; border-top: 1px dashed #bbdefb; padding-top: 8px;">
                                     <span style="font-size: 0.85em; color: #1976d2; font-weight: bold; display: block; margin-bottom: 6px;">历史连接记录</span>
-                                    <div id="p2p-history-list" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                        <!-- JS 渲染 -->
-                                    </div>
+                                    <div id="p2p-history-list" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
-
     </div>
 
     <script>
@@ -449,10 +393,10 @@
             fontSize: "14px",
             viewYear: new Date().getFullYear(),
             viewMonth: new Date().getMonth(),
-            viewWeekBaseDate: getTodayString() 
+            viewWeekBaseDate: getTodayString(),
+            _lastModified: 1  // 数据修改时间戳，用于同步冲突解决
         };
         
-        // ================= P2P 同步变量 =================
         let peer = null;
         let conn = null;
         let isSyncing = false; 
@@ -461,6 +405,7 @@
         let connectTimer = null;
         let syncDebounceTimer = null;
         let currentTargetPeer = null;
+        let handshakeDone = false;  // 本次连接是否已完成初次握手
         const p2pIndicator = document.getElementById('p2p-indicator');
         const isMobileDevice = window.innerWidth <= 768;
 
@@ -472,7 +417,6 @@
             return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         }
 
-        // ================= 通用工具 =================
         function generatePeerId() {
             const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
             let s = 'ws-';
@@ -521,7 +465,7 @@
             return false;
         }
 
-        // ================= 1. P2P 实时同步逻辑 =================
+        // ================= P2P 同步 =================
         window.copyHostId = function() {
             const idText = document.getElementById('my-peer-id').innerText.trim();
             if (!idText || idText === '未生成') { alert('请先点击“开启并固定此码”'); return; }
@@ -538,18 +482,10 @@
             }
             history.forEach(id => {
                 const wrapper = document.createElement('div');
-                wrapper.style.display = 'flex';
-                wrapper.style.alignItems = 'center';
-                wrapper.style.background = 'white';
-                wrapper.style.border = '1px solid #90caf9';
-                wrapper.style.borderRadius = '4px';
-                wrapper.style.overflow = 'hidden';
+                wrapper.style.cssText = 'display:flex; align-items:center; background:white; border:1px solid #90caf9; border-radius:4px; overflow:hidden;';
 
                 const connectBtn = document.createElement('div');
-                connectBtn.style.padding = '4px 8px';
-                connectBtn.style.color = '#1976d2';
-                connectBtn.style.fontSize = '0.85em';
-                connectBtn.style.cursor = 'pointer';
+                connectBtn.style.cssText = 'padding:4px 8px; color:#1976d2; font-size:0.85em; cursor:pointer;';
                 connectBtn.innerText = id.substring(0, 12) + '...';
                 connectBtn.title = "点击连接: " + id;
                 connectBtn.onclick = () => {
@@ -559,12 +495,7 @@
                 };
 
                 const copyBtn = document.createElement('div');
-                copyBtn.style.padding = '4px 8px';
-                copyBtn.style.background = '#e3f2fd';
-                copyBtn.style.color = '#1976d2';
-                copyBtn.style.fontSize = '0.85em';
-                copyBtn.style.cursor = 'pointer';
-                copyBtn.style.borderLeft = '1px solid #90caf9';
+                copyBtn.style.cssText = 'padding:4px 8px; background:#e3f2fd; color:#1976d2; font-size:0.85em; cursor:pointer; border-left:1px solid #90caf9;';
                 copyBtn.innerText = '📋';
                 copyBtn.title = '复制完整连接码';
                 copyBtn.onclick = (e) => {
@@ -573,12 +504,7 @@
                 };
 
                 const deleteBtn = document.createElement('div');
-                deleteBtn.style.padding = '4px 8px';
-                deleteBtn.style.background = '#ffebee';
-                deleteBtn.style.color = '#eb5757';
-                deleteBtn.style.fontSize = '0.85em';
-                deleteBtn.style.cursor = 'pointer';
-                deleteBtn.style.borderLeft = '1px solid #90caf9';
+                deleteBtn.style.cssText = 'padding:4px 8px; background:#ffebee; color:#eb5757; font-size:0.85em; cursor:pointer; border-left:1px solid #90caf9;';
                 deleteBtn.innerText = '✕';
                 deleteBtn.title = "删除该记录";
                 deleteBtn.onclick = (e) => {
@@ -622,10 +548,10 @@
                 document.getElementById('p2p-status').style.color = "#f2994a";
                 return;
             }
-
             if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
             if (conn) { try { conn.close(); } catch(e){} conn = null; }
             isConnecting = false;
+            handshakeDone = false;
             clearTimeout(connectTimer);
 
             let customId = null;
@@ -667,12 +593,12 @@
                     try { conn.close(); } catch(e){}
                 }
                 conn = c;
+                handshakeDone = false;
                 setupConnection(conn, true, c.peer);
             });
 
             peer.on('disconnected', function() {
                 if (peer && !peer.destroyed) {
-                    console.log('信令服务器断开，尝试 reconnect...');
                     try { peer.reconnect(); } catch(e){}
                 }
             });
@@ -708,10 +634,8 @@
             if (!isAutoReconnecting) return;
             const lastPeer = localStorage.getItem('last_connected_peer');
             if (!lastPeer) { isAutoReconnecting = false; return; }
-
             if (conn && conn.open) { isAutoReconnecting = false; isConnecting = false; return; }
             if (isConnecting) return;
-
             if (!peer || peer.destroyed) {
                 initPeer(false);
                 setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 300);
@@ -726,12 +650,11 @@
                 setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 300);
                 return;
             }
-
             isConnecting = true;
+            handshakeDone = false;
             document.getElementById('p2p-status').innerText = "🔄 正在自动寻找主机...";
             document.getElementById('p2p-status').style.color = "#f2994a";
             p2pIndicator.className = 'p2p-dot connecting';
-
             if (conn) { try { conn.close(); } catch(e){} conn = null; }
             currentTargetPeer = lastPeer;
             try {
@@ -742,7 +665,6 @@
                 return;
             }
             setupConnection(conn, false, lastPeer);
-
             clearTimeout(connectTimer);
             connectTimer = setTimeout(() => {
                 if (isConnecting && (!conn || !conn.open)) {
@@ -758,30 +680,18 @@
         window.connectToPeer = function(targetId = null) {
             isAutoReconnecting = false;
             isConnecting = false;
+            handshakeDone = false;
             clearTimeout(connectTimer);
-
             const idToConnect = targetId || document.getElementById('target-peer-id').value.trim();
             if (!idToConnect) { alert('请输入连接码'); return; }
-
             document.getElementById('p2p-status').innerText = "正在连接...";
             document.getElementById('p2p-status').style.color = "#f2994a";
             p2pIndicator.className = 'p2p-dot connecting';
 
             const doConnect = () => {
-                if (!peer || peer.destroyed) {
-                    initPeer(false);
-                    setTimeout(doConnect, 500);
-                    return;
-                }
-                if (peer.disconnected) {
-                    try { peer.reconnect(); } catch(e){}
-                    setTimeout(doConnect, 500);
-                    return;
-                }
-                if (!peer.open) {
-                    setTimeout(doConnect, 300);
-                    return;
-                }
+                if (!peer || peer.destroyed) { initPeer(false); setTimeout(doConnect, 500); return; }
+                if (peer.disconnected) { try { peer.reconnect(); } catch(e){} setTimeout(doConnect, 500); return; }
+                if (!peer.open) { setTimeout(doConnect, 300); return; }
                 if (conn) { try { conn.close(); } catch(e){} conn = null; }
                 currentTargetPeer = idToConnect;
                 try {
@@ -792,7 +702,6 @@
                     return;
                 }
                 setupConnection(conn, false, idToConnect);
-
                 clearTimeout(connectTimer);
                 connectTimer = setTimeout(() => {
                     if (conn && !conn.open) {
@@ -803,21 +712,45 @@
                     }
                 }, 7000);
             };
-
             doConnect();
         };
+
+        // 应用远端数据（接收 SYNC_DATA 时调用）
+        function applyRemoteData(payload) {
+            isSyncing = true;
+            appData = payload;
+            if (!appData._lastModified) appData._lastModified = 1;
+            if (appData.themeColor) {
+                document.documentElement.style.setProperty('--accent-color', appData.themeColor);
+                const slider = document.getElementById('font-size-slider');
+                const valEl = document.getElementById('font-size-val');
+                // 主题不触发 saveDataToFile
+            }
+            if (appData.fontSize) {
+                document.documentElement.style.setProperty('--base-font-size', appData.fontSize);
+                const slider = document.getElementById('font-size-slider');
+                const valEl = document.getElementById('font-size-val');
+                const sizeNum = parseInt(appData.fontSize);
+                if (slider) slider.value = sizeNum;
+                if (valEl) valEl.innerText = sizeNum;
+            }
+            renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
+            saveLocalStorage();
+            isSyncing = false;
+        }
 
         function setupConnection(connection, isHost, targetId) {
             connection.on('open', () => {
                 if (conn !== connection) return;
                 isAutoReconnecting = false; 
                 isConnecting = false;
+                handshakeDone = false;
                 clearTimeout(connectTimer);
-                document.getElementById('p2p-status').innerText = "✅ 已连接！实时同步中。";
-                document.getElementById('p2p-status').style.color = "#27ae60";
+                document.getElementById('p2p-status').innerText = "🔗 已连接，正在比较数据版本...";
+                document.getElementById('p2p-status').style.color = "#f2994a";
                 p2pIndicator.className = 'p2p-dot connected';
                 p2pIndicator.title = "已连接";
-                
+
                 if (!isHost && targetId) {
                     let history = JSON.parse(localStorage.getItem('my_p2p_history') || '[]');
                     if (!history.includes(targetId)) {
@@ -829,34 +762,57 @@
                     renderP2PHistory();
                 }
 
-                setTimeout(() => {
-                    if (connection.open && conn === connection) {
-                        try { connection.send({ type: 'SYNC_DATA', payload: appData }); } catch(e){}
-                    }
-                }, 150);
+                // 握手第一阶段：告诉对方自己的数据版本
+                try {
+                    connection.send({ type: 'SYNC_META', lastModified: appData._lastModified || 1 });
+                } catch(e){}
             });
 
             connection.on('data', (data) => {
                 if (conn !== connection) return;
-                if (data.type === 'SYNC_DATA') {
-                    isSyncing = true;
-                    appData = data.payload;
-                    if(appData.themeColor) changeTheme(appData.themeColor);
-                    if(appData.fontSize) changeFontSize(appData.fontSize);
-                    renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
-                    saveLocalStorage();
-                    isSyncing = false;
+                if (!data || !data.type) return;
+
+                if (data.type === 'SYNC_META') {
+                    const remoteLM = data.lastModified || 1;
+                    const localLM = appData._lastModified || 1;
+                    if (remoteLM > localLM) {
+                        // 对方更新，请求数据
+                        try { connection.send({ type: 'SYNC_NEED_DATA' }); } catch(e){}
+                        document.getElementById('p2p-status').innerText = "📥 对方数据更新，正在拉取...";
+                        document.getElementById('p2p-status').style.color = "#1976d2";
+                    } else if (remoteLM < localLM) {
+                        // 我方更新，发送数据
+                        try { connection.send({ type: 'SYNC_DATA', payload: appData, lastModified: localLM }); } catch(e){}
+                        document.getElementById('p2p-status').innerText = "📤 已发送本地数据给对端...";
+                        document.getElementById('p2p-status').style.color = "#1976d2";
+                    } else {
+                        // 时间戳相同，数据视为一致
+                        handshakeDone = true;
+                        document.getElementById('p2p-status').innerText = "✅ 已连接！数据一致，实时同步中。";
+                        document.getElementById('p2p-status').style.color = "#27ae60";
+                    }
+                } else if (data.type === 'SYNC_NEED_DATA') {
+                    try { connection.send({ type: 'SYNC_DATA', payload: appData, lastModified: appData._lastModified || 1 }); } catch(e){}
+                } else if (data.type === 'SYNC_DATA') {
+                    if (data.lastModified && data.lastModified < (appData._lastModified || 1)) {
+                        // 防御：收到比本地旧的数据，忽略
+                        return;
+                    }
+                    applyRemoteData(data.payload);
+                    handshakeDone = true;
+                    document.getElementById('p2p-status').innerText = "✅ 已同步！实时同步中。";
+                    document.getElementById('p2p-status').style.color = "#27ae60";
                 }
             });
 
             connection.on('close', () => {
                 if (conn !== connection) return;
                 isConnecting = false;
+                handshakeDone = false;
                 clearTimeout(connectTimer);
                 p2pIndicator.className = 'p2p-dot';
                 p2pIndicator.title = "未连接";
                 conn = null;
-                
                 if (!isAutoReconnecting) {
                     document.getElementById('p2p-status').innerText = "❌ 连接已断开";
                     document.getElementById('p2p-status').style.color = "#999";
@@ -871,13 +827,17 @@
             });
         }
 
+        // 保存数据 + 推送（实时修改用）
         function saveDataToFile(data) {
+            if (!isSyncing) {
+                data._lastModified = Date.now();
+            }
             saveLocalStorage(); 
             if (conn && conn.open && !isSyncing) {
                 clearTimeout(syncDebounceTimer);
                 syncDebounceTimer = setTimeout(() => {
                     if (conn && conn.open && !isSyncing) {
-                        try { conn.send({ type: 'SYNC_DATA', payload: data }); } catch(e){}
+                        try { conn.send({ type: 'SYNC_DATA', payload: data, lastModified: data._lastModified }); } catch(e){}
                     }
                 }, 200);
             }
@@ -887,11 +847,10 @@
             localStorage.setItem('myWorkspaceAppData', JSON.stringify(appData));
         }
 
-        // ================= 原有设置 & 存档逻辑 =================
         function changeTheme(color) {
             appData.themeColor = color;
             document.documentElement.style.setProperty('--accent-color', color);
-            saveDataToFile(appData); 
+            if (!isSyncing) saveDataToFile(appData);
         }
 
         function changeFontSize(sizeStr) {
@@ -900,7 +859,7 @@
             document.documentElement.style.setProperty('--base-font-size', appData.fontSize);
             document.getElementById('font-size-slider').value = sizeNum;
             document.getElementById('font-size-val').innerText = sizeNum;
-            saveDataToFile(appData);
+            if (!isSyncing) saveDataToFile(appData);
         }
 
         function getSnapshots() { return JSON.parse(localStorage.getItem('myWorkspaceSnapshots') || '[]'); }
@@ -922,6 +881,7 @@
             const snapshots = getSnapshots();
             if (index >= 0 && index < snapshots.length) {
                 appData = JSON.parse(JSON.stringify(snapshots[index].data)); 
+                if (!appData._lastModified) appData._lastModified = 1;
                 if(appData.themeColor) changeTheme(appData.themeColor);
                 if(appData.fontSize) changeFontSize(appData.fontSize);
                 renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
@@ -950,13 +910,11 @@
             snapshots.forEach((snap, idx) => {
                 const div = document.createElement('div');
                 div.className = 'snapshot-item';
-                div.innerHTML = `
-                    <div class="snapshot-time">📁 ${snap.time}</div>
+                div.innerHTML = `<div>📁 ${snap.time}</div>
                     <div class="snapshot-actions">
                         <button class="btn btn-sm" style="color: var(--accent-color); border-color: var(--accent-color);" onclick="restoreSnapshot(${idx})">恢复</button>
                         <button class="btn btn-sm" style="color: var(--danger-color); border-color: var(--danger-color);" onclick="deleteSnapshot(${idx})">删除</button>
-                    </div>
-                `;
+                    </div>`;
                 list.appendChild(div);
             });
         }
@@ -971,7 +929,6 @@
             box.classList.toggle('span-full');
         };
 
-        // ================= 时间导航 =================
         window.changeMonth = function(offset) {
             appData.viewMonth += offset;
             if (appData.viewMonth > 11) { appData.viewMonth = 0; appData.viewYear++; }
@@ -986,7 +943,6 @@
             renderWeekBoard(); renderTaskPool();
         };
 
-        // ================= 渲染逻辑 =================
         function getSubTaskProgress(sub) {
             if (sub.target) return { done: sub.current || 0, total: sub.target };
             return { done: sub.completed ? 1 : 0, total: 1 };
@@ -997,8 +953,7 @@
                 let done = 0, total = 0;
                 task.subTasks.forEach(sub => {
                     const p = getSubTaskProgress(sub);
-                    done += p.done;
-                    total += p.total;
+                    done += p.done; total += p.total;
                 });
                 return { done, total };
             }
@@ -1020,7 +975,6 @@
                 const recurringExNames = appData.exercises.filter(e => isRecurringMatch(e.recurringType, dateStr)).map(e => e.name);
                 const todayExNames = [...new Set([...manualEx, ...recurringExNames])];
                 if (todayExNames.length === 0) return { done: 0, total: 0 };
-                
                 let totalActions = 0; let doneActions = 0;
                 const dailyChecks = appData.dailyExerciseChecks[dateStr] || {};
                 todayExNames.forEach(name => {
@@ -1038,8 +992,7 @@
                 let doneCount = 0; let totalCount = 0;
                 tasks.forEach(t => {
                     const prog = getTaskProgress(t);
-                    doneCount += prog.done;
-                    totalCount += prog.total;
+                    doneCount += prog.done; totalCount += prog.total;
                 });
                 return { done: doneCount, total: totalCount };
             }
@@ -1088,20 +1041,17 @@
             const startDate = new Date(year, 0, 1);
             const endDate = new Date(year, 11, 31);
             const todayStr = getTodayString();
-
             for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
                 const dateStr = formatDate(d.getFullYear(), d.getMonth(), d.getDate());
                 const div = document.createElement('div');
                 div.className = 'heatmap-cell';
                 div.title = dateStr;
                 div.innerText = d.getDate(); 
-                
                 const l = calcProgress(dateStr, 'learning');
                 const o = calcProgress(dateStr, 'other');
                 const e = calcProgress(dateStr, '锻炼');
                 const total = l.total + o.total + e.total;
                 const done = l.done + o.done + e.done;
-                
                 if (total > 0) {
                     const percent = (done / total) * 100;
                     if (percent === 100) { div.style.backgroundColor = '#27ae60'; div.style.color = '#fff'; } 
@@ -1111,9 +1061,7 @@
                         div.style.color = hue > 50 ? '#333' : '#fff'; 
                     }
                 } else { div.style.backgroundColor = '#ebedf0'; div.style.color = '#999'; }
-                
                 if (dateStr === todayStr) div.style.border = "2px solid var(--accent-color)";
-                
                 div.onclick = () => {
                     appData.selectedDate = dateStr;
                     appData.viewYear = d.getFullYear();
@@ -1134,7 +1082,6 @@
             const year = appData.viewYear;
             const month = appData.viewMonth;
             document.getElementById('month-display').innerText = `${year}年 ${month + 1}月`;
-
             const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
             weekDays.forEach(day => {
                 const header = document.createElement('div');
@@ -1142,27 +1089,20 @@
                 header.innerText = '周' + day;
                 grid.appendChild(header);
             });
-
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             let firstDay = new Date(year, month, 1).getDay();
             if (firstDay === 0) firstDay = 7; 
-            
             for (let i = 1; i < firstDay; i++) { grid.appendChild(document.createElement('div')); }
-
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateStr = formatDate(year, month, i);
                 const div = document.createElement('div');
-                
                 const lProg = calcProgress(dateStr, 'learning');
                 const oProg = calcProgress(dateStr, 'other');
                 const eProg = calcProgress(dateStr, '锻炼');
-                
                 const totalTasks = lProg.total + oProg.total + eProg.total;
                 const doneTasks = lProg.done + oProg.done + eProg.done;
                 const isAllDone = totalTasks > 0 && doneTasks === totalTasks;
-
                 div.className = `day-box ${dateStr === appData.selectedDate ? 'active' : ''} ${isAllDone ? 'all-done' : ''}`;
-
                 let summaryHtml = `<div class="day-summary">`;
                 if (lProg.total > 0) {
                     const lp = Math.round((lProg.done / lProg.total) * 100);
@@ -1178,14 +1118,12 @@
                 }
                 if (totalTasks === 0) { summaryHtml += `<div style="color:#aaa; font-size:0.8em; text-align:center; margin-top:8px;">🌸 无任务</div>`; }
                 summaryHtml += `</div>`;
-                
                 let reflectionHtml = '';
                 if (appData.dailyReflections[dateStr] && appData.dailyReflections[dateStr].trim() !== '') {
                     const txt = appData.dailyReflections[dateStr].trim();
                     const preview = txt.length > 6 ? txt.substring(0, 6) + '...' : txt;
                     reflectionHtml = `<div class="reflection-preview" title="${txt}">📝 ${preview}</div>`;
                 }
-                
                 const deadlineTasks = appData.tasks.filter(t => t.deadline === dateStr && !t.completed);
                 let deadlineHtml = '';
                 if (deadlineTasks.length > 0) {
@@ -1193,7 +1131,6 @@
                     const preview = dText.length > 6 ? dText.substring(0, 6) + '...' : dText;
                     deadlineHtml = `<div class="deadline-preview" title="截止任务: ${dText}">⏰ ${preview}</div>`;
                 }
-
                 div.innerHTML = `<div class="day-number">${i}</div>${summaryHtml}${reflectionHtml}${deadlineHtml}`;
                 div.onclick = () => {
                     appData.selectedDate = dateStr;
@@ -1222,6 +1159,13 @@
             return item;
         }
 
+        // 从周计划移除某个锻炼排期
+        function removeExerciseFromDate(exName, dateStr) {
+            if (!appData.exerciseSchedule[dateStr]) return;
+            appData.exerciseSchedule[dateStr] = appData.exerciseSchedule[dateStr].filter(n => n !== exName);
+            if (appData.exerciseSchedule[dateStr].length === 0) delete appData.exerciseSchedule[dateStr];
+        }
+
         function renderWeekBoard() {
             const board = document.getElementById('week-board');
             board.innerHTML = '';
@@ -1230,7 +1174,6 @@
             const dayOfWeek = baseDate.getDay() || 7; 
             const monday = new Date(baseDate);
             monday.setDate(baseDate.getDate() - dayOfWeek + 1);
-            
             document.getElementById('week-display').innerText = `${monday.getMonth()+1}月${monday.getDate()}日 那一周`;
 
             weekDays.forEach((dayName, index) => {
@@ -1259,6 +1202,8 @@
                     }
                     const exDiv = document.createElement('div');
                     exDiv.className = 'exercise-capsule';
+                    exDiv.draggable = true;
+                    exDiv.ondragstart = (e) => dragExercise(e, exName, 'date:' + dateStr);
                     const cb = document.createElement('input');
                     cb.type = 'checkbox';
                     cb.checked = allDone;
@@ -1272,7 +1217,19 @@
                     };
                     const label = document.createElement('span');
                     label.innerText = '💪 ' + exName;
-                    exDiv.appendChild(cb); exDiv.appendChild(label);
+                    const delBtn = document.createElement('span');
+                    delBtn.className = 'ex-del-btn';
+                    delBtn.innerText = '✕';
+                    delBtn.title = '从该日移除';
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        removeExerciseFromDate(exName, dateStr);
+                        saveDataToFile(appData);
+                        renderWeekBoard(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
+                    };
+                    exDiv.appendChild(cb); 
+                    exDiv.appendChild(label);
+                    exDiv.appendChild(delBtn);
                     col.appendChild(exDiv);
                 });
                 board.appendChild(col);
@@ -1290,7 +1247,7 @@
                 div.className = 'exercise-capsule';
                 div.innerText = ex.name;
                 div.draggable = true;
-                div.ondragstart = (e) => dragExercise(e, ex.name);
+                div.ondragstart = (e) => dragExercise(e, ex.name, 'pool');
                 pool.appendChild(div);
             });
         }
@@ -1300,7 +1257,6 @@
             const poolL = document.getElementById('task-pool-learning');
             const poolO = document.getElementById('task-pool-other');
             poolL.innerHTML = ''; poolO.innerHTML = '';
-
             const tasksL = appData.tasks.filter(t => t.type === 'learning' && (t.date === 'pool' || t.date === appData.selectedDate || (t.date < todayStr && t.date !== 'pool' && !t.completed)));
             tasksL.forEach(task => {
                 const item = createWeekTaskDOM(task); 
@@ -1309,7 +1265,6 @@
                 else if (task.date < todayStr && !task.completed) { const tag = document.createElement('span'); tag.className = 'task-tag overdue'; tag.innerText = '逾期'; item.appendChild(tag); }
                 poolL.appendChild(item);
             });
-
             const tasksO = appData.tasks.filter(t => t.type === 'other' && (t.date === 'pool' || t.date === appData.selectedDate || (t.date < todayStr && t.date !== 'pool' && !t.completed)));
             tasksO.forEach(task => {
                 const item = createWeekTaskDOM(task);
@@ -1320,7 +1275,6 @@
             });
         }
 
-        // ===== 内联编辑：双击任务文本即可修改 =====
         window.enableTaskEdit = function(spanEl, taskId, subId) {
             if (spanEl.dataset.editing === '1') return;
             spanEl.dataset.editing = '1';
@@ -1333,7 +1287,6 @@
             spanEl.parentNode.insertBefore(input, spanEl.nextSibling);
             input.focus();
             input.select();
-
             let finished = false;
             const finish = (save) => {
                 if (finished) return;
@@ -1348,7 +1301,6 @@
                         const task = appData.tasks.find(t => t.id === taskId);
                         if (task) task.text = newText;
                     }
-                    // 删除 input，交给重新渲染
                     if (input.parentNode) input.parentNode.removeChild(input);
                     renderDayPlan(); renderTaskPool(); renderWeekBoard();
                     saveDataToFile(appData);
@@ -1358,7 +1310,6 @@
                 spanEl.style.display = '';
                 spanEl.dataset.editing = '';
             };
-
             input.addEventListener('blur', () => finish(true));
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') { e.preventDefault(); finish(true); }
@@ -1372,25 +1323,19 @@
             const loopClass = task.recurringType ? 'active' : '';
             const loopLabel = task.recurringType ? `<span class="loop-label">${task.recurringType}</span>` : '';
             const pinClass = task.pinned ? 'active' : '';
-            
             let deadlineClass = '';
             let deadlineTitle = '⏰ 设置截止日期';
             if (task.deadline && !task.completed && task.deadline < todayStr) { deadlineClass = 'overdue'; deadlineTitle = '⚠️ 已逾期！'; }
-
             const isCombinedProgress = (task.subTasks && task.subTasks.length > 0);
             const mainProg = getTaskProgress(task);
-            
             let headerLeftHtml = '';
             const mainCb = `<input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleMainTask('${task.id}')">`;
             const editableText = `<span class="task-text ${task.completed ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor: text;">${task.text}</span>`;
-
             if (task.target || isCombinedProgress) {
                 const pct = Math.min(100, Math.round((mainProg.done / mainProg.total) * 100));
                 headerLeftHtml = `
                     <div class="progress-task-container">
-                        ${mainCb}
-                        ${editableText}
-                        ${loopLabel}
+                        ${mainCb}${editableText}${loopLabel}
                         <div class="progress-task-bar-bg" style="width: 80px; margin-left:8px;"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div>
                         <span class="progress-text">${mainProg.done}/${mainProg.total}</span>
                         ${!task.completed && !isCombinedProgress ? `<button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}
@@ -1398,7 +1343,6 @@
             } else {
                 headerLeftHtml = `${mainCb}${editableText}${loopLabel}`;
             }
-
             let html = `
                 <div class="main-task-header">
                     <div class="main-task-left">${headerLeftHtml}</div>
@@ -1411,7 +1355,6 @@
                     </div>
                 </div>
             `;
-
             html += `<div class="sub-task-list">`;
             if (task.subTasks && task.subTasks.length > 0) {
                 task.subTasks.forEach(sub => {
@@ -1430,7 +1373,6 @@
                 });
             }
             html += `</div><span class="btn-add-sub" onclick="showSubInput('${task.id}')">➕ 添加步骤</span><input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')">`;
-
             taskDiv.innerHTML = html;
             return taskDiv;
         }
@@ -1441,24 +1383,18 @@
             const otherList = document.getElementById('other-list');
             const learningCompleted = document.getElementById('learning-completed');
             const otherCompleted = document.getElementById('other-completed');
-            
             learningList.innerHTML = ''; otherList.innerHTML = '';
             learningCompleted.innerHTML = ''; otherCompleted.innerHTML = '';
-            
             const todayStr = getTodayString();
             const dayTasks = appData.tasks.filter(t => t.date === appData.selectedDate);
-
             let activeL = dayTasks.filter(t => t.type === 'learning' && !t.completed);
             let doneL = dayTasks.filter(t => t.type === 'learning' && t.completed);
             let activeO = dayTasks.filter(t => t.type === 'other' && !t.completed);
             let doneO = dayTasks.filter(t => t.type === 'other' && t.completed);
-
             const sortTasks = (a, b) => { if (a.pinned && !b.pinned) return -1; if (!a.pinned && b.pinned) return 1; return 0; };
             activeL.sort(sortTasks); activeO.sort(sortTasks);
-
             activeL.forEach(task => learningList.appendChild(generateTaskDOM(task, todayStr)));
             activeO.forEach(task => otherList.appendChild(generateTaskDOM(task, todayStr)));
-
             if (doneL.length > 0) {
                 let html = `<details class="completed-tasks-section"><summary>已完成 (${doneL.length})</summary><div class="completed-tasks-list"></div></details>`;
                 learningCompleted.innerHTML = html;
@@ -1471,10 +1407,8 @@
                 const listDiv = otherCompleted.querySelector('.completed-tasks-list');
                 doneO.forEach(task => listDiv.appendChild(generateTaskDOM(task, todayStr)));
             }
-
             const reflTa = document.getElementById('daily-reflection-textarea');
             if(reflTa) { reflTa.value = appData.dailyReflections[appData.selectedDate] || ''; }
-
             renderDayExercises();
             updateFixedProgressBars();
             saveDataToFile(appData);
@@ -1492,22 +1426,18 @@
             grid.innerHTML = '';
             const manualEx = appData.exerciseSchedule[appData.selectedDate] || [];
             const checks = appData.dailyExerciseChecks[appData.selectedDate] || {};
-
             appData.exercises.forEach(ex => {
                 const isPlanned = manualEx.includes(ex.name) || isRecurringMatch(ex.recurringType, appData.selectedDate);
                 const card = document.createElement('div');
                 card.className = `exercise-card ${isPlanned ? 'active-plan' : ''}`;
                 const loopClass = ex.recurringType ? 'active' : '';
                 const loopLabel = ex.recurringType ? `<span class="loop-label">${ex.recurringType}</span>` : '';
-                
                 const allChecked = isCategoryAllChecked(ex.id);
                 const headCheckbox = `<input type="checkbox" class="exercise-cat-checkbox" ${allChecked ? 'checked' : ''} onchange="toggleExerciseCategory('${ex.id}')" title="一键完成所有动作">`;
-
                 let html = `<div class="exercise-card-header">
                     <div class="exercise-header-left">${headCheckbox}<span class="exercise-name" title="${ex.name}" ondblclick="renameExerciseCategory('${ex.id}')">${ex.name}</span>${loopLabel}</div>
                     <div class="exercise-header-right"><span class="btn-loop ${loopClass}" title="循环" onclick="toggleExerciseRecurring('${ex.id}')">🔁</span><span class="btn-del-ex" title="删除大类" onclick="deleteExerciseCategory('${ex.id}')">✖</span></div>
                 </div>`;
-
                 html += `<div class="exercise-content">`;
                 if (ex.subTasks.length === 0) {
                     html += `<div style="color:#aaa; text-align:center; font-size:0.85em; margin:8px 0;">👇 点击下方添加动作</div>`;
@@ -1522,13 +1452,12 @@
                     }
                 }
                 html += `</div><div style="margin-top:8px; display:flex; gap:4px;"><input type="text" style="flex:1; min-width:0; border:1px solid #ddd; padding:4px 6px; border-radius:4px; font-size:0.85em;" placeholder="🏋️ 添加动作..." onkeypress="addExerciseTask(event, '${ex.id}')"></div>`;
-
                 card.innerHTML = html;
                 grid.appendChild(card);
             });
         }
 
-        // ================= 4. 交互事件 =================
+        // ================= 交互事件 =================
         document.querySelectorAll('.nav-item[data-target]').forEach(item => {
             item.addEventListener('click', () => {
                 document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
@@ -1536,7 +1465,6 @@
                 item.classList.add('active');
                 const target = item.getAttribute('data-target');
                 document.getElementById(`view-${target}`).classList.add('active');
-
                 if (target === 'month') renderCalendar();
                 else if (target === 'year') renderYearHeatmap();
                 else if (target === 'week') { renderWeekBoard(); renderTaskPool(); renderExercisePool(); }
@@ -1556,25 +1484,64 @@
             if (document.getElementById('view-month').classList.contains('active')) { renderCalendar(); }
         };
 
-        let draggedTaskId = null; let draggedExerciseName = null;
-        function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
-        function drag(ev, taskId) { draggedTaskId = taskId; draggedExerciseName = null; }
-        function dragExercise(ev, name) { draggedExerciseName = name; draggedTaskId = null; }
+        let draggedTaskId = null; 
+        let draggedExerciseName = null;
+        let draggedExerciseSource = null;  // 'pool' 或 'date:YYYY-MM-DD'
+
+        function allowDrop(ev) { 
+            ev.preventDefault(); 
+            ev.currentTarget.classList.add('drag-over'); 
+        }
+        function drag(ev, taskId) { 
+            draggedTaskId = taskId; 
+            draggedExerciseName = null; 
+            draggedExerciseSource = null;
+        }
+        function dragExercise(ev, name, source) { 
+            draggedExerciseName = name; 
+            draggedExerciseSource = source || 'pool';
+            draggedTaskId = null; 
+        }
         
         function handleDrop(ev, targetDate) {
             ev.preventDefault();
-            document.querySelectorAll('.week-column, .task-pool-list').forEach(c => c.classList.remove('drag-over'));
+            document.querySelectorAll('.week-column, .task-pool-list, #exercise-pool').forEach(c => c.classList.remove('drag-over'));
+            
             if (draggedTaskId) {
                 const task = appData.tasks.find(t => t.id === draggedTaskId);
                 if (task) { task.date = targetDate; }
             } else if (draggedExerciseName) {
-                if (targetDate === 'pool') return; 
-                if (!appData.exerciseSchedule[targetDate]) appData.exerciseSchedule[targetDate] = [];
-                if (!appData.exerciseSchedule[targetDate].includes(draggedExerciseName)) { appData.exerciseSchedule[targetDate].push(draggedExerciseName); }
+                const sourceIsDate = draggedExerciseSource && draggedExerciseSource.startsWith('date:');
+                const sourceDate = sourceIsDate ? draggedExerciseSource.substring(5) : null;
+
+                if (targetDate === 'pool') {
+                    // 拖回锻炼池：如果是来自某天，则从该天移除
+                    if (sourceIsDate && sourceDate) {
+                        removeExerciseFromDate(draggedExerciseName, sourceDate);
+                    }
+                } else {
+                    // 拖到某一天
+                    // 如果是同一天，不做操作
+                    if (sourceIsDate && sourceDate === targetDate) {
+                        // 什么都不做
+                    } else {
+                        // 如果是来自别的日期，先移除
+                        if (sourceIsDate && sourceDate) {
+                            removeExerciseFromDate(draggedExerciseName, sourceDate);
+                        }
+                        // 添加到目标日期
+                        if (!appData.exerciseSchedule[targetDate]) appData.exerciseSchedule[targetDate] = [];
+                        if (!appData.exerciseSchedule[targetDate].includes(draggedExerciseName)) {
+                            appData.exerciseSchedule[targetDate].push(draggedExerciseName);
+                        }
+                    }
+                }
             }
             saveDataToFile(appData);
             renderWeekBoard(); renderTaskPool(); renderExercisePool(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
-            draggedTaskId = null; draggedExerciseName = null;
+            draggedTaskId = null; 
+            draggedExerciseName = null; 
+            draggedExerciseSource = null;
         }
 
         window.deleteTask = function(taskId) {
@@ -1823,10 +1790,8 @@
             const todayStr = getTodayString();
             const targetYear = new Date().getFullYear();
             const targetMonth = new Date().getMonth() + 1;
-
             let yearTotal = 0, yearDone = 0;
             let monthTotal = 0, monthDone = 0;
-            
             const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
             for (let i = 1; i <= daysInMonth; i++) {
                 const dStr = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
@@ -1844,7 +1809,6 @@
             const tl = calcProgress(todayStr, 'learning'); const to = calcProgress(todayStr, 'other'); const te = calcProgress(todayStr, '锻炼');
             const dayTotal = tl.total + to.total + te.total; const dayDone = tl.done + to.done + te.done;
             const calcPct = (done, total) => total === 0 ? 0 : Math.round((done / total) * 100);
-            
             const yPct = calcPct(yearDone, yearTotal); document.getElementById('prog-year-text').innerText = yPct + '%'; document.getElementById('prog-year-fill').style.width = yPct + '%';
             const mPct = calcPct(monthDone, monthTotal); document.getElementById('prog-month-text').innerText = mPct + '%'; document.getElementById('prog-month-fill').style.width = mPct + '%';
             const dPct = calcPct(dayDone, dayTotal); document.getElementById('prog-day-text').innerText = dPct + '%'; document.getElementById('prog-day-fill').style.width = dPct + '%';
@@ -1865,6 +1829,7 @@
                     const importedData = JSON.parse(e.target.result);
                     if (importedData.tasks && importedData.exercises && confirm('确定导入数据吗？这将覆盖当前数据！')) {
                         appData = importedData;
+                        if (!appData._lastModified) appData._lastModified = 1;
                         if(appData.themeColor) changeTheme(appData.themeColor);
                         if(appData.fontSize) changeFontSize(appData.fontSize);
                         renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); saveDataToFile(appData); alert('导入成功！');
@@ -1889,12 +1854,12 @@
             appData.tasks.push({ id: '2', text: '看教程视频', type: 'learning', date: getTodayString(), completed: false, subTasks: [], deadline: '', target: 100, current: 10, pinned: false });
             appData.tasks.push({ id: '3', text: '复习考试', type: 'learning', date: getTodayString(), completed: false, subTasks: [{id: '3-1', text: '第一章', completed: false, target: 5, current: 0}, {id: '3-2', text: '第二章', completed: false, target: 5, current: 0}], deadline: '', pinned: false });
         }
+        if (!appData._lastModified) appData._lastModified = 1;
         
         if(appData.themeColor) changeTheme(appData.themeColor);
         if(appData.fontSize) changeFontSize(appData.fontSize);
         
         renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); initDragAndDrop(); renderSnapshots();
-        
         renderP2PHistory();
         const savedHost = localStorage.getItem('my_p2p_host_id');
         if (savedHost) document.getElementById('my-peer-id').innerText = savedHost;
@@ -1905,7 +1870,6 @@
                 initPeer(false, true); 
             }, 500);
         }
-
     </script>
 </body>
 </html>
