@@ -84,7 +84,7 @@ body{font-family:var(--font-family);background-color:var(--bg-main);color:var(--
 .main-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .view-container{flex:1;padding:24px;overflow-y:auto;display:none;flex-direction:column}
 .view-container.active{display:flex}
-h1{font-size:1.7em;font-weight:700;margin-bottom:20px;flex-shrink:0;display:flex;align-items:center;gap:8px}
+h1{font-size:1.7em;font-weight:700;margin-bottom:20px;flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 h2{font-size:1.15em;font-weight:600;margin-bottom:0;display:flex;align-items:center;gap:6px}
 .time-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:1.15em;font-weight:bold}
 .time-nav button{background:#fff;border:1px solid var(--border-color);border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:bold;color:var(--text-main);transition:all .2s;display:flex;align-items:center;gap:4px;font-size:.9em}
@@ -95,7 +95,9 @@ h2{font-size:1.15em;font-weight:600;margin-bottom:0;display:flex;align-items:cen
 .day-box:hover{border-color:#ccc}
 .day-box.active{border-color:var(--accent-color)}
 .day-box.all-done{background-color:#e8f5e9;border-color:#a5d6a7}
-.day-number{font-size:1.15em;font-weight:bold;margin-bottom:4px;color:#333}
+.day-box.is-today{box-shadow:0 0 0 2px var(--accent-color) inset}
+.day-number{font-size:1.15em;font-weight:bold;margin-bottom:4px;color:#333;display:flex;align-items:center;gap:6px}
+.today-badge{font-size:.55em;font-weight:700;color:#fff;background:var(--accent-color);padding:1px 6px;border-radius:8px;letter-spacing:0.3px}
 .day-summary{font-size:.8em;color:var(--text-main);line-height:1.4;margin-top:auto;display:flex;flex-direction:column;gap:4px}
 .mini-bar-row{display:flex;align-items:center;gap:4px;font-size:.85em;color:#555;white-space:nowrap}
 .mini-bar-row span:first-child{width:44px;flex-shrink:0}
@@ -107,8 +109,9 @@ h2{font-size:1.15em;font-weight:600;margin-bottom:0;display:flex;align-items:cen
 .deadline-preview{color:var(--danger-color);background:#ffebee;border-left:2px solid var(--danger-color);font-weight:bold}
 .year-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-shrink:0}
 .year-heatmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(36px,1fr));gap:6px;margin-bottom:24px;padding:16px;background:#fff;border:1px solid var(--border-color);border-radius:8px;flex-shrink:0}
-.heatmap-cell{width:100%;aspect-ratio:1/1;background-color:#ebedf0;border-radius:4px;cursor:pointer;transition:all .1s;display:flex;align-items:center;justify-content:center;font-size:.9em;font-weight:600}
+.heatmap-cell{width:100%;aspect-ratio:1/1;background-color:#ebedf0;border-radius:4px;cursor:pointer;transition:all .1s;display:flex;align-items:center;justify-content:center;font-size:.9em;font-weight:600;position:relative}
 .heatmap-cell:hover{transform:scale(1.15);z-index:10}
+.heatmap-cell.today-cell{outline:2px solid var(--accent-color);outline-offset:-2px}
 .stats-container{display:flex;gap:16px;margin:16px 0 24px 0;flex-shrink:0}
 .stat-card{flex:1;background:#fff;border:1px solid var(--border-color);border-radius:8px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .stat-value{font-size:1.7em;font-weight:bold;margin-bottom:4px}
@@ -118,8 +121,10 @@ h2{font-size:1.15em;font-weight:600;margin-bottom:0;display:flex;align-items:cen
 .stat-card.exercise{border-top:4px solid #27ae60}
 .week-board{display:flex;gap:8px;height:400px;margin-bottom:24px;flex-shrink:0}
 .week-column{flex:1;background:var(--bg-sidebar);border-radius:8px;padding:8px;display:flex;flex-direction:column;border:1px dashed transparent}
+.week-column.today-col{border-color:var(--accent-color);background:#eef5fc}
 .week-column.drag-over{border-color:var(--accent-color);background:#eef5fc}
 .week-column-header{font-weight:600;text-align:center;margin-bottom:12px;font-size:.9em;color:#555}
+.week-today-badge{display:inline-block;font-size:.7em;color:#fff;background:var(--accent-color);padding:1px 6px;border-radius:8px;margin-top:2px}
 .todo-section{background:#fff;border:1px solid var(--border-color);border-radius:8px;padding:16px;flex-shrink:0}
 .todo-input{width:100%;padding:10px 12px;border:1px solid var(--border-color);border-radius:6px;margin-bottom:12px;outline:none;font-family:inherit;font-size:.95em}
 .todo-input:focus{border-color:var(--accent-color)}
@@ -285,6 +290,7 @@ body{flex-direction:column}
 .calendar-grid{gap:2px}
 .day-box{padding:4px;min-height:70px;border-width:1px}
 .day-number{font-size:.9em;margin-bottom:2px}
+.today-badge{font-size:.7em;padding:0 4px}
 .day-summary{gap:2px;margin-top:auto}
 .mini-bar-row span{display:none!important}
 .mini-bar-bg{height:4px;margin-bottom:2px;border-radius:2px}
@@ -586,33 +592,31 @@ h1{font-size:1.4em;margin-bottom:12px}
    1. 更新日志
    ========================================================= */
 const APP_CHANGELOG = [
+    { version: 'v1.5.0', date: '2026-10-25', changes: [
+        '新增：每次打开页面默认显示今天，不再恢复上次编辑日期',
+        '新增：跨天自动切换（页面开着过夜时自动切到新的一天）',
+        '新增：日期显示"今天 / 昨天 / 明天 / N天前"等笼统名字',
+        '新增：月历今天格子标注"今天"徽章，周计划今天列高亮'
+    ]},
     { version: 'v1.4.0', date: '2026-10-24', changes: [
         '新增：RPG 属性变动动画（数字跳动 + 飘出 +N 提示）',
-        '新增：自定义等级名称和升级所需经验（设置页可编辑）',
-        '新增：日计划子任务超过 3 个时折叠，可展开/收起',
-        '优化：设置页改为自适应网格布局，更紧凑',
-        '优化：手机端 RPG 浮动按钮'
+        '新增：自定义等级名称和升级所需经验',
+        '新增：日计划子任务超过 3 个时折叠',
+        '优化：设置页改为自适应网格布局，更紧凑'
     ]},
     { version: 'v1.3.0', date: '2026-10-24', changes: [
-        '新增：日计划任务超过 5 个时折叠，点击「查看全部」弹出大框',
-        '优化：更新日志改为版本更新记录',
-        '优化：手机端同步显示 RPG 浮动按钮'
+        '新增：日计划任务超过 5 个时折叠，可弹框查看全部',
+        '优化：更新日志改为版本更新记录'
     ]},
     { version: 'v1.2.0', date: '2026-10-24', changes: [
-        '新增：今日精力系统，支持午睡 +40、课间 +15 恢复',
-        '新增：精力警告阈值设置，低于阈值时提醒休息且经验减半',
-        '新增：RPG 属性编辑，可自定义初始值',
-        '优化：等级经验递增，越到后面升级所需经验越多',
-        '优化：日计划默认三列显示，保留拖动和 resize',
-        '修复：修改 index 后日计划布局被重置的问题'
+        '新增：今日精力系统，支持午睡/课间恢复',
+        '新增：精力警告阈值设置',
+        '新增：RPG 属性编辑',
+        '优化：等级经验递增',
+        '优化：日计划默认三列显示',
+        '修复：修改 index 后日计划布局被重置'
     ]},
-    { version: 'v1.1.0', date: '2026-10-23', changes: [
-        '新增：任务/子任务预计时长设置',
-        '新增：日计划面板大类备注',
-        '新增：次数型任务支持 -1 减少',
-        '修复：周计划锻炼拖回锻炼池',
-        '优化：同步逻辑改为基于时间戳的 Last-Write-Wins'
-    ]},
+    { version: 'v1.1.0', date: '2026-10-23', changes: ['新增预计时长、大类备注、-1 减少、拖回锻炼池等功能'] },
     { version: 'v1.0.0', date: '2026-10-22', changes: ['初始版本'] }
 ];
 
@@ -673,6 +677,7 @@ let lastSavedSignature = '';
 let resizeObserver = null;
 let currentTaskModalCategory = null;
 let lastRpgState = null;
+let userPickedDate = false;
 const expandedSubTasks = new Set();
 
 /* =========================================================
@@ -684,6 +689,35 @@ function getTodayString() {
 }
 function formatDate(y, m, d) { return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`; }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// 相对日期名称显示（今天 / 昨天 / 明天 / N天前 等）
+function getDateLabel(dateStr) {
+    const today = getTodayString();
+    const d = new Date(dateStr + 'T00:00:00');
+    const t = new Date(today + 'T00:00:00');
+    const diffDays = Math.round((t - d) / (1000 * 60 * 60 * 24));
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const weekday = weekdays[d.getDay()];
+    const full = `${d.getMonth() + 1}月${d.getDate()}日 ${weekday}`;
+    if (diffDays === 0) return `今天 · ${full}`;
+    if (diffDays === 1) return `昨天 · ${full}`;
+    if (diffDays === -1) return `明天 · ${full}`;
+    if (diffDays === 2) return `前天 · ${full}`;
+    if (diffDays === -2) return `后天 · ${full}`;
+    if (diffDays > 2 && diffDays <= 7) return `${diffDays}天前 · ${full}`;
+    if (diffDays < -2 && diffDays >= -7) return `${-diffDays}天后 · ${full}`;
+    if (d.getFullYear() === t.getFullYear()) return full;
+    return `${d.getFullYear()}年${full}`;
+}
+// 简短名称（用于徽章）
+function getShortDateLabel(dateStr) {
+    const diffDays = Math.round((new Date(getTodayString() + 'T00:00:00') - new Date(dateStr + 'T00:00:00')) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return '今天';
+    if (diffDays === 1) return '昨天';
+    if (diffDays === -1) return '明天';
+    return '';
+}
+
 function generatePeerId() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     let s = 'ws-';
@@ -866,10 +900,8 @@ function renderEnergyAndRPG() {
         if (el && document.activeElement !== el) el.value = editMap[id];
     });
 
-    // 变动动画
     const cur = { exp: rpg.exp, int: rpg.int, vit: rpg.vit, cre: rpg.cre, foc: rpg.foc, wil: rpg.wil, level: level };
     if (lastRpgState) {
-        // 经验
         if (cur.exp !== lastRpgState.exp) {
             const delta = cur.exp - lastRpgState.exp;
             const expText = document.getElementById('rpg-exp-text');
@@ -880,14 +912,12 @@ function renderEnergyAndRPG() {
                 showRpgFloat(expText, delta + ' EXP', '#eb5757');
             }
         }
-        // 等级
         if (cur.level !== lastRpgState.level) {
             const lvEl = document.getElementById('rpg-level');
             const modalLv = document.getElementById('rpg-modal-level');
             if (lvEl) { flashElement(lvEl, 'rpg-value-pop', 900); showRpgFloat(lvEl, '🎉 升级！Lv.' + cur.level, '#f59e0b'); }
             if (modalLv) flashElement(modalLv, 'rpg-value-pop', 900);
         }
-        // 属性
         ['int','vit','cre','foc','wil'].forEach(k => {
             if (cur[k] !== lastRpgState[k]) {
                 const delta = cur[k] - lastRpgState[k];
@@ -901,7 +931,6 @@ function renderEnergyAndRPG() {
     }
     lastRpgState = cur;
 
-    // 同步更新已打开的 RPG 模态框内容（等级、属性）
     if (document.getElementById('rpg-modal').classList.contains('active')) {
         document.getElementById('rpg-modal-level').innerText = 'Lv.' + level;
         document.getElementById('rpg-modal-title').innerText = title;
@@ -992,7 +1021,6 @@ window.openRPGModal = function() {
 };
 window.closeRPGModal = function() { document.getElementById('rpg-modal').classList.remove('active'); };
 
-/* 等级配置编辑 */
 function renderLevelConfig() {
     ensureEnergyData();
     const list = document.getElementById('level-config-list');
@@ -1479,7 +1507,7 @@ function renderYearHeatmap() {
         const ds = formatDate(d.getFullYear(), d.getMonth(), d.getDate());
         const div = document.createElement('div');
         div.className = 'heatmap-cell';
-        div.title = ds;
+        div.title = getDateLabel(ds);
         div.innerText = d.getDate();
         const l = calcProgress(ds, 'learning'), o = calcProgress(ds, 'other'), e = calcProgress(ds, '锻炼');
         const tot = l.total + o.total + e.total, done = l.done + o.done + e.done;
@@ -1488,8 +1516,8 @@ function renderYearHeatmap() {
             if (pct === 100) { div.style.backgroundColor = '#27ae60'; div.style.color = '#fff'; }
             else { const hue = pct * 1.2; div.style.backgroundColor = `hsl(${hue}, 70%, 60%)`; div.style.color = hue > 50 ? '#333' : '#fff'; }
         } else { div.style.backgroundColor = '#ebedf0'; div.style.color = '#999'; }
-        if (ds === td) div.style.border = "2px solid var(--accent-color)";
-        div.onclick = () => { appData.selectedDate = ds; appData.viewYear = d.getFullYear(); appData.viewMonth = d.getMonth(); document.querySelector('.nav-item[data-target="day"]').click(); };
+        if (ds === td) div.classList.add('today-cell');
+        div.onclick = () => { appData.selectedDate = ds; userPickedDate = true; appData.viewYear = d.getFullYear(); appData.viewMonth = d.getMonth(); document.querySelector('.nav-item[data-target="day"]').click(); };
         h.appendChild(div);
     }
     renderStats('stats-year', formatDate(y, 0, 1), formatDate(y, 11, 31), '年');
@@ -1512,13 +1540,16 @@ function renderCalendar() {
     let fd = new Date(y, m, 1).getDay();
     if (fd === 0) fd = 7;
     for (let i = 1; i < fd; i++) grid.appendChild(document.createElement('div'));
+    const todayStr = getTodayString();
     for (let i = 1; i <= dim; i++) {
         const ds = formatDate(y, m, i);
         const div = document.createElement('div');
         const lp = calcProgress(ds, 'learning'), op = calcProgress(ds, 'other'), ep = calcProgress(ds, '锻炼');
         const tot = lp.total + op.total + ep.total, done = lp.done + op.done + ep.done;
         const allDone = tot > 0 && done === tot;
-        div.className = `day-box ${ds === appData.selectedDate ? 'active' : ''} ${allDone ? 'all-done' : ''}`;
+        const isToday = ds === todayStr;
+        const isActive = ds === appData.selectedDate;
+        div.className = 'day-box' + (isActive ? ' active' : '') + (allDone ? ' all-done' : '') + (isToday ? ' is-today' : '');
         let sHtml = '<div class="day-summary">';
         if (lp.total > 0) { const p = Math.round((lp.done/lp.total)*100); sHtml += `<div class="mini-bar-row"><span>📚学习</span><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${p}%;background:#2383e2;"></div></div><span>${p}%</span></div>`; }
         if (op.total > 0) { const p = Math.round((op.done/op.total)*100); sHtml += `<div class="mini-bar-row"><span>🧺其他</span><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${p}%;background:#f2994a;"></div></div><span>${p}%</span></div>`; }
@@ -1536,8 +1567,9 @@ function renderCalendar() {
             const dt = dl.map(t => t.text).join(', ');
             dHtml = `<div class="deadline-preview" title="截止任务: ${dt}">⏰ ${dt.length > 6 ? dt.substring(0,6)+'...' : dt}</div>`;
         }
-        div.innerHTML = `<div class="day-number">${i}</div>${sHtml}${refl}${dHtml}`;
-        div.onclick = () => { appData.selectedDate = ds; document.querySelector('.nav-item[data-target="day"]').click(); };
+        const todayBadge = isToday ? '<span class="today-badge">今天</span>' : '';
+        div.innerHTML = `<div class="day-number">${i}${todayBadge}</div>${sHtml}${refl}${dHtml}`;
+        div.onclick = () => { appData.selectedDate = ds; userPickedDate = true; document.querySelector('.nav-item[data-target="day"]').click(); };
         grid.appendChild(div);
     }
     renderStats('stats-month', formatDate(y, m, 1), formatDate(y, m, dim), '月');
@@ -1577,15 +1609,17 @@ function renderWeekBoard() {
     const dow = bd.getDay() || 7;
     const mon = new Date(bd);
     mon.setDate(bd.getDate() - dow + 1);
+    const todayStr = getTodayString();
     document.getElementById('week-display').innerText = `${mon.getMonth()+1}月${mon.getDate()}日 那一周`;
     wd.forEach((dn, i) => {
         const cd = new Date(mon); cd.setDate(mon.getDate() + i);
         const ds = formatDate(cd.getFullYear(), cd.getMonth(), cd.getDate());
+        const isToday = ds === todayStr;
         const col = document.createElement('div');
-        col.className = 'week-column';
+        col.className = 'week-column' + (isToday ? ' today-col' : '');
         col.ondrop = (e) => handleDrop(e, ds);
         col.ondragover = allowDrop;
-        col.innerHTML = `<div class="week-column-header">${dn} <br><span style="font-size:0.85em;color:#999">${cd.getMonth()+1}/${cd.getDate()}</span></div>`;
+        col.innerHTML = `<div class="week-column-header">${dn} <br><span style="font-size:0.85em;color:#999">${cd.getMonth()+1}/${cd.getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
         appData.tasks.filter(t => t.date === ds).forEach(t => col.appendChild(createWeekTaskDOM(t)));
         const manual = appData.exerciseSchedule[ds] || [];
         const rec = appData.exercises.filter(e => isRecurringMatch(e.recurringType, ds)).map(e => e.name);
@@ -1795,7 +1829,7 @@ function generateTaskDOM(task, td) {
     return div;
 }
 function renderDayPlan() {
-    document.getElementById('day-title').innerText = `📝 日计划 (${appData.selectedDate})`;
+    document.getElementById('day-title').innerText = `📝 日计划 (${getDateLabel(appData.selectedDate)})`;
     const ll = document.getElementById('learning-list'), ol = document.getElementById('other-list');
     const lc = document.getElementById('learning-completed'), oc = document.getElementById('other-completed');
     ll.innerHTML = ''; ol.innerHTML = ''; lc.innerHTML = ''; oc.innerHTML = '';
@@ -1835,7 +1869,6 @@ function renderDayPlan() {
     if (currentTaskModalCategory) renderTaskListModalContent(currentTaskModalCategory);
 }
 
-/* 任务列表模态框 */
 function getCategoryTasks(type) {
     const dt = appData.tasks.filter(t => t.date === appData.selectedDate && t.type === type);
     const active = dt.filter(t => !t.completed).sort((a, b) => (a.pinned && !b.pinned ? -1 : (!a.pinned && b.pinned ? 1 : 0)));
@@ -1868,7 +1901,6 @@ function renderTaskListModalContent(type) {
     }
 }
 
-/* 锻炼渲染 */
 function isCategoryAllChecked(exId) {
     const ex = appData.exercises.find(e => e.id === exId);
     if (!ex || ex.subTasks.length === 0) return false;
@@ -2558,6 +2590,13 @@ function renderChangelog() {
     if (!appData._lastModified) appData._lastModified = 1;
     if (!appData.panelNotes) appData.panelNotes = { learning: '', other: '', exercise: '' };
     ensureEnergyData();
+
+    // 每次打开默认显示今天
+    appData.selectedDate = getTodayString();
+    appData.viewYear = new Date().getFullYear();
+    appData.viewMonth = new Date().getMonth();
+    appData.viewWeekBaseDate = getTodayString();
+
     appData.tasks.forEach(t => {
         if (t.energyCost === undefined) t.energyCost = t.target ? 1 : 10;
         if (t.subTasks) t.subTasks.forEach(s => { if (s.energyCost === undefined) s.energyCost = s.target ? 1 : 5; });
@@ -2590,7 +2629,17 @@ function renderChangelog() {
         document.getElementById('target-peer-id').value = localStorage.getItem('last_connected_peer');
         setTimeout(() => initPeer(false, true), 500);
     }
-    setInterval(() => renderEnergyAndRPG(), 60000);
+
+    // 每分钟检查：跨天自动切换 + 精力刷新
+    setInterval(() => {
+        const today = getTodayString();
+        if (!userPickedDate && appData.selectedDate !== today) {
+            appData.selectedDate = today;
+            if (document.getElementById('view-day').classList.contains('active')) renderDayPlan();
+            if (document.getElementById('view-month').classList.contains('active')) renderCalendar();
+        }
+        renderEnergyAndRPG();
+    }, 60000);
 })();
 </script>
 </body>
