@@ -219,14 +219,64 @@ body.dark-mode .deadline-preview { background: #3a1c1c; }
 .week-grid-cell.drag-over { background: var(--hover-bg); outline: 2px dashed var(--accent-color); outline-offset: -2px; }
 .week-grid-cell.today-col { background: #f4f8fd; }
 body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
-.week-grid-cell > .task-item.lecture-task { flex: 1 1 0; min-height: 32px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: #fff; border: none; border-radius: 8px; padding: 8px 10px 8px 26px; box-shadow: 0 2px 6px rgba(0,0,0,0.12); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; font-size: var(--font-hint); position: relative; overflow: hidden; gap: 4px; }
-.week-grid-cell > .task-item.lecture-task .task-text { font-weight: 600; line-height: 1.35; word-break: break-all; color: #fff; font-size: var(--font-hint); }
-.week-grid-cell > .task-item.lecture-task input[type="checkbox"] { margin-right: 6px; margin-top: 0; width: 14px; height: 14px; }
-/* 周课表计数任务特殊样式 */
-.week-grid-cell > .task-item.lecture-task.count-task { background: linear-gradient(135deg, #93c5fd 0%, #bfdbfe 100%); color: #1e3a8a; }
-.week-grid-cell > .task-item.lecture-task.count-task .task-text { color: #1e3a8a; }
-.week-grid-cell > .fixed-block-item { flex: 1 1 0; min-height: 32px; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 8px; padding: 8px 10px 8px 26px; font-size: var(--font-hint); }
-.week-grid-cell > .fixed-block-item > span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+
+/* 周时间池任务：字体加大、上下左右居中 */
+.week-grid-cell > .task-item.lecture-task { 
+    flex: 1 1 0; 
+    min-height: 36px; 
+    background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); 
+    color: #fff; 
+    border: none; 
+    border-radius: 8px; 
+    padding: 8px 20px; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12); 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; /* 水平居中 */
+    justify-content: center; /* 垂直居中 */
+    font-size: 13px; 
+    position: relative; 
+    overflow: hidden; 
+    text-align: center;
+    line-height: 1.4;
+}
+.week-grid-cell > .task-item.lecture-task .task-text { 
+    font-weight: 600; 
+    color: #fff; 
+    font-size: 13px; 
+    word-break: break-all;
+}
+.week-grid-cell > .task-item.lecture-task input[type="checkbox"] { 
+    margin: 0 0 4px 0; 
+    width: 14px; 
+    height: 14px; 
+}
+.week-grid-cell > .task-item.lecture-task.count-task { 
+    background: linear-gradient(135deg, #93c5fd 0%, #bfdbfe 100%); 
+    color: #1e3a8a; 
+}
+.week-grid-cell > .task-item.lecture-task.count-task .task-text { 
+    color: #1e3a8a; 
+    font-size: 13px; 
+}
+.week-grid-cell > .fixed-block-item { 
+    flex: 1 1 0; 
+    min-height: 36px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    text-align: center; 
+    border-radius: 8px; 
+    padding: 8px 20px; 
+    font-size: 13px; 
+}
+.week-grid-cell > .fixed-block-item > span:first-child { 
+    flex: 1; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+    font-weight: 700; 
+}
 
 .week-column { flex: 1; background: var(--bg-sidebar); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; border: 1px dashed transparent; overflow-y: auto; min-height: 0; }
 .week-column.today-col { border-color: var(--accent-color); background: var(--hover-bg); }
@@ -536,6 +586,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <div class="nav-item active" data-target="month">📅 月计划</div>
 <div class="nav-item" data-target="week">🗓️ 周计划</div>
 <div class="nav-item" data-target="day">📝 日计划</div>
+<div class="nav-item" onclick="jumpToToday()" style="color:var(--accent-color);font-weight:700;">📍 回到今天</div>
 <div class="nav-item" data-target="settings">⚙️ 设置</div>
 <div class="sidebar-footer">
 <div class="sidebar-goal-box">
@@ -901,7 +952,12 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
-    { version: 'v2.15.0', date: '2025-10-25', changes: [
+    { version: 'v2.16.0', date: '2025-10-25', changes: [
+        '优化：周时间池里的任务文字加大，且上下左右居中',
+        '新增：月计划悬停某日时，不仅显示完成了什么，还显示「做了什么」（如计数任务+1/-1合并）',
+        '新增：左侧栏添加「📍 回到今天」按钮，方便从其他日期快速跳回'
+    ]},
+    { version: 'v2.15.0', date: '2025-10-24', changes: [
         '修复：日计划有子计划时显示「📋 查看 N 个子计划」提示',
         '优化：周计划待办抽屉与右侧周计划间距紧贴，无空隙',
         '优化：周计划时间池里的移回待办统一改成左上角 ↩️ 箭头',
@@ -910,44 +966,44 @@ const APP_CHANGELOG = [
         '优化：周计划时间池的累计计数任务只显示标题，不再展示加减按钮',
         '修复：日计划中创建的累计计数任务（非 pool）现在也会出现在周计划待办池中'
     ]},
-    { version: 'v2.14.0', date: '2025-10-24', changes: [
+    { version: 'v2.14.0', date: '2025-10-23', changes: [
         '优化：周计划待办弹窗贴顶贴底，中间不留空隙',
         '同步：日计划里未拖入时间池的任务都显示在周待办',
         '修复：彻底移除日计划中的 👁️ 查看详情按钮'
     ]},
-    { version: 'v2.13.0', date: '2025-10-23', changes: [
+    { version: 'v2.13.0', date: '2025-10-22', changes: [
         '新增：累计计数任务周时间池显示 -1/+1 按钮',
         '优化：日计划点击母计划卡片空白查看详情',
         '新增：累计计数任务 -1 撤销功能',
         '优化：子任务按钮缩略为 ⋮ 菜单'
     ]},
-    { version: 'v2.12.0', date: '2025-10-22', changes: [
+    { version: 'v2.12.0', date: '2025-10-21', changes: [
         '新增：周计划待办池任务带删除按钮',
         '修复：累计计数任务周视图不铺开',
         '优化：子任务计数按钮加边框'
     ]},
-    { version: 'v2.11.0', date: '2025-10-21', changes: ['详情弹窗刷新','子计划纯计数','时长合并','隐藏默认查看','拖拽回原日期'] },
-    { version: 'v2.10.0', date: '2025-10-20', changes: ['纯计数任务','背景加深','子任务收起','设置扩展','月计划悬停','循环单格'] },
-    { version: 'v2.9.0', date: '2025-10-19', changes: ['移除未安排列','截止任务按天','今天暂不完成','周课表字体调大'] },
-    { version: 'v2.8.0', date: '2025-10-18', changes: ['循环遵守截止','华丽升级','课表填满圆角','抽屉彻底收回','时间段拖拽'] },
-    { version: 'v2.7.0', date: '2025-10-17', changes: ['待办悬浮抽屉','拖拽边缘滚动'] },
-    { version: 'v2.6.0', date: '2025-10-16', changes: ['固定块无限拖','一键取消'] },
-    { version: 'v2.5.0', date: '2025-10-15', changes: ['课表视图','精力下限 -20'] },
-    { version: 'v2.4.0', date: '2025-10-14', changes: ['循环自动结束','统计图表化'] },
-    { version: 'v2.3.0', date: '2025-10-13', changes: ['计数型循环进度'] },
-    { version: 'v2.2.0', date: '2025-10-12', changes: ['字体大小细分','子任务拖拽'] },
-    { version: 'v2.1.0', date: '2025-10-11', changes: ['任务详情加宽','常用按钮'] },
-    { version: 'v2.0.0', date: '2025-10-10', changes: ['母计划备注'] },
-    { version: 'v1.9.0', date: '2025-10-09', changes: ['独立逾期任务'] },
-    { version: 'v1.8.0', date: '2025-10-08', changes: ['黑暗模式'] },
-    { version: 'v1.7.0', date: '2025-10-07', changes: ['周计划跳转'] },
-    { version: 'v1.6.0', date: '2025-10-06', changes: ['任务折叠弹框'] },
-    { version: 'v1.5.0', date: '2025-10-05', changes: ['默认显示今天'] },
-    { version: 'v1.4.0', date: '2025-10-04', changes: ['属性动画','自定义等级'] },
-    { version: 'v1.3.0', date: '2025-10-03', changes: ['任务折叠弹框'] },
-    { version: 'v1.2.0', date: '2025-10-02', changes: ['精力系统','RPG编辑'] },
-    { version: 'v1.1.0', date: '2025-10-01', changes: ['预计时长','拖拽'] },
-    { version: 'v1.0.0', date: '2025-09-30', changes: ['初始版本'] }
+    { version: 'v2.11.0', date: '2025-10-20', changes: ['详情弹窗刷新','子计划纯计数','时长合并','隐藏默认查看','拖拽回原日期'] },
+    { version: 'v2.10.0', date: '2025-10-19', changes: ['纯计数任务','背景加深','子任务收起','设置扩展','月计划悬停','循环单格'] },
+    { version: 'v2.9.0', date: '2025-10-18', changes: ['移除未安排列','截止任务按天','今天暂不完成','周课表字体调大'] },
+    { version: 'v2.8.0', date: '2025-10-17', changes: ['循环遵守截止','华丽升级','课表填满圆角','抽屉彻底收回','时间段拖拽'] },
+    { version: 'v2.7.0', date: '2025-10-16', changes: ['待办悬浮抽屉','拖拽边缘滚动'] },
+    { version: 'v2.6.0', date: '2025-10-15', changes: ['固定块无限拖','一键取消'] },
+    { version: 'v2.5.0', date: '2025-10-14', changes: ['课表视图','精力下限 -20'] },
+    { version: 'v2.4.0', date: '2025-10-13', changes: ['循环自动结束','统计图表化'] },
+    { version: 'v2.3.0', date: '2025-10-12', changes: ['计数型循环进度'] },
+    { version: 'v2.2.0', date: '2025-10-11', changes: ['字体大小细分','子任务拖拽'] },
+    { version: 'v2.1.0', date: '2025-10-10', changes: ['任务详情加宽','常用按钮'] },
+    { version: 'v2.0.0', date: '2025-10-09', changes: ['母计划备注'] },
+    { version: 'v1.9.0', date: '2025-10-08', changes: ['独立逾期任务'] },
+    { version: 'v1.8.0', date: '2025-10-07', changes: ['黑暗模式'] },
+    { version: 'v1.7.0', date: '2025-10-06', changes: ['周计划跳转'] },
+    { version: 'v1.6.0', date: '2025-10-05', changes: ['任务折叠弹框'] },
+    { version: 'v1.5.0', date: '2025-10-04', changes: ['默认显示今天'] },
+    { version: 'v1.4.0', date: '2025-10-03', changes: ['属性动画','自定义等级'] },
+    { version: 'v1.3.0', date: '2025-10-02', changes: ['任务折叠弹框'] },
+    { version: 'v1.2.0', date: '2025-10-01', changes: ['精力系统','RPG编辑'] },
+    { version: 'v1.1.0', date: '2025-09-30', changes: ['预计时长','拖拽'] },
+    { version: 'v1.0.0', date: '2025-09-29', changes: ['初始版本'] }
 ];
 
 const DEFAULT_LEVELS = [
@@ -972,7 +1028,7 @@ let appData = {
         { id: 'ex_legs', name: '腿部', subTasks: [], recurringType: '', energyCost: 15 },
         { id: 'ex_cardio', name: '有氧', subTasks: [], recurringType: '', energyCost: 15 }
     ],
-    exerciseSchedule: {}, dailyExerciseChecks: {}, dailyReflections: {},
+    exerciseSchedule: {}, dailyExerciseChecks: {}, dailyReflections: {}, dailyLogs: {},
     selectedDate: getTodayString(), yearlyGoals: "",
     themeColor: "#2383e2", themeMode: "light",
     fonts: { title: "18px", content: "14px", hint: "12px", small: "10px" },
@@ -1210,6 +1266,7 @@ function setSubCurrent(sub, dateStr, val) {
 
 function ensureEnergyData() {
     if (!appData.dailyEnergy) appData.dailyEnergy = {};
+    if (!appData.dailyLogs) appData.dailyLogs = {};
     if (!appData.energyMax) appData.energyMax = 100;
     if (appData.energyWarnThreshold === undefined) appData.energyWarnThreshold = 30;
     const def = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
@@ -1234,6 +1291,24 @@ function ensureEnergyData() {
     if (appData.maxVisible === undefined) appData.maxVisible = 5;
     if (appData.animationEnabled === undefined) appData.animationEnabled = true;
 }
+
+function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
+    if (!appData.dailyLogs) appData.dailyLogs = {};
+    if (!appData.dailyLogs[dateStr]) appData.dailyLogs[dateStr] = {};
+    if (!appData.dailyLogs[dateStr][taskId]) {
+        appData.dailyLogs[dateStr][taskId] = { name: taskName, delta: 0, completed: 0 };
+    }
+    const log = appData.dailyLogs[dateStr][taskId];
+    log.name = taskName;
+    if (actionType === 'count') {
+        log.delta += delta;
+    } else if (actionType === 'complete') {
+        log.completed = 1;
+    } else if (actionType === 'uncomplete') {
+        log.completed = 0;
+    }
+}
+
 function getTodayEnergySpent() { ensureEnergyData(); return appData.dailyEnergy[getTodayString()] || 0; }
 function getTodayEnergyRemaining() { ensureEnergyData(); return Math.max(-20, appData.energyMax - getTodayEnergySpent()); }
 function adjustTodayEnergy(delta) {
@@ -1701,6 +1776,17 @@ window.jumpToDay = function(ds) {
     userPickedDate = true;
     document.querySelector('.nav-item[data-target="day"]').click();
 };
+window.jumpToToday = function() {
+    const today = getTodayString();
+    appData.selectedDate = today;
+    appData.viewYear = new Date().getFullYear();
+    appData.viewMonth = new Date().getMonth();
+    appData.viewWeekBaseDate = today;
+    userPickedDate = false;
+    document.querySelector('.nav-item[data-target="day"]').click();
+    renderDayPlan();
+    showMiniToast('📍 已回到今天');
+};
 
 function getSubTaskProgress(s, ds, parentTask) {
     if (s.countOnly) return { done: 0, total: 1, count: s.countTotal || 0 };
@@ -1900,12 +1986,31 @@ function renderCalendar() {
         }
         const todayBadge = isToday ? '<span class="today-badge">今天</span>' : '';
         div.innerHTML = `<div class="day-number">${i}${todayBadge}</div>${sHtml}${refl}${dHtml}`;
+        
+        // 悬停显示
+        const logs = (appData.dailyLogs && appData.dailyLogs[ds]) ? appData.dailyLogs[ds] : {};
         const completedTasks = getTasksForDate(ds).filter(t => !t.countOnly && isTaskDone(t, ds));
-        if (completedTasks.length > 0) {
-            div.title = '已完成任务：\n' + completedTasks.map(t => '✓ ' + t.text).join('\n');
+        let doneSet = new Set(completedTasks.map(t => t.text));
+        Object.values(logs).forEach(l => { if (l.completed) doneSet.add(l.name); });
+
+        let tooltipArr = [];
+        if (doneSet.size > 0) {
+            tooltipArr.push('已完成：');
+            tooltipArr.push([...doneSet].map(n => '✓ ' + (n.length > 8 ? n.substring(0,8)+'...' : n)).join('  '));
         } else {
-            div.title = '当日暂无已完成任务';
+            tooltipArr.push('当日暂无已完成任务');
         }
+
+        const countLogs = Object.values(logs).filter(l => l.delta !== 0);
+        if (countLogs.length > 0) {
+            tooltipArr.push('\n操作记录：');
+            tooltipArr.push(countLogs.map(l => {
+                const sName = l.name.length > 8 ? l.name.substring(0,8)+'...' : l.name;
+                return `${sName}: ${l.delta > 0 ? '+' : ''}${l.delta}`;
+            }).join('  '));
+        }
+
+        div.title = tooltipArr.join('\n');
         div.onclick = () => { jumpToDay(ds); };
         grid.appendChild(div);
     }
@@ -2509,7 +2614,6 @@ function generateTaskDOM(task, ds, options = {}) {
         }
         html += `</div>`;
     } else if (hasSub && !showSubTasks) {
-        // 日计划收起状态，显示子任务数量提示
         html += `<div class="view-sub-tasks-btn" onclick="openTaskDetailModal('${task.id}')">📋 查看 ${task.subTasks.length} 个子计划</div>`;
     }
 
@@ -2523,7 +2627,7 @@ function generateTaskDOM(task, ds, options = {}) {
             const interactive = e.target.closest('input, button, textarea, select, a, .btn-icon, .more-menu-container, .task-meta, .task-note-area, .btn-add-sub, .add-sub-task-input, .progress-task-container, .sub-task-list, .btn-count-plus, .btn-count-minus, .btn-count-end');
             if (interactive) return;
             if (e.target.closest('.task-text')) return;
-            if (e.target.closest('.view-sub-tasks-btn')) return; // 让提示按钮的 onclick 正常工作
+            if (e.target.closest('.view-sub-tasks-btn')) return;
             openTaskDetailModal(task.id);
         });
     }
@@ -2570,11 +2674,13 @@ window.incrementCountTask = function(taskId) {
     const ec = t.energyCost || 1;
     adjustTodayEnergy(ec);
     adjustExp(ec);
+    logTaskAction(getTodayString(), t.id, t.text, 'count', 1);
     saveDataToFile(appData);
     renderDayPlan();
     updateFixedProgressBars();
     renderEnergyAndRPG();
     renderWeekBoard();
+    renderCalendar();
     refreshDetailModalIfOpen();
 };
 
@@ -2587,11 +2693,13 @@ window.decrementCountTask = function(taskId) {
     const today = getTodayString();
     appData.dailyEnergy[today] = Math.max(0, (appData.dailyEnergy[today] || 0) - ec);
     appData.rpg.exp = Math.max(0, appData.rpg.exp - ec);
+    logTaskAction(today, t.id, t.text, 'count', -1);
     saveDataToFile(appData);
     renderDayPlan();
     updateFixedProgressBars();
     renderEnergyAndRPG();
     renderWeekBoard();
+    renderCalendar();
     refreshDetailModalIfOpen();
 };
 
@@ -2602,6 +2710,7 @@ window.endCountTask = function(taskId) {
     t.countEnded = true;
     adjustAttr(t.type, 1);
     updateStreak();
+    logTaskAction(getTodayString(), t.id, t.text, 'complete');
     saveDataToFile(appData);
     renderDayPlan(); renderTaskPool(); renderCalendar(); updateFixedProgressBars(); renderEnergyAndRPG();
     refreshDetailModalIfOpen();
@@ -2638,8 +2747,9 @@ window.incrementSubCount = function(tid, sid) {
     s.countTotal = (s.countTotal || 0) + 1;
     const ec = s.energyCost || 1;
     adjustTodayEnergy(ec); adjustExp(ec);
+    logTaskAction(getTodayString(), s.id, s.text, 'count', 1);
     saveDataToFile(appData);
-    renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
+    renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG(); renderCalendar();
     refreshDetailModalIfOpen();
 };
 
@@ -2655,6 +2765,7 @@ window.endSubCount = function(tid, sid) {
     syncParentTaskStatus(t, appData.selectedDate);
     const newT = isTaskDone(t, appData.selectedDate);
     if (!wt && newT) { adjustAttr('focus', 1); updateStreak(); }
+    logTaskAction(getTodayString(), s.id, s.text, 'complete');
     saveDataToFile(appData);
     renderDayPlan(); renderCalendar(); updateFixedProgressBars(); renderEnergyAndRPG();
     refreshDetailModalIfOpen();
@@ -3002,6 +3113,7 @@ function toggleTaskCompletion(t, ds) {
             setTaskDone(t, ds, false);
         }
     }
+    logTaskAction(ds, t.id, t.text, will ? 'complete' : 'uncomplete');
 }
 window.incrementTaskProgress = function(id) {
     const ds = appData.selectedDate;
@@ -3011,10 +3123,11 @@ window.incrementTaskProgress = function(id) {
     const c = t.energyCost || 1;
     setTaskCurrent(t, ds, cur + 1);
     adjustTodayEnergy(c); adjustExp(c);
+    logTaskAction(ds, t.id, t.text, 'count', 1);
     if (cur + 1 >= t.target) {
         const wasDone = isTaskDone(t, ds);
         setTaskDone(t, ds, true);
-        if (!wasDone) { adjustAttr(t.type, 1); adjustAttr('focus', 1); updateStreak(); }
+        if (!wasDone) { adjustAttr(t.type, 1); adjustAttr('focus', 1); updateStreak(); logTaskAction(ds, t.id, t.text, 'complete'); }
         if (t.recurringType && !t.recurringEndedDate) {
             t.recurringEndedDate = ds;
             alert(`🎉【${t.text}】目标已达成！该循环任务已自动结束。`);
@@ -3032,9 +3145,11 @@ window.decrementTaskProgress = function(id) {
     if (cur > 0) {
         adjustTodayEnergy(-c); adjustExp(-c);
         setTaskCurrent(t, ds, cur - 1);
+        logTaskAction(ds, t.id, t.text, 'count', -1);
         if (cur - 1 < t.target && isTaskDone(t, ds)) {
             setTaskDone(t, ds, false);
             adjustAttr(t.type, -1); adjustAttr('focus', -1);
+            logTaskAction(ds, t.id, t.text, 'uncomplete');
         }
     }
     renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
@@ -3051,10 +3166,11 @@ window.incrementSubTaskProgress = function(tid, sid) {
     const c = s.energyCost || 1;
     setSubCurrent(s, ds, cur + 1);
     adjustTodayEnergy(c); adjustExp(c);
-    if (cur + 1 >= s.target) { if (!isSubTaskDone(s, ds)) adjustAttr(t.type, 1); setSubTaskDone(s, ds, true); }
+    logTaskAction(ds, s.id, s.text, 'count', 1);
+    if (cur + 1 >= s.target) { if (!isSubTaskDone(s, ds)) adjustAttr(t.type, 1); setSubTaskDone(s, ds, true); logTaskAction(ds, s.id, s.text, 'complete'); }
     syncParentTaskStatus(t, ds);
     const newT = isTaskDone(t, ds);
-    if (!wt && newT) { adjustAttr('focus', 1); updateStreak(); }
+    if (!wt && newT) { adjustAttr('focus', 1); updateStreak(); logTaskAction(ds, t.id, t.text, 'complete'); }
     if (newT && t.recurringType && !t.recurringEndedDate) { t.recurringEndedDate = ds; alert(`🎉【${t.text}】目标已达成！该循环任务已自动结束。`); }
     renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
     refreshDetailModalIfOpen();
@@ -3071,11 +3187,12 @@ window.decrementSubTaskProgress = function(tid, sid) {
     if (cur > 0) {
         adjustTodayEnergy(-c); adjustExp(-c);
         setSubCurrent(s, ds, cur - 1);
-        if (cur - 1 < s.target && isSubTaskDone(s, ds)) { setSubTaskDone(s, ds, false); adjustAttr(t.type, -1); }
+        logTaskAction(ds, s.id, s.text, 'count', -1);
+        if (cur - 1 < s.target && isSubTaskDone(s, ds)) { setSubTaskDone(s, ds, false); adjustAttr(t.type, -1); logTaskAction(ds, s.id, s.text, 'uncomplete'); }
     }
     syncParentTaskStatus(t, ds);
     const newT = isTaskDone(t, ds);
-    if (wt && !newT) adjustAttr('focus', -1);
+    if (wt && !newT) { adjustAttr('focus', -1); logTaskAction(ds, t.id, t.text, 'uncomplete'); }
     renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
     refreshDetailModalIfOpen();
 };
@@ -3248,6 +3365,8 @@ window.toggleSubTask = function(tid, sid) {
     const newT = isTaskDone(t, ds);
     if (!wt && newT) { adjustAttr('focus', 1); updateStreak(); }
     if (wt && !newT) adjustAttr('focus', -1);
+    logTaskAction(ds, s.id, s.text, will ? 'complete' : 'uncomplete');
+    logTaskAction(ds, t.id, t.text, newT ? 'complete' : 'uncomplete');
     renderDayPlan(); renderCalendar(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
     refreshDetailModalIfOpen();
 };
