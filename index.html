@@ -45,7 +45,6 @@ body { font-family: var(--font-family); background-color: var(--bg-main); color:
 .sidebar-goal-input:focus { border-color: var(--accent-color); }
 .sidebar-goal-input:empty:before { content: attr(placeholder); color: #aaa; pointer-events: none; display: block; }
 
-/* 进度条网格化（两行，每行两个） */
 .fixed-progress-bars { width: 100%; padding: 0 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
 .prog-row { display: flex; flex-direction: column; gap: 2px; cursor: pointer; padding: 4px; border-radius: 6px; transition: background 0.2s; }
 .prog-row:hover { background: var(--hover-bg); }
@@ -57,7 +56,6 @@ body { font-family: var(--font-family); background-color: var(--bg-main); color:
 .rpg-card { background: linear-gradient(135deg, #fff8e7 0%, #ffefc2 100%); border: 1px solid #e8c26a; border-radius: var(--radius); padding: 8px 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,.6); transition: all 0.3s; }
 body.dark-mode .rpg-card { background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%); border-color: #444; box-shadow: inset 0 1px 0 rgba(0,0,0,.5); }
 
-/* 精力条改成左右布局 */
 .rpg-energy-section { display: flex; gap: 8px; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px dashed rgba(180,83,9,.25); align-items: stretch; }
 body.dark-mode .rpg-energy-section { border-bottom-color: #444; }
 .energy-left { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
@@ -220,7 +218,6 @@ body.dark-mode .deadline-preview { background: #3a1c1c; }
 .week-grid-cell.today-col { background: #f4f8fd; }
 body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
 
-/* 周时间池任务：字体加大、上下左右居中 */
 .week-grid-cell > .task-item.lecture-task { 
     flex: 1 1 0; 
     min-height: 36px; 
@@ -232,51 +229,20 @@ body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
     box-shadow: 0 2px 6px rgba(0,0,0,0.12); 
     display: flex; 
     flex-direction: column; 
-    align-items: center; /* 水平居中 */
-    justify-content: center; /* 垂直居中 */
+    align-items: center; 
+    justify-content: center; 
     font-size: 13px; 
     position: relative; 
     overflow: hidden; 
     text-align: center;
     line-height: 1.4;
 }
-.week-grid-cell > .task-item.lecture-task .task-text { 
-    font-weight: 600; 
-    color: #fff; 
-    font-size: 13px; 
-    word-break: break-all;
-}
-.week-grid-cell > .task-item.lecture-task input[type="checkbox"] { 
-    margin: 0 0 4px 0; 
-    width: 14px; 
-    height: 14px; 
-}
-.week-grid-cell > .task-item.lecture-task.count-task { 
-    background: linear-gradient(135deg, #93c5fd 0%, #bfdbfe 100%); 
-    color: #1e3a8a; 
-}
-.week-grid-cell > .task-item.lecture-task.count-task .task-text { 
-    color: #1e3a8a; 
-    font-size: 13px; 
-}
-.week-grid-cell > .fixed-block-item { 
-    flex: 1 1 0; 
-    min-height: 36px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    text-align: center; 
-    border-radius: 8px; 
-    padding: 8px 20px; 
-    font-size: 13px; 
-}
-.week-grid-cell > .fixed-block-item > span:first-child { 
-    flex: 1; 
-    overflow: hidden; 
-    text-overflow: ellipsis; 
-    white-space: nowrap; 
-    font-weight: 700; 
-}
+.week-grid-cell > .task-item.lecture-task .task-text { font-weight: 600; color: #fff; font-size: 13px; word-break: break-all; }
+.week-grid-cell > .task-item.lecture-task input[type="checkbox"] { margin: 0 0 4px 0; width: 14px; height: 14px; }
+.week-grid-cell > .task-item.lecture-task.count-task { background: linear-gradient(135deg, #93c5fd 0%, #bfdbfe 100%); color: #1e3a8a; }
+.week-grid-cell > .task-item.lecture-task.count-task .task-text { color: #1e3a8a; font-size: 13px; }
+.week-grid-cell > .fixed-block-item { flex: 1 1 0; min-height: 36px; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 8px; padding: 8px 20px; font-size: 13px; }
+.week-grid-cell > .fixed-block-item > span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 
 .week-column { flex: 1; background: var(--bg-sidebar); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; border: 1px dashed transparent; overflow-y: auto; min-height: 0; }
 .week-column.today-col { border-color: var(--accent-color); background: var(--hover-bg); }
@@ -319,7 +285,6 @@ body.dark-mode .week-column .exercise-capsule { background: #1b3322; border-colo
 .week-column .exercise-capsule .ex-del-btn { margin-left: auto; cursor: pointer; color: var(--danger-color); font-weight: bold; padding: 0 4px; opacity: .5; transition: opacity .2s; }
 .week-column .exercise-capsule .ex-del-btn:hover { opacity: 1; }
 
-/* 悬浮抽屉——贴顶到底，覆盖左侧栏 */
 .week-drawer-panel { position: fixed; left: 0; top: 0; bottom: 0; height: 100vh; transform: translateX(-105%); transition: transform .35s cubic-bezier(.2,.8,.3,1), opacity .25s, visibility .35s; width: 380px; max-width: 90vw; z-index: 550; background: var(--bg-card); border-right: 1px solid var(--border-color); box-shadow: 4px 0 24px rgba(0,0,0,.15); display: flex; flex-direction: column; overflow: hidden; opacity: 0; visibility: hidden; pointer-events: none; }
 body.dark-mode .week-drawer-panel { border-right-color: #333; box-shadow: 4px 0 24px rgba(0,0,0,.5); }
 .week-drawer-panel.open { transform: translateX(0); opacity: 1; visibility: visible; pointer-events: auto; transition: transform .35s cubic-bezier(.2,.8,.3,1), opacity .25s, visibility 0s; }
@@ -347,10 +312,8 @@ body.dark-mode .fixed-block-item { background: linear-gradient(135deg, #3a2e12 0
 .fixed-block-item .fb-del { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); cursor: pointer; font-size: var(--font-small); color: var(--danger-color); font-weight: bold; opacity: .6; padding: 1px 3px; border-radius: 3px; line-height: 1; }
 .fixed-block-item .fb-del:hover { opacity: 1; background: rgba(235,87,87,.15); }
 
-/* 左上角返回箭头 */
 .task-unschedule-btn { position: absolute; top: 4px; left: 4px; font-size: var(--font-small); line-height: 1; cursor: pointer; color: #fff; background: rgba(0,0,0,.25); opacity: .85; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: opacity .2s, background .2s; z-index: 2; }
 .task-unschedule-btn:hover { opacity: 1; background: rgba(235,87,87,.85); }
-/* 右上角删除按钮 */
 .task-delete-btn { position: absolute; top: 4px; right: 4px; font-size: var(--font-small); line-height: 1; cursor: pointer; color: var(--danger-color); background: rgba(255,255,255,.85); opacity: .7; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: opacity .2s, background .2s; z-index: 2; }
 body.dark-mode .task-delete-btn { background: rgba(0,0,0,.4); }
 .task-delete-btn:hover { opacity: 1; background: #ffebee; }
@@ -955,10 +918,12 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
-    { version: 'v2.17.3', date: '2025-10-26', changes: [
-        '修复：取消勾选母计划导致经验值清零、进度全部丢失的问题',
-        '修复：任务详情弹窗中，点击 +/- 进度条不实时刷新的问题',
-        '优化：RPG 属性界面数据渲染逻辑，数值变动实时同步，无需切换页面'
+    { version: 'v2.18.0', date: '2025-10-26', changes: [
+        '重构：移除所有缓存，改为实时计算，彻底解决“数值延迟”和“必须点设置才刷新”的问题',
+        '修复：取消勾选母计划导致经验清空、进度丢失的严重 Bug',
+        '修复：左侧栏完成度“满状态却 0%”的数据计算与渲染异常',
+        '修复：任务详情弹窗内，点击进度条 +/- 不实时刷新的问题',
+        '优化：移除冗余代码，提升整体运行流畅度'
     ]}
 ];
 
@@ -1015,11 +980,6 @@ let currentDetailTaskId = null;
 let lastRpgState = null;
 let userPickedDate = false;
 const expandedSubTasks = new Set();
-
-let _cachedTasksLength = -1;
-let _cachedTasksModified = -1;
-let _taskMapCache = {};
-let _progressCache = {};
 
 function getTodayString() {
     const d = new Date();
@@ -1095,23 +1055,10 @@ function getPrevRecurringDate(type, dateStr) {
     else { const m = type.match(/自定义(\d+)天/); if (m) d.setDate(d.getDate() - parseInt(m[1])); else return null; }
     return formatDate(d.getFullYear(), d.getMonth(), d.getDate());
 }
-function updateTaskCache() {
-    if (appData.tasks.length === _cachedTasksLength && appData._lastModified === _cachedTasksModified) return;
-    _cachedTasksLength = appData.tasks.length;
-    _cachedTasksModified = appData._lastModified || 0;
-    _taskMapCache = {};
-    appData.tasks.forEach(t => {
-        if (t.date && t.date !== 'pool') {
-            if (!_taskMapCache[t.date]) _taskMapCache[t.date] = [];
-            _taskMapCache[t.date].push(t);
-        }
-    });
-}
 function getTasksForDate(dateStr, options = {}) {
     const includeDeadlineRange = options.includeDeadlineRange !== false;
-    updateTaskCache();
-    const directTasks = _taskMapCache[dateStr] || [];
-    const filteredDirect = directTasks.filter(t => {
+    const filteredDirect = appData.tasks.filter(t => {
+        if (t.date !== dateStr || t.date === 'pool') return false;
         if (t.skipDates && t.skipDates[dateStr] && dateStr !== t.deadline) return false;
         return true;
     });
@@ -1143,7 +1090,6 @@ function getTasksForDate(dateStr, options = {}) {
     });
     return [...filteredDirect, ...deadlineRange, ...recurring, ...countOnlyTasks];
 }
-function clearProgressCache() { _progressCache = {}; }
 
 function isTaskDone(task, dateStr) {
     if (task.countOnly) return !!task.countEnded;
@@ -1630,7 +1576,6 @@ function getDataSignature(data) {
     return JSON.stringify(copy);
 }
 function saveDataToFile(data) {
-    clearProgressCache();
     const sig = getDataSignature(data);
     const changed = sig !== lastSavedSignature;
     if (!isSyncing && changed) { data._lastModified = Date.now(); lastSavedSignature = getDataSignature(data); }
@@ -1786,27 +1731,23 @@ function syncParentTaskStatus(t, ds) {
 }
 function calcProgress(dateStr, type) {
     ensureEnergyData();
-    const cacheKey = `${dateStr}_${type}`;
-    if (_progressCache[cacheKey]) return _progressCache[cacheKey];
     if (type === '锻炼') {
         const manual = appData.exerciseSchedule[dateStr] || [];
         const recurring = appData.exercises.filter(e => isRecurringMatch(e.recurringType, dateStr)).map(e => e.name);
         const names = [...new Set([...manual, ...recurring])];
-        if (names.length === 0) { _progressCache[cacheKey] = { done: 0, total: 0 }; return _progressCache[cacheKey]; }
+        if (names.length === 0) return { done: 0, total: 0 };
         let tot = 0, d = 0;
         const checks = appData.dailyExerciseChecks[dateStr] || {};
         names.forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
             if (ex && ex.subTasks) ex.subTasks.forEach(s => { tot++; if (checks[`${ex.id}_${s.id}`]) d++; });
         });
-        _progressCache[cacheKey] = { done: d, total: tot };
-        return _progressCache[cacheKey];
+        return { done: d, total: tot };
     }
     const tasks = getTasksForDate(dateStr).filter(t => t.type === type && !t.countOnly);
     let d = 0, tot = 0;
     tasks.forEach(t => { const p = getTaskProgress(t, dateStr); d += p.done; tot += p.total; });
-    _progressCache[cacheKey] = { done: d, total: tot };
-    return _progressCache[cacheKey];
+    return { done: d, total: tot };
 }
 
 window.openStatsModal = function(type) {
@@ -1846,7 +1787,6 @@ window.openStatsModal = function(type) {
             if (ex && ex.subTasks) ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) ed++; });
         });
         
-        // 收集操作记录
         const logs = (appData.dailyLogs && appData.dailyLogs[d]) ? appData.dailyLogs[d] : {};
         const logItems = [];
         Object.values(logs).forEach(l => {
@@ -1982,7 +1922,6 @@ function renderCalendar() {
         const todayBadge = isToday ? '<span class="today-badge">今天</span>' : '';
         div.innerHTML = `<div class="day-number">${i}${todayBadge}</div>${sHtml}${refl}${dHtml}`;
         
-        // 悬停显示
         const logs = (appData.dailyLogs && appData.dailyLogs[ds]) ? appData.dailyLogs[ds] : {};
         const completedTasks = getTasksForDate(ds).filter(t => !t.countOnly && isTaskDone(t, ds));
         let doneSet = new Set(completedTasks.map(t => t.text));
@@ -2193,13 +2132,11 @@ function renderWeekBoard() {
             cell.ondrop = (e) => handleDrop(e, ds, ts.id);
             cell.ondragover = allowDrop;
             
-            // 渲染普通任务
             getTasksForDate(ds).filter(t => t.timeSlot === ts.id && !t.countOnly).forEach(t => {
                 const item = createWeekTaskDOM(t, ds);
                 item.classList.add('lecture-task');
                 cell.appendChild(item);
             });
-            // 渲染计数任务
             appData.tasks.filter(t => t.countOnly && t.timeSlots && t.timeSlots.includes(ds + '_' + ts.id)).forEach(t => {
                 const item = createWeekTaskDOM(t, ds, { slotDate: ds, slotId: ts.id });
                 item.classList.add('lecture-task');
@@ -3437,7 +3374,6 @@ document.getElementById('yearly-goals').addEventListener('input', e => syncGoal(
 document.getElementById('yearly-goals-bottom').addEventListener('input', e => syncGoal(e.target.value));
 
 function updateFixedProgressBars() {
-    clearProgressCache(); // 强制清理缓存，确保左侧进度实时准确
     ensureEnergyData();
     const td = getTodayString();
     const y = new Date().getFullYear();
@@ -3468,7 +3404,7 @@ function updateFixedProgressBars() {
     }
     const tl = calcProgress(td, 'learning'), to = calcProgress(td, 'other'), te = calcProgress(td, '锻炼');
     const dt = tl.total + to.total + te.total, dd = tl.done + to.done + te.done;
-    const pct = (d, t) => t === 0 ? 0 : Math.round((d / t) * 100);
+    const pct = (d, t) => t <= 0 ? 0 : Math.round((d / t) * 100);
     const yP = pct(yd, yt); document.getElementById('prog-year-text').innerText = yP + '%'; document.getElementById('prog-year-fill').style.width = yP + '%';
     const mP = pct(md, mt); document.getElementById('prog-month-text').innerText = mP + '%'; document.getElementById('prog-month-fill').style.width = mP + '%';
     const wP = pct(wd, wt); document.getElementById('prog-week-text').innerText = wP + '%'; document.getElementById('prog-week-fill').style.width = wP + '%';
@@ -3790,7 +3726,6 @@ function applyRemoteData(payload) {
     if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
     lastSavedSignature = getDataSignature(appData);
     lastRpgState = null;
-    clearProgressCache();
     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
     renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
     saveLocalStorage();
@@ -3945,8 +3880,6 @@ document.addEventListener('drop', stopAutoScroll, true);
         document.getElementById('target-peer-id').value = localStorage.getItem('last_connected_peer');
         setTimeout(() => initPeer(false, true), 500);
     }
-    
-    // 强制刷新 RPG UI 的定时器，防止由于个别事件未触发导致渲染丢失
     setInterval(() => {
         if (document.hidden) return;
         const today = getTodayString();
@@ -3956,7 +3889,7 @@ document.addEventListener('drop', stopAutoScroll, true);
             if (document.getElementById('view-month').classList.contains('active')) renderCalendar();
         }
         renderEnergyAndRPG();
-    }, 5000); // 5秒静默同步一次
+    }, 60000);
 })();
 </script>
 </body>
