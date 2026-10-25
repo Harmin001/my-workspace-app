@@ -215,7 +215,7 @@ body.dark-mode .deadline-preview { background: #3a1c1c; }
 .week-grid-cell.drag-over { background: var(--hover-bg); outline: 2px dashed var(--accent-color); outline-offset: -2px; }
 .week-grid-cell.today-col { background: #f4f8fd; }
 body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
-.week-grid-cell > .task-item.lecture-task { flex: 1 1 0; min-height: 32px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: #fff; border: none; border-radius: 8px; padding: 8px 24px 8px 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.12); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; font-size: var(--font-hint); position: relative; overflow: hidden; }
+.week-grid-cell > .task-item.lecture-task { flex: 1 1 0; min-height: 32px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: #fff; border: none; border-radius: 8px; padding: 8px 26px 8px 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.12); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; font-size: var(--font-hint); position: relative; overflow: hidden; }
 .week-grid-cell > .task-item.lecture-task .task-text { font-weight: 600; line-height: 1.4; word-break: break-all; color: #fff; font-size: var(--font-hint); }
 .week-grid-cell > .task-item.lecture-task input[type="checkbox"] { margin-right: 6px; margin-top: 0; width: 14px; height: 14px; }
 .week-grid-cell > .fixed-block-item { flex: 1 1 0; min-height: 32px; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 8px; padding: 8px 24px 8px 10px; font-size: var(--font-hint); }
@@ -236,7 +236,7 @@ body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
 .todo-column:hover { border-bottom-color: var(--border-color); }
 .todo-column h3 { font-size: var(--font-content); color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
 .task-pool-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; padding: 8px; border: 2px dashed var(--border-color); border-radius: 6px; background: var(--bg-sidebar); }
-.task-item { background: var(--bg-card); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; cursor: grab; display: inline-flex; align-items: center; gap: 6px; font-size: var(--font-content); }
+.task-item { background: var(--bg-card); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; cursor: grab; display: inline-flex; align-items: center; gap: 6px; font-size: var(--font-content); position: relative; }
 .task-item input[type="checkbox"] { margin-right: 2px; cursor: pointer; accent-color: var(--accent-color); width: 14px; height: 14px; }
 .task-item .task-text { flex: 1; word-break: break-all; }
 .week-column .task-item { width: 100%; margin-bottom: 6px; }
@@ -288,10 +288,16 @@ body.dark-mode .fixed-block-item { background: linear-gradient(135deg, #3a2e12 0
 .fixed-block-item .fb-del { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); cursor: pointer; font-size: var(--font-small); color: var(--danger-color); font-weight: bold; opacity: .6; padding: 1px 3px; border-radius: 3px; line-height: 1; }
 .fixed-block-item .fb-del:hover { opacity: 1; background: rgba(235,87,87,.15); }
 
-.task-item.in-slot { position: relative; padding-right: 22px; }
-.week-grid-cell .task-item.lecture-task.in-slot { padding-right: 24px; }
-.task-unschedule-btn { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); font-size: var(--font-small); line-height: 1; cursor: pointer; color: #fff; background: rgba(0,0,0,.25); opacity: .8; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: opacity .2s, background .2s; }
+.task-item.in-slot { padding-right: 44px; }
+.week-grid-cell .task-item.lecture-task.in-slot { padding-right: 44px; }
+.task-unschedule-btn { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); font-size: var(--font-small); line-height: 1; cursor: pointer; color: #fff; background: rgba(0,0,0,.25); opacity: .85; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: opacity .2s, background .2s; }
 .task-unschedule-btn:hover { opacity: 1; background: rgba(235,87,87,.85); }
+/* 删除按钮（周待办与周课表任务通用） */
+.task-delete-btn { position: absolute; top: 50%; right: 22px; transform: translateY(-50%); font-size: var(--font-small); line-height: 1; cursor: pointer; color: var(--danger-color); background: rgba(255,255,255,.85); opacity: .7; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: opacity .2s, background .2s; }
+body.dark-mode .task-delete-btn { background: rgba(0,0,0,.4); }
+.task-delete-btn:hover { opacity: 1; background: #ffebee; color: var(--danger-color); }
+/* 待办池中任务删除按钮（无取消按钮时放最右） */
+.task-item:not(.in-slot) .task-delete-btn { right: 4px; }
 
 .day-panels-grid { display: flex; flex-wrap: wrap; gap: 20px; flex: 1; align-items: flex-start; margin-bottom: 24px; }
 .section-box { width: calc((100% - 40px)/3); min-width: 220px; border: 1px solid var(--border-color); border-radius: var(--radius); display: flex; flex-direction: column; background: var(--bg-card); position: relative; height: 350px; resize: both; overflow: hidden; min-height: 200px; }
@@ -368,8 +374,22 @@ body.dark-mode .task-note-area.has-note { background: #1a2a3a; border-color: #3b
 .sub-prog-text { font-size: var(--font-small); color: var(--text-muted); width: 32px; text-align: right; }
 .sub-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px; }
 .btn-sub-plus { background: var(--hover-bg); color: var(--text-main); border: none; border-radius: 4px; padding: 0px 6px; font-size: var(--font-hint); cursor: pointer; font-weight: bold; }
-.btn-sub-target, .btn-sub-delete, .btn-sub-estimate, .btn-sub-count { cursor: pointer; color: var(--text-muted); font-size: var(--font-hint); padding: 0 2px; }
-.btn-sub-count:hover { color: var(--accent-color); }
+.btn-sub-target, .btn-sub-delete { cursor: pointer; color: var(--text-muted); font-size: var(--font-hint); padding: 0 2px; }
+/* 子任务计数转换按钮更明显 */
+.btn-sub-count {
+    cursor: pointer;
+    color: var(--accent-color);
+    font-size: var(--font-small);
+    padding: 2px 6px;
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    font-weight: 700;
+    background: rgba(35,131,226,.08);
+    white-space: nowrap;
+    transition: all .15s;
+}
+.btn-sub-count:hover { background: var(--accent-color); color: #fff; }
+body.dark-mode .btn-sub-count { background: rgba(59,130,246,.15); }
 .add-sub-task-input { margin-left: 24px; margin-top: 8px; font-size: var(--font-hint); padding: 4px 8px; border: 1px dashed var(--border-color); width: calc(100% - 24px); display: none; border-radius: 4px; background: var(--bg-input); color: var(--text-main); }
 .btn-add-sub { font-size: var(--font-hint); color: var(--accent-color); cursor: pointer; margin-left: 24px; margin-top: 4px; display: inline-block; font-weight: 500; }
 .sub-fold-btn { margin-left: 24px; margin-top: 4px; font-size: var(--font-hint); color: var(--accent-color); cursor: pointer; font-weight: 600; display: inline-block; user-select: none; padding: 2px 6px; border-radius: 4px; background: var(--hover-bg); }
@@ -871,21 +891,19 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.12.0', date: '2026-11-11', changes: [
+        '新增：周计划待办池每个任务右上角显示 🗑️ 删除按钮，可直接删除',
+        '修复：累计计数任务拖入周视图后不再铺满整周（无 timeSlot 时不显示于周视图）',
+        '优化：子任务计数转换按钮 🔄计数 加边框，更明显易点'
+    ]},
     { version: 'v2.11.0', date: '2026-11-10', changes: [
         '修复：详情弹窗内点击 +1/-1 后进度条、计数不刷新',
         '新增：子计划可独立开启纯计数模式（🔄 按钮），可单独累计、结束',
         '优化：预计完成时长直接显示在 ⏱ 按钮上，不再占用文字后空间',
-        '优化：日计划默认隐藏「查看详情」按钮（子任务展开用「📋 查看子任务」即可）',
+        '优化：日计划默认隐藏「查看详情」按钮',
         '修复：从周计划拖入时间槽后取消，任务会回到原日期'
     ]},
-    { version: 'v2.10.0', date: '2026-11-09', changes: [
-        '新增：纯计数任务（累计次数、单日可不结束持续累计），带"🏁 结束"按钮',
-        '优化：日计划中非置顶母计划背景加深、左侧色条，更易区分多个计划',
-        '优化：母计划默认收起子任务，点击"📋 查看子任务"按钮打开详情弹窗操作',
-        '新增：设置项—日计划列最大显示数、动画开关',
-        '新增：月计划鼠标悬停某日可查看当日已完成任务列表',
-        '修复：循环任务拖入周课表后，只在拖入当天的那一格显示'
-    ]},
+    { version: 'v2.10.0', date: '2026-11-09', changes: ['纯计数任务','背景加深区分','子任务收起','设置扩展','月计划悬停','循环任务只占一格'] },
     { version: 'v2.9.0', date: '2026-11-08', changes: ['移除「未安排」列','截止任务按天显示','今天暂不完成','周课表字体调大'] },
     { version: 'v2.8.0', date: '2026-11-07', changes: ['循环任务遵守截止日期','华丽升级弹框','课表块填满+圆角','抽屉彻底收回','时间段拖拽排序'] },
     { version: 'v2.7.0', date: '2026-11-06', changes: ['待办池升级为悬浮抽屉','拖拽边缘自动滚动'] },
@@ -1873,6 +1891,7 @@ function renderCalendar() {
     }
 }
 
+/* 周视图任务 DOM（含删除按钮） */
 function createWeekTaskDOM(t, ds) {
     const item = document.createElement('div');
     item.className = 'task-item';
@@ -1891,6 +1910,8 @@ function createWeekTaskDOM(t, ds) {
         ? `${t.text} · 🔄 ${t.countTotal || 0} 次`
         : ((t.target || (t.subTasks && t.subTasks.length > 0)) ? `${t.text} (${p.done}/${p.total})` : t.text);
     item.appendChild(cb); item.appendChild(text);
+
+    // 取消按钮（仅当已排入时间槽或来自待办池时）
     if (t.timeSlot || t._poolOrigin) {
         item.classList.add('in-slot');
         const rm = document.createElement('span');
@@ -1901,6 +1922,16 @@ function createWeekTaskDOM(t, ds) {
         rm.ondragstart = (e) => e.stopPropagation();
         item.appendChild(rm);
     }
+
+    // 删除按钮（始终显示）
+    const del = document.createElement('span');
+    del.className = 'task-delete-btn';
+    del.innerText = '🗑️';
+    del.title = '删除此任务';
+    del.onclick = (e) => { e.stopPropagation(); e.preventDefault(); deleteTaskFromWeek(t.id); };
+    del.ondragstart = (e) => e.stopPropagation();
+    item.appendChild(del);
+
     return item;
 }
 
@@ -1940,6 +1971,8 @@ function renderWeekBoard() {
             col.className = 'week-column' + (isToday ? ' today-col' : '');
             col.innerHTML = `<div class="week-column-header" onclick="jumpToDay('${ds}')">${dn} <br><span style="font-size:var(--font-small);color:var(--text-muted);">${new Date(ds).getMonth()+1}/${new Date(ds).getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
             getTasksForDate(ds).forEach(t => {
+                // 修复：累计计数任务未设置 timeSlot 时不在周视图显示（避免从创建日起每天铺开）
+                if (t.countOnly && !t.timeSlot) return;
                 const item = createWeekTaskDOM(t, ds);
                 if (t.timeSlot) {
                     const ts = appData.timeSlots.find(x => x.id === t.timeSlot);
@@ -2038,6 +2071,17 @@ function renderWeekBoard() {
         });
     });
 }
+
+/* 删除周视图任务 */
+window.deleteTaskFromWeek = function(id) {
+    const t = appData.tasks.find(x => x.id === id);
+    if (!t) return;
+    if (!confirm(`删除任务【${t.text}】？`)) return;
+    appData.tasks = appData.tasks.filter(x => x.id !== id);
+    saveDataToFile(appData);
+    renderTaskPool(); renderWeekBoard(); renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
+    refreshDetailModalIfOpen();
+};
 
 function renderExercisePool() {
     const pool = document.getElementById('exercise-pool');
@@ -2289,7 +2333,6 @@ window.editTaskNote = function(taskId, el) {
 
 const SUB_FOLD_THRESHOLD = 3;
 function renderSubTaskHtml(task, sub, ds) {
-    // 计数型子任务
     if (sub.countOnly) {
         return `
             <div class="sub-task-item" data-sub-id="${sub.id}">
@@ -2301,7 +2344,7 @@ function renderSubTaskHtml(task, sub, ds) {
                 <div class="sub-actions">
                     <button class="btn-count-plus" style="padding:2px 8px;font-size:var(--font-small);" onclick="incrementSubCount('${task.id}', '${sub.id}')">+1</button>
                     <span class="btn-icon btn-count-end" title="结束此子任务" onclick="endSubCount('${task.id}', '${sub.id}')" style="font-weight:bold;">🏁</span>
-                    <span class="btn-sub-count" title="转为普通子任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')" style="color:var(--accent-color);">↩️</span>
+                    <span class="btn-sub-count" title="转回普通子任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">↩️ 普通</span>
                     <span class="btn-sub-delete" title="删除" onclick="deleteSubTask('${task.id}', '${sub.id}')">🗑️</span>
                 </div>
             </div>`;
@@ -2325,10 +2368,10 @@ function renderSubTaskHtml(task, sub, ds) {
                     <span class="sub-prog-text">${sp.done}/${sp.total}</span>
                     ${!done ? `<button class="btn-sub-plus" onclick="decrementSubTaskProgress('${task.id}', '${sub.id}')" title="减少一次">-1</button><button class="btn-sub-plus" onclick="incrementSubTaskProgress('${task.id}', '${sub.id}')" title="增加一次">+1</button>` : ''}
                 </div>` : ''}
-                <span class="btn-sub-estimate" title="${sub.estimate ? '预计时长：' + sub.estimate + '（点击修改）' : '设置预计时长'}" onclick="setSubTaskEstimate('${task.id}', '${sub.id}')">${estLabel}</span>
+                <span class="btn-sub-estimate" title="${sub.estimate ? '预计时长：' + sub.estimate + '（点击修改）' : '设置预计时长'}" onclick="setSubTaskEstimate('${task.id}', '${sub.id}')" style="cursor:pointer;color:var(--text-muted);font-size:var(--font-hint);padding:0 2px;">${estLabel}</span>
                 <span class="btn-energy" title="精力消耗" onclick="setSubTaskEnergyCost('${task.id}', '${sub.id}')">⚡${ec}</span>
                 <span class="btn-sub-target" title="次数" onclick="setSubTaskTarget('${task.id}', '${sub.id}')">#</span>
-                <span class="btn-sub-count" title="转为计数任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">🔄</span>
+                <span class="btn-sub-count" title="转为累计计数任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">🔄 计数</span>
                 <span class="btn-sub-delete" title="删除" onclick="deleteSubTask('${task.id}', '${sub.id}')">🗑️</span>
             </div>
         </div>`;
