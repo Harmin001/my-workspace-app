@@ -954,6 +954,10 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.17.1', date: '2025-10-26', changes: [
+        '修复：由于备份数据裁剪过度导致月计划、年计划空白报错的问题',
+        '优化：增强了系统底层数据的容错能力，避免数据缺失导致白屏'
+    ]},
     { version: 'v2.17.0', date: '2025-10-26', changes: [
         '优化：统计弹窗底部新增操作记录展示，可查看具体干了什么',
         '优化：备份文件导出与自动备份大幅缩减体积，去除冗余字段',
@@ -961,11 +965,6 @@ const APP_CHANGELOG = [
         '优化：左侧栏「回到今天」与「日计划」合并为一行，更节省空间',
         '修复：周计划待办抽屉与时间池间距过大的问题',
         '修复：累计计数任务拖拽进时间池后，池子里消失无法再次拖拽的问题'
-    ]},
-    { version: 'v2.16.0', date: '2025-10-25', changes: [
-        '优化：周时间池里的任务文字加大，且上下左右居中',
-        '新增：月计划悬停某日时，不仅显示完成了什么，还显示「做了什么」（如计数任务+1/-1合并）',
-        '新增：左侧栏添加「📍 回到今天」按钮，方便从其他日期快速跳回'
     ]}
 ];
 
@@ -1228,8 +1227,15 @@ function setSubCurrent(sub, dateStr, val) {
 }
 
 function ensureEnergyData() {
-    if (!appData.dailyEnergy) appData.dailyEnergy = {};
+    if (!appData.tasks) appData.tasks = [];
+    if (!appData.exercises) appData.exercises = [];
+    if (!appData.exerciseSchedule) appData.exerciseSchedule = {};
+    if (!appData.dailyExerciseChecks) appData.dailyExerciseChecks = {};
+    if (!appData.dailyReflections) appData.dailyReflections = {};
     if (!appData.dailyLogs) appData.dailyLogs = {};
+    if (!appData.dailyEnergy) appData.dailyEnergy = {};
+    if (!appData.fixedBlockSchedule) appData.fixedBlockSchedule = {};
+    
     if (!appData.energyMax) appData.energyMax = 100;
     if (appData.energyWarnThreshold === undefined) appData.energyWarnThreshold = 30;
     const def = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
@@ -1250,13 +1256,12 @@ function ensureEnergyData() {
     if (!appData.fonts) appData.fonts = { title: "18px", content: "14px", hint: "12px", small: "10px" };
     if (!appData.timeSlots) appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
     if (!Array.isArray(appData.fixedBlocks)) appData.fixedBlocks = JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS));
-    if (!appData.fixedBlockSchedule || typeof appData.fixedBlockSchedule !== 'object') appData.fixedBlockSchedule = {};
     if (appData.maxVisible === undefined) appData.maxVisible = 5;
     if (appData.animationEnabled === undefined) appData.animationEnabled = true;
 }
 
 function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
-    if (!appData.dailyLogs) appData.dailyLogs = {};
+    ensureEnergyData();
     if (!appData.dailyLogs[dateStr]) appData.dailyLogs[dateStr] = {};
     if (!appData.dailyLogs[dateStr][taskId]) {
         appData.dailyLogs[dateStr][taskId] = { name: taskName, delta: 0, completed: 0 };
@@ -1786,6 +1791,7 @@ function syncParentTaskStatus(t, ds) {
     setTaskDone(t, ds, allDone);
 }
 function calcProgress(dateStr, type) {
+    ensureEnergyData();
     const cacheKey = `${dateStr}_${type}`;
     if (_progressCache[cacheKey]) return _progressCache[cacheKey];
     if (type === '锻炼') {
@@ -1810,6 +1816,7 @@ function calcProgress(dateStr, type) {
 }
 
 window.openStatsModal = function(type) {
+    ensureEnergyData();
     let title = '', s = '', e = '';
     const td = getTodayString(), y = new Date().getFullYear(), m = new Date().getMonth() + 1;
     if (type === 'year') { title = `${y}年 统计`; s = formatDate(y, 0, 1); e = formatDate(y, 11, 31); }
@@ -1904,8 +1911,10 @@ window.openStatsModal = function(type) {
 window.closeStatsModal = function() { document.getElementById('stats-modal').classList.remove('active'); };
 
 function renderYearHeatmap() {
+    ensureEnergyData();
     document.getElementById('year-display').innerText = appData.viewYear + '年';
     const h = document.getElementById('year-heatmap');
+    if (!h) return;
     h.innerHTML = '';
     const y = appData.viewYear;
     const sd = new Date(y, 0, 1), ed = new Date(y, 11, 31);
@@ -1933,7 +1942,9 @@ function renderYearHeatmap() {
 }
 
 function renderCalendar() {
+    ensureEnergyData();
     const grid = document.getElementById('calendar-grid');
+    if (!grid) return;
     grid.innerHTML = '';
     const y = appData.viewYear, m = appData.viewMonth;
     document.getElementById('month-display').innerText = `${y}年 ${m+1}月`;
@@ -2066,7 +2077,9 @@ function isExerciseAllChecked(ds, ex) {
 }
 
 function renderWeekBoard() {
+    ensureEnergyData();
     const board = document.getElementById('week-board');
+    if (!board) return;
     board.innerHTML = '';
     const wd = ['周一','周二','周三','周四','周五','周六','周日'];
     const bd = new Date(appData.viewWeekBaseDate);
@@ -2075,7 +2088,6 @@ function renderWeekBoard() {
     mon.setDate(bd.getDate() - dow + 1);
     const todayStr = getTodayString();
     document.getElementById('week-display').innerText = `${mon.getMonth()+1}月${mon.getDate()}日 那一周`;
-    ensureEnergyData();
     const dates = [];
     for (let i = 0; i < 7; i++) {
         const cd = new Date(mon); cd.setDate(mon.getDate() + i);
@@ -2202,6 +2214,7 @@ window.deleteTaskFromWeek = function(id) {
 
 function renderExercisePool() {
     const pool = document.getElementById('exercise-pool');
+    if (!pool) return;
     pool.innerHTML = '';
     appData.exercises.forEach(ex => {
         const div = document.createElement('div');
@@ -2278,6 +2291,7 @@ window.removeFixedBlockInstance = function(ds, tsId, instId) {
 };
 
 function renderTaskPool() {
+    ensureEnergyData();
     const td = getTodayString();
     const pl = document.getElementById('task-pool-learning');
     const po = document.getElementById('task-pool-other');
@@ -2764,6 +2778,7 @@ window.endSubCount = function(tid, sid) {
 };
 
 function renderDayPlan() {
+    ensureEnergyData();
     document.getElementById('day-title').innerText = `📝 日计划 (${getDateLabel(appData.selectedDate)})`;
     const ll = document.getElementById('learning-list'), ol = document.getElementById('other-list');
     const lc = document.getElementById('learning-completed'), oc = document.getElementById('other-completed');
@@ -2886,6 +2901,7 @@ function isCategoryAllChecked(exId) {
     return ex.subTasks.every(s => c[`${ex.id}_${s.id}`]);
 }
 function renderDayExercises() {
+    ensureEnergyData();
     const grid = document.getElementById('exercise-grid');
     grid.innerHTML = '';
     const ds = appData.selectedDate;
@@ -2939,6 +2955,7 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
     });
 });
 window.handleReflectionInput = function(val) {
+    ensureEnergyData();
     appData.dailyReflections[appData.selectedDate] = val;
     saveDataToFile(appData);
     if (document.getElementById('view-month').classList.contains('active')) renderCalendar();
@@ -3289,6 +3306,7 @@ window.deleteExerciseAction = function(exId, sid) {
 };
 window.toggleExerciseCategory = function(exId) {
     const ds = appData.selectedDate;
+    ensureEnergyData();
     if (!appData.dailyExerciseChecks[ds]) appData.dailyExerciseChecks[ds] = {};
     const ex = appData.exercises.find(e => e.id === exId);
     if (!ex) return;
@@ -3303,6 +3321,7 @@ window.toggleExerciseCategory = function(exId) {
 };
 window.toggleExerciseTask = function(exId, sid) {
     const ds = appData.selectedDate;
+    ensureEnergyData();
     if (!appData.dailyExerciseChecks[ds]) appData.dailyExerciseChecks[ds] = {};
     const k = `${exId}_${sid}`;
     const was = isCategoryAllChecked(exId);
@@ -3387,6 +3406,7 @@ document.getElementById('yearly-goals').addEventListener('input', e => syncGoal(
 document.getElementById('yearly-goals-bottom').addEventListener('input', e => syncGoal(e.target.value));
 
 function updateFixedProgressBars() {
+    ensureEnergyData();
     const td = getTodayString();
     const y = new Date().getFullYear();
     const m = new Date().getMonth() + 1;
@@ -3423,21 +3443,9 @@ function updateFixedProgressBars() {
     const dP = pct(dd, dt); document.getElementById('prog-day-text').innerText = dP + '%'; document.getElementById('prog-day-fill').style.width = dP + '%';
 }
 
-// 数据精简函数
 function getCleanedDataForBackup(data) {
     const copy = JSON.parse(JSON.stringify(data));
     delete copy._lastModified;
-    // 清理空字段、空对象和空数组
-    function clean(obj) {
-        for (let key in obj) {
-            if (obj[key] === null || obj[key] === undefined) { delete obj[key]; continue; }
-            if (typeof obj[key] === 'object') {
-                clean(obj[key]);
-                if (Object.keys(obj[key]).length === 0) delete obj[key];
-            }
-        }
-    }
-    clean(copy);
     return JSON.stringify(copy);
 }
 
@@ -3455,8 +3463,8 @@ window.importData = function(e) {
             const d = JSON.parse(ev.target.result);
             if (d.tasks && d.exercises && confirm('导入数据？会覆盖当前数据！')) {
                 appData = d;
-                if (!appData._lastModified) appData._lastModified = 1;
                 ensureEnergyData();
+                if (!appData._lastModified) appData._lastModified = 1;
                 lastSavedSignature = '';
                 lastRpgState = null;
                 document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
@@ -3548,7 +3556,6 @@ window.performBackup = async function(silent) {
         if (p !== 'granted') { p = await backupDirHandle.requestPermission({ mode: 'readwrite' }); if (p !== 'granted') throw new Error('无写入权限'); }
         const fh = await backupDirHandle.getFileHandle('myWorkspace_backup.json', { create: true });
         const w = await fh.createWritable();
-        // 使用精简版数据
         await w.write(getCleanedDataForBackup(appData));
         await w.close();
         lastBackupTime = Date.now();
@@ -3743,8 +3750,8 @@ window.connectToPeer = function(targetId = null) {
 function applyRemoteData(payload) {
     isSyncing = true;
     appData = payload;
-    if (!appData._lastModified) appData._lastModified = 1;
     ensureEnergyData();
+    if (!appData._lastModified) appData._lastModified = 1;
     document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
     if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
     if (appData.fonts) ['title','content','hint','small'].forEach(k => document.documentElement.style.setProperty(`--font-${k}`, appData.fonts[k]));
@@ -3866,9 +3873,8 @@ document.addEventListener('drop', stopAutoScroll, true);
         appData.tasks.push({ id: '2', text: '看教程视频', type: 'learning', date: getTodayString(), completed: false, subTasks: [], deadline: '', target: 100, current: 10, pinned: false, energyCost: 1 });
         appData.tasks.push({ id: '3', text: '复习考试', type: 'learning', date: getTodayString(), completed: false, subTasks: [{id: '3-1', text: '第一章', completed: false, target: 5, current: 0, energyCost: 1}, {id: '3-2', text: '第二章', completed: false, target: 5, current: 0, energyCost: 1}], deadline: '', pinned: false, energyCost: 1 });
     }
-    if (!appData._lastModified) appData._lastModified = 1;
-    if (!appData.timeSlots) appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
     ensureEnergyData();
+    if (!appData._lastModified) appData._lastModified = 1;
     appData.selectedDate = getTodayString();
     appData.viewYear = new Date().getFullYear();
     appData.viewMonth = new Date().getMonth();
