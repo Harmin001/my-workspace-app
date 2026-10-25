@@ -45,31 +45,35 @@ body { font-family: var(--font-family); background-color: var(--bg-main); color:
 .sidebar-goal-input:focus { border-color: var(--accent-color); }
 .sidebar-goal-input:empty:before { content: attr(placeholder); color: #aaa; pointer-events: none; display: block; }
 
-.fixed-progress-bars { width: 100%; padding: 0 8px; display: flex; flex-direction: column; gap: 12px; margin: 8px 0; }
-.prog-row { display: flex; flex-direction: column; gap: 4px; cursor: pointer; padding: 4px; border-radius: 6px; transition: background 0.2s; }
+/* 进度条网格化（两行，每行两个） */
+.fixed-progress-bars { width: 100%; padding: 0 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.prog-row { display: flex; flex-direction: column; gap: 2px; cursor: pointer; padding: 4px; border-radius: 6px; transition: background 0.2s; }
 .prog-row:hover { background: var(--hover-bg); }
-.prog-label-row { display: flex; justify-content: space-between; font-size: var(--font-hint); color: var(--text-muted); font-weight: 600; }
-.prog-bar-bg { width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; }
-.prog-bar-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+.prog-label-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-weight: 600; }
+.prog-bar-bg { width: 100%; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; }
+.prog-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
 
 .energy-rpg-panel { padding: 0 8px; margin-top: 10px; padding-bottom: 10px; }
 .rpg-card { background: linear-gradient(135deg, #fff8e7 0%, #ffefc2 100%); border: 1px solid #e8c26a; border-radius: var(--radius); padding: 8px 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,.6); transition: all 0.3s; }
 body.dark-mode .rpg-card { background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%); border-color: #444; box-shadow: inset 0 1px 0 rgba(0,0,0,.5); }
-.rpg-energy-section { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px dashed rgba(180,83,9,.25); }
+
+/* 精力条改成左右布局 */
+.rpg-energy-section { display: flex; gap: 8px; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px dashed rgba(180,83,9,.25); align-items: stretch; }
 body.dark-mode .rpg-energy-section { border-bottom-color: #444; }
-.energy-header { display: flex; justify-content: space-between; font-size: var(--font-hint); font-weight: 700; color: #78350f; margin-bottom: 6px; }
+.energy-left { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.energy-right { display: flex; flex-direction: column; gap: 4px; justify-content: center; flex-shrink: 0; }
+.energy-header { display: flex; justify-content: space-between; font-size: var(--font-hint); font-weight: 700; color: #78350f; margin-bottom: 4px; }
 body.dark-mode .energy-header { color: var(--text-muted); }
 .energy-header #energy-text { color: #b45309; }
 body.dark-mode .energy-header #energy-text { color: #fbbf24; }
 .energy-bar-bg { width: 100%; height: 8px; background: rgba(146,64,14,.15); border-radius: 4px; overflow: hidden; }
 body.dark-mode .energy-bar-bg { background: #333; }
 .energy-bar-fill { height: 100%; border-radius: 4px; transition: width .3s, background .3s; background: #27ae60; }
-.energy-actions { display: flex; gap: 6px; margin-top: 6px; }
-.btn-energy-restore { flex: 1; padding: 4px 6px; font-size: var(--font-hint); font-weight: 700; background: #fff; border: 1px solid #fcd34d; border-radius: var(--radius); color: #b45309; cursor: pointer; transition: all .15s; }
+.btn-energy-restore { padding: 2px 8px; font-size: var(--font-small); font-weight: 700; background: #fff; border: 1px solid #fcd34d; border-radius: var(--radius); color: #b45309; cursor: pointer; transition: all .15s; white-space: nowrap; }
 body.dark-mode .btn-energy-restore { background: #333; border-color: #555; color: #fbbf24; }
 .btn-energy-restore:hover { background: #fef3c7; }
 body.dark-mode .btn-energy-restore:hover { background: #444; }
-.energy-warn { margin-top: 6px; padding: 4px 8px; font-size: var(--font-hint); background: #ffebee; color: #c62828; border-radius: 4px; border-left: 3px solid var(--danger-color); font-weight: 600; }
+.energy-warn { margin-top: 4px; padding: 4px 8px; font-size: var(--font-small); background: #ffebee; color: #c62828; border-radius: 4px; border-left: 3px solid var(--danger-color); font-weight: 600; }
 body.dark-mode .energy-warn { background: #3a1c1c; color: #fca5a5; }
 .rpg-card.rpg-critical, .rpg-modal-energy.rpg-critical { border-color: var(--danger-color) !important; background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important; animation: pulseRed 1s infinite alternate; }
 body.dark-mode .rpg-card.rpg-critical, body.dark-mode .rpg-modal-energy.rpg-critical { background: linear-gradient(135deg, #3a1c1c 0%, #2a1111 100%) !important; border-color: #ef4444 !important; }
@@ -112,7 +116,7 @@ body.dark-mode .rpg-modal-level { color: #fbbf24; }
 body.dark-mode .rpg-modal-title { color: var(--text-muted); }
 .rpg-modal-exp { margin-top: 12px; display: inline-block; background: #fef3c7; border-radius: 6px; padding: 8px 16px; font-size: var(--font-hint); color: #92400e; font-weight: 700; }
 body.dark-mode .rpg-modal-exp { background: #333; color: #fbbf24; }
-.rpg-modal-energy { background: #fff8e7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+.rpg-modal-energy { background: #fff8e7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin-bottom: 16px; display: flex; gap: 8px; align-items: stretch; }
 body.dark-mode .rpg-modal-energy { background: #2a2a2a; border-color: #444; }
 .rpg-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .rpg-attr-card { background: #fff8e7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; }
@@ -215,18 +219,13 @@ body.dark-mode .deadline-preview { background: #3a1c1c; }
 .week-grid-cell.drag-over { background: var(--hover-bg); outline: 2px dashed var(--accent-color); outline-offset: -2px; }
 .week-grid-cell.today-col { background: #f4f8fd; }
 body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
-.week-grid-cell > .task-item.lecture-task { flex: 1 1 0; min-height: 32px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: #fff; border: none; border-radius: 8px; padding: 8px 28px 8px 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.12); display: flex; flex-direction: column; align-items: stretch; justify-content: center; font-size: var(--font-hint); position: relative; overflow: hidden; gap: 4px; }
+.week-grid-cell > .task-item.lecture-task { flex: 1 1 0; min-height: 32px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: #fff; border: none; border-radius: 8px; padding: 8px 10px 8px 26px; box-shadow: 0 2px 6px rgba(0,0,0,0.12); display: flex; flex-direction: column; align-items: flex-start; justify-content: center; font-size: var(--font-hint); position: relative; overflow: hidden; gap: 4px; }
 .week-grid-cell > .task-item.lecture-task .task-text { font-weight: 600; line-height: 1.35; word-break: break-all; color: #fff; font-size: var(--font-hint); }
 .week-grid-cell > .task-item.lecture-task input[type="checkbox"] { margin-right: 6px; margin-top: 0; width: 14px; height: 14px; }
 /* 周课表计数任务特殊样式 */
 .week-grid-cell > .task-item.lecture-task.count-task { background: linear-gradient(135deg, #93c5fd 0%, #bfdbfe 100%); color: #1e3a8a; }
 .week-grid-cell > .task-item.lecture-task.count-task .task-text { color: #1e3a8a; }
-.week-grid-cell > .task-item.lecture-task .week-count-line { display: flex; align-items: center; gap: 4px; width: 100%; }
-.week-grid-cell > .task-item.lecture-task .week-count-num { font-weight: 800; font-size: 1.15em; color: #0d47a1; margin-left: 2px; }
-.week-grid-cell > .task-item.lecture-task .week-count-btns { display: flex; gap: 3px; margin-top: 3px; flex-wrap: wrap; }
-.week-grid-cell > .task-item.lecture-task .week-count-btns button { background: rgba(255,255,255,.8); border: 1px solid #60a5fa; color: #1e40af; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 800; cursor: pointer; line-height: 1.2; }
-.week-grid-cell > .task-item.lecture-task .week-count-btns button:hover { background: #fff; }
-.week-grid-cell > .fixed-block-item { flex: 1 1 0; min-height: 32px; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 8px; padding: 8px 24px 8px 10px; font-size: var(--font-hint); }
+.week-grid-cell > .fixed-block-item { flex: 1 1 0; min-height: 32px; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 8px; padding: 8px 10px 8px 26px; font-size: var(--font-hint); }
 .week-grid-cell > .fixed-block-item > span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 
 .week-column { flex: 1; background: var(--bg-sidebar); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; border: 1px dashed transparent; overflow-y: auto; min-height: 0; }
@@ -245,8 +244,7 @@ body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
 .todo-column h3 { font-size: var(--font-content); color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
 .task-pool-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; padding: 8px; border: 2px dashed var(--border-color); border-radius: 6px; background: var(--bg-sidebar); }
 .task-item { background: var(--bg-card); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; cursor: grab; display: inline-flex; align-items: center; gap: 6px; font-size: var(--font-content); position: relative; }
-/* 待办池里的任务为非 in-slot 状态，删除按钮需要空间 */
-.task-item:not(.in-slot) { padding-right: 28px; }
+.task-item:not(.in-slot) { padding: 6px 28px 6px 12px; }
 .task-item input[type="checkbox"] { margin-right: 2px; cursor: pointer; accent-color: var(--accent-color); width: 14px; height: 14px; }
 .task-item .task-text { flex: 1; word-break: break-all; }
 .week-column .task-item { width: 100%; margin-bottom: 6px; }
@@ -287,7 +285,7 @@ body.dark-mode .week-drawer-panel { box-shadow: 4px 0 24px rgba(0,0,0,.6); }
 .week-drawer-tab:hover { filter: brightness(1.1); }
 .week-drawer-tab.hidden { opacity: 0; pointer-events: none; transform: translateY(-50%) translateX(-20px); }
 #view-week { transition: padding-left .35s cubic-bezier(.2,.8,.3,1); }
-#view-week.drawer-open { padding-left: 392px; }
+#view-week.drawer-open { padding-left: 380px; }
 
 .fixed-block-capsule { padding: 8px 14px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 20px; cursor: grab; font-size: var(--font-content); font-weight: 600; color: #92400e; display: flex; align-items: center; gap: 6px; user-select: none; }
 body.dark-mode .fixed-block-capsule { background: #2a2412; border-color: #6b5a20; color: #fbbf24; }
@@ -298,14 +296,13 @@ body.dark-mode .fixed-block-item { background: linear-gradient(135deg, #3a2e12 0
 .fixed-block-item .fb-del { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); cursor: pointer; font-size: var(--font-small); color: var(--danger-color); font-weight: bold; opacity: .6; padding: 1px 3px; border-radius: 3px; line-height: 1; }
 .fixed-block-item .fb-del:hover { opacity: 1; background: rgba(235,87,87,.15); }
 
-.task-item.in-slot { padding-right: 46px; }
-.week-grid-cell .task-item.lecture-task.in-slot { padding-right: 46px; }
-.task-unschedule-btn { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); font-size: var(--font-small); line-height: 1; cursor: pointer; color: #fff; background: rgba(0,0,0,.25); opacity: .85; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: opacity .2s, background .2s; }
+/* 左上角返回箭头 */
+.task-unschedule-btn { position: absolute; top: 4px; left: 4px; font-size: var(--font-small); line-height: 1; cursor: pointer; color: #fff; background: rgba(0,0,0,.25); opacity: .85; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: opacity .2s, background .2s; z-index: 2; }
 .task-unschedule-btn:hover { opacity: 1; background: rgba(235,87,87,.85); }
-.task-delete-btn { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); font-size: var(--font-small); line-height: 1; cursor: pointer; color: var(--danger-color); background: rgba(255,255,255,.85); opacity: .7; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: opacity .2s, background .2s; }
+/* 右上角删除按钮 */
+.task-delete-btn { position: absolute; top: 4px; right: 4px; font-size: var(--font-small); line-height: 1; cursor: pointer; color: var(--danger-color); background: rgba(255,255,255,.85); opacity: .7; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: opacity .2s, background .2s; z-index: 2; }
 body.dark-mode .task-delete-btn { background: rgba(0,0,0,.4); }
 .task-delete-btn:hover { opacity: 1; background: #ffebee; }
-.task-item.in-slot .task-delete-btn { right: 24px; }
 
 .day-panels-grid { display: flex; flex-wrap: wrap; gap: 20px; flex: 1; align-items: flex-start; margin-bottom: 24px; }
 .section-box { width: calc((100% - 40px)/3); min-width: 220px; border: 1px solid var(--border-color); border-radius: var(--radius); display: flex; flex-direction: column; background: var(--bg-card); position: relative; height: 350px; resize: both; overflow: hidden; min-height: 200px; }
@@ -326,7 +323,6 @@ body.dark-mode .main-task-item:hover { background: #252b33; border-left-color: v
 body.dark-mode .main-task-item.pinned-task { background: #2a1e11; border-left-color: #f2994a; }
 .main-task-item.count-only-task { background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%); border-left-color: #2383e2; }
 body.dark-mode .main-task-item.count-only-task { background: linear-gradient(135deg, #1a2a3a 0%, #1f2937 100%); border-left-color: #3b82f6; }
-/* 提示可点击查看详情（仅当有子任务且未展开） */
 .main-task-item.clickable-for-detail { cursor: pointer; }
 .main-task-item.clickable-for-detail::after { content: '👆 点击空白处查看详情'; position: absolute; bottom: 4px; right: 8px; font-size: 9px; color: var(--text-muted); opacity: .5; pointer-events: none; }
 .count-display { display: inline-flex; align-items: baseline; gap: 3px; font-size: var(--font-content); color: #1976d2; font-weight: 600; margin-left: 4px; }
@@ -373,6 +369,9 @@ body.dark-mode .count-display b { color: #60a5fa; }
 .task-note-area.has-note { border-left: 3px solid var(--accent-color); color: var(--text-main); background: #f4f8fd; border-style: solid; }
 body.dark-mode .task-note-area.has-note { background: #1a2a3a; border-color: #3b82f6; }
 
+.view-sub-tasks-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; margin-left: 24px; padding: 4px 10px; background: var(--hover-bg); border: 1px dashed var(--border-color); border-radius: 6px; font-size: var(--font-hint); color: var(--accent-color); font-weight: 600; cursor: pointer; transition: all .15s; }
+.view-sub-tasks-btn:hover { background: var(--border-color); border-color: var(--accent-color); }
+
 .sub-task-list { margin-left: 24px; margin-top: 8px; padding-left: 12px; border-left: 2px solid var(--border-color); display: flex; flex-direction: column; gap: 6px; min-height: 20px; }
 .sub-task-item { display: flex; align-items: center; font-size: var(--font-content); color: var(--text-main); justify-content: space-between; margin-bottom: 2px; background: var(--bg-card); padding: 4px 6px; border-radius: 4px; }
 .sub-task-item.sortable-ghost { opacity: 0.5; background: var(--hover-bg); }
@@ -384,11 +383,9 @@ body.dark-mode .task-note-area.has-note { background: #1a2a3a; border-color: #3b
 .sub-prog-text { font-size: var(--font-small); color: var(--text-muted); width: 32px; text-align: right; }
 .sub-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px; flex-shrink: 0; }
 .btn-sub-plus { background: var(--hover-bg); color: var(--text-main); border: none; border-radius: 4px; padding: 0px 6px; font-size: var(--font-hint); cursor: pointer; font-weight: bold; }
-/* 子任务计数转换按钮（醒目） */
 .btn-sub-count { cursor: pointer; color: var(--accent-color); font-size: var(--font-small); padding: 2px 6px; border: 1px solid var(--accent-color); border-radius: 4px; font-weight: 700; background: rgba(35,131,226,.08); white-space: nowrap; transition: all .15s; }
 .btn-sub-count:hover { background: var(--accent-color); color: #fff; }
 body.dark-mode .btn-sub-count { background: rgba(59,130,246,.15); }
-/* 子任务更多菜单 */
 .sub-more-container { position: relative; display: inline-block; }
 .sub-more-btn { cursor: pointer; color: var(--text-muted); font-size: var(--font-hint); padding: 2px 6px; border-radius: 4px; font-weight: bold; transition: background .2s; }
 .sub-more-btn:hover { background: var(--hover-bg); }
@@ -547,32 +544,34 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 </div>
 <div class="fixed-progress-bars">
 <div class="prog-row" onclick="openStatsModal('year')">
-    <div class="prog-label-row"><span>年计划完成度</span><span id="prog-year-text">0%</span></div>
+    <div class="prog-label-row"><span>年完成度</span><span id="prog-year-text">0%</span></div>
     <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-year-fill" style="background:#2383e2;"></div></div>
 </div>
 <div class="prog-row" onclick="openStatsModal('month')">
-    <div class="prog-label-row"><span>月计划完成度</span><span id="prog-month-text">0%</span></div>
+    <div class="prog-label-row"><span>月完成度</span><span id="prog-month-text">0%</span></div>
     <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-month-fill" style="background:#f2994a;"></div></div>
 </div>
 <div class="prog-row" onclick="openStatsModal('week')">
-    <div class="prog-label-row"><span>周计划完成度</span><span id="prog-week-text">0%</span></div>
+    <div class="prog-label-row"><span>周完成度</span><span id="prog-week-text">0%</span></div>
     <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-week-fill" style="background:#9b51e0;"></div></div>
 </div>
 <div class="prog-row" onclick="openStatsModal('day')">
-    <div class="prog-label-row"><span>日计划完成度</span><span id="prog-day-text">0%</span></div>
+    <div class="prog-label-row"><span>日完成度</span><span id="prog-day-text">0%</span></div>
     <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-day-fill" style="background:#27ae60;"></div></div>
 </div>
 </div>
 <div class="energy-rpg-panel">
 <div class="rpg-card" id="rpg-card">
 <div class="rpg-energy-section">
-<div class="energy-header"><span>⚡ 今日精力</span><span id="energy-text">100 / 100</span></div>
-<div class="energy-bar-bg"><div class="energy-bar-fill" id="energy-fill" style="width:100%;"></div></div>
-<div class="energy-actions">
-<button class="btn-energy-restore" onclick="restoreEnergy('nap')" title="恢复 40 点精力">😴 午睡 +40</button>
-<button class="btn-energy-restore" onclick="restoreEnergy('break')" title="恢复 15 点精力">☕ 课间 +15</button>
+<div class="energy-left">
+    <div class="energy-header"><span>⚡ 今日精力</span><span id="energy-text">100 / 100</span></div>
+    <div class="energy-bar-bg"><div class="energy-bar-fill" id="energy-fill" style="width:100%;"></div></div>
+    <div class="energy-warn" id="energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
 </div>
-<div class="energy-warn" id="energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
+<div class="energy-right">
+    <button class="btn-energy-restore" onclick="restoreEnergy('nap')" title="恢复 40 点精力">😴+40</button>
+    <button class="btn-energy-restore" onclick="restoreEnergy('break')" title="恢复 15 点精力">☕+15</button>
+</div>
 </div>
 <div class="rpg-card-main" onclick="openRPGModal()">
 <div class="rpg-header"><span class="rpg-level" id="rpg-level">Lv.1</span><span class="rpg-title" id="rpg-title">新手</span></div>
@@ -761,6 +760,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
     <label><input type="checkbox" value="loop" onchange="updateCommonBtn('loop', this.checked)"> 🔁 循环</label>
     <label><input type="checkbox" value="count" onchange="updateCommonBtn('count', this.checked)"> 🔄 计数</label>
     <label><input type="checkbox" value="deadline" onchange="updateCommonBtn('deadline', this.checked)"> 📅 截止日期</label>
+    <label><input type="checkbox" value="view" onchange="updateCommonBtn('view', this.checked)"> 👁️ 查看详情（可选）</label>
     <label><input type="checkbox" value="delete" onchange="updateCommonBtn('delete', this.checked)"> 🗑️ 删除</label>
 </div>
 </div>
@@ -855,10 +855,15 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <div class="rpg-modal-exp" id="rpg-modal-exp">0 / 100 EXP</div>
 </div>
 <div class="rpg-modal-energy" id="rpg-modal-energy-panel">
-<div class="energy-header"><span>⚡ 今日精力</span><span id="modal-energy-text">100 / 100</span></div>
-<div class="energy-bar-bg"><div class="energy-bar-fill" id="modal-energy-fill" style="width:100%;"></div></div>
-<div class="energy-actions"><button class="btn-energy-restore" onclick="restoreEnergy('nap')">😴 午睡 +40</button><button class="btn-energy-restore" onclick="restoreEnergy('break')">☕ 课间 +15</button></div>
-<div class="energy-warn" id="modal-energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
+    <div class="energy-left">
+        <div class="energy-header"><span>⚡ 今日精力</span><span id="modal-energy-text">100 / 100</span></div>
+        <div class="energy-bar-bg"><div class="energy-bar-fill" id="modal-energy-fill" style="width:100%;"></div></div>
+        <div class="energy-warn" id="modal-energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
+    </div>
+    <div class="energy-right">
+        <button class="btn-energy-restore" onclick="restoreEnergy('nap')">😴+40</button>
+        <button class="btn-energy-restore" onclick="restoreEnergy('break')">☕+15</button>
+    </div>
 </div>
 <div class="rpg-modal-grid" id="rpg-modal-grid"></div>
 <div class="rpg-modal-tips">
@@ -895,46 +900,54 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 </div>
 
 <script>
-/* ==================== 更新日志 ==================== */
 const APP_CHANGELOG = [
-    { version: 'v2.14.0', date: '2025-10-25', changes: [
-        '优化：周计划待办弹窗贴顶贴底，中间不留空隙，与右侧周计划间距减小',
-        '同步：日计划里的任务，只要没被拖入时间池，都会显示在周计划待办中（不限制本周内）',
-        '修复：彻底移除日计划任务卡片右侧的 👁️ 查看详情按钮，统一通过点击空白处查看'
+    { version: 'v2.15.0', date: '2025-10-25', changes: [
+        '修复：日计划有子计划时显示「📋 查看 N 个子计划」提示',
+        '优化：周计划待办抽屉与右侧周计划间距紧贴，无空隙',
+        '优化：周计划时间池里的移回待办统一改成左上角 ↩️ 箭头',
+        '优化：左侧栏进度条改为 2 行 x 2 列网格显示',
+        '优化：左侧栏精力恢复按钮移到精力条右侧上下排列，节省空间',
+        '优化：周计划时间池的累计计数任务只显示标题，不再展示加减按钮',
+        '修复：日计划中创建的累计计数任务（非 pool）现在也会出现在周计划待办池中'
     ]},
-    { version: 'v2.13.0', date: '2025-10-24', changes: [
+    { version: 'v2.14.0', date: '2025-10-24', changes: [
+        '优化：周计划待办弹窗贴顶贴底，中间不留空隙',
+        '同步：日计划里未拖入时间池的任务都显示在周待办',
+        '修复：彻底移除日计划中的 👁️ 查看详情按钮'
+    ]},
+    { version: 'v2.13.0', date: '2025-10-23', changes: [
         '新增：累计计数任务周时间池显示 -1/+1 按钮',
         '优化：日计划点击母计划卡片空白查看详情',
         '新增：累计计数任务 -1 撤销功能',
         '优化：子任务按钮缩略为 ⋮ 菜单'
     ]},
-    { version: 'v2.12.0', date: '2025-10-23', changes: [
+    { version: 'v2.12.0', date: '2025-10-22', changes: [
         '新增：周计划待办池任务带删除按钮',
         '修复：累计计数任务周视图不铺开',
         '优化：子任务计数按钮加边框'
     ]},
-    { version: 'v2.11.0', date: '2025-10-22', changes: ['详情弹窗刷新','子计划纯计数','时长显示合并','隐藏默认查看','拖拽回原日期'] },
-    { version: 'v2.10.0', date: '2025-10-21', changes: ['纯计数任务','背景加深','子任务收起','设置扩展','月计划悬停','循环单格'] },
-    { version: 'v2.9.0', date: '2025-10-20', changes: ['移除未安排列','截止任务按天','今天暂不完成','周课表字体调大'] },
-    { version: 'v2.8.0', date: '2025-10-19', changes: ['循环遵守截止','华丽升级','课表填满圆角','抽屉彻底收回','时间段拖拽'] },
-    { version: 'v2.7.0', date: '2025-10-18', changes: ['待办悬浮抽屉','拖拽边缘滚动'] },
-    { version: 'v2.6.0', date: '2025-10-17', changes: ['固定块无限拖','一键取消'] },
-    { version: 'v2.5.0', date: '2025-10-16', changes: ['课表视图','精力下限 -20'] },
-    { version: 'v2.4.0', date: '2025-10-15', changes: ['循环自动结束','统计图表化'] },
-    { version: 'v2.3.0', date: '2025-10-14', changes: ['计数型循环进度'] },
-    { version: 'v2.2.0', date: '2025-10-13', changes: ['字体大小细分','子任务拖拽'] },
-    { version: 'v2.1.0', date: '2025-10-12', changes: ['任务详情加宽','常用按钮'] },
-    { version: 'v2.0.0', date: '2025-10-11', changes: ['母计划备注'] },
-    { version: 'v1.9.0', date: '2025-10-10', changes: ['独立逾期任务'] },
-    { version: 'v1.8.0', date: '2025-10-09', changes: ['黑暗模式'] },
-    { version: 'v1.7.0', date: '2025-10-08', changes: ['周计划跳转'] },
-    { version: 'v1.6.0', date: '2025-10-07', changes: ['任务折叠弹框'] },
-    { version: 'v1.5.0', date: '2025-10-06', changes: ['默认显示今天'] },
-    { version: 'v1.4.0', date: '2025-10-05', changes: ['属性动画','自定义等级'] },
-    { version: 'v1.3.0', date: '2025-10-04', changes: ['任务折叠弹框'] },
-    { version: 'v1.2.0', date: '2025-10-03', changes: ['精力系统','RPG编辑'] },
-    { version: 'v1.1.0', date: '2025-10-02', changes: ['预计时长','拖拽'] },
-    { version: 'v1.0.0', date: '2025-10-01', changes: ['初始版本'] }
+    { version: 'v2.11.0', date: '2025-10-21', changes: ['详情弹窗刷新','子计划纯计数','时长合并','隐藏默认查看','拖拽回原日期'] },
+    { version: 'v2.10.0', date: '2025-10-20', changes: ['纯计数任务','背景加深','子任务收起','设置扩展','月计划悬停','循环单格'] },
+    { version: 'v2.9.0', date: '2025-10-19', changes: ['移除未安排列','截止任务按天','今天暂不完成','周课表字体调大'] },
+    { version: 'v2.8.0', date: '2025-10-18', changes: ['循环遵守截止','华丽升级','课表填满圆角','抽屉彻底收回','时间段拖拽'] },
+    { version: 'v2.7.0', date: '2025-10-17', changes: ['待办悬浮抽屉','拖拽边缘滚动'] },
+    { version: 'v2.6.0', date: '2025-10-16', changes: ['固定块无限拖','一键取消'] },
+    { version: 'v2.5.0', date: '2025-10-15', changes: ['课表视图','精力下限 -20'] },
+    { version: 'v2.4.0', date: '2025-10-14', changes: ['循环自动结束','统计图表化'] },
+    { version: 'v2.3.0', date: '2025-10-13', changes: ['计数型循环进度'] },
+    { version: 'v2.2.0', date: '2025-10-12', changes: ['字体大小细分','子任务拖拽'] },
+    { version: 'v2.1.0', date: '2025-10-11', changes: ['任务详情加宽','常用按钮'] },
+    { version: 'v2.0.0', date: '2025-10-10', changes: ['母计划备注'] },
+    { version: 'v1.9.0', date: '2025-10-09', changes: ['独立逾期任务'] },
+    { version: 'v1.8.0', date: '2025-10-08', changes: ['黑暗模式'] },
+    { version: 'v1.7.0', date: '2025-10-07', changes: ['周计划跳转'] },
+    { version: 'v1.6.0', date: '2025-10-06', changes: ['任务折叠弹框'] },
+    { version: 'v1.5.0', date: '2025-10-05', changes: ['默认显示今天'] },
+    { version: 'v1.4.0', date: '2025-10-04', changes: ['属性动画','自定义等级'] },
+    { version: 'v1.3.0', date: '2025-10-03', changes: ['任务折叠弹框'] },
+    { version: 'v1.2.0', date: '2025-10-02', changes: ['精力系统','RPG编辑'] },
+    { version: 'v1.1.0', date: '2025-10-01', changes: ['预计时长','拖拽'] },
+    { version: 'v1.0.0', date: '2025-09-30', changes: ['初始版本'] }
 ];
 
 const DEFAULT_LEVELS = [
@@ -1908,25 +1921,8 @@ function createWeekTaskDOM(t, ds) {
         item.classList.add('count-task');
         const text = document.createElement('span');
         text.className = 'task-text';
-        text.innerText = `🔄 ${t.text}`;
+        text.innerText = `🔄 ${t.text} (${t.countTotal || 0}次)`;
         item.appendChild(text);
-        const numLine = document.createElement('div');
-        numLine.className = 'week-count-line';
-        numLine.innerHTML = `<span>累计</span><span class="week-count-num">${t.countTotal || 0}</span><span>次</span>`;
-        item.appendChild(numLine);
-        const btns = document.createElement('div');
-        btns.className = 'week-count-btns';
-        const minus = document.createElement('button');
-        minus.innerText = '-1';
-        minus.onclick = (e) => { e.stopPropagation(); decrementCountTask(t.id); };
-        minus.ondragstart = (e) => e.stopPropagation();
-        btns.appendChild(minus);
-        const plus = document.createElement('button');
-        plus.innerText = '+1';
-        plus.onclick = (e) => { e.stopPropagation(); incrementCountTask(t.id); };
-        plus.ondragstart = (e) => e.stopPropagation();
-        btns.appendChild(plus);
-        item.appendChild(btns);
     } else {
         const p = getTaskProgress(t, ds);
         const isDone = isTaskDone(t, ds);
@@ -1945,7 +1941,7 @@ function createWeekTaskDOM(t, ds) {
         item.classList.add('in-slot');
         const rm = document.createElement('span');
         rm.className = 'task-unschedule-btn';
-        rm.innerText = '✕';
+        rm.innerText = '↩️';
         rm.title = t._poolOrigin ? '移回待办池' : '移回未安排';
         rm.onclick = (e) => { e.stopPropagation(); e.preventDefault(); unscheduleTask(t.id); };
         rm.ondragstart = (e) => e.stopPropagation();
@@ -2194,23 +2190,13 @@ function renderTaskPool() {
     const ovdWrapper = document.getElementById('overdue-wrapper');
     pl.innerHTML = ''; po.innerHTML = ''; povd.innerHTML = '';
     let hasOverdue = false;
-    const bd = new Date(appData.viewWeekBaseDate);
-    const dow = bd.getDay() || 7;
-    const mon = new Date(bd);
-    mon.setDate(bd.getDate() - dow + 1);
-    const weekDates = [];
-    for (let i = 0; i < 7; i++) {
-        const cd = new Date(mon); cd.setDate(mon.getDate() + i);
-        weekDates.push(formatDate(cd.getFullYear(), cd.getMonth(), cd.getDate()));
-    }
+
     ['learning', 'other'].forEach(type => {
         const pool = type === 'learning' ? pl : po;
         appData.tasks.filter(t => {
             if (t.type !== type) return false;
-            // 累计计数任务：只有 date='pool' 时显示在待办里
-            if (t.countOnly) return t.date === 'pool';
+            // 只要没有分配时间槽，无论在日计划哪一天，都在池子里显示
             if (t.date === 'pool') return true;
-            // 放宽限制：只要是没有时间槽的任务，都在待办中显示，不管它是哪一天
             if (!t.timeSlot) return true;
             return false;
         }).forEach(t => {
@@ -2476,7 +2462,6 @@ function generateTaskDOM(task, ds, options = {}) {
     let btnsHtml = '', moreBtnsHtml = '';
     const canSkip = !!(task.deadline || task.recurringType);
     const estLabel = task.estimate ? `⏱ ${task.estimate}` : '⏱';
-    // 移除 view 按钮（直接点击空白处查看）
     const allBtns = [
         { key: 'skip', icon: '⏭️', title: '今天暂不完成', cls: 'btn-skip-task', action: `onclick="skipTaskForToday('${task.id}')"`, show: canSkip },
         { key: 'estimate', icon: '⏱', title: '预计时长', label: estLabel, action: `onclick="setTaskEstimate('${task.id}')"` },
@@ -2523,6 +2508,9 @@ function generateTaskDOM(task, ds, options = {}) {
             html += `</div></details>`;
         }
         html += `</div>`;
+    } else if (hasSub && !showSubTasks) {
+        // 日计划收起状态，显示子任务数量提示
+        html += `<div class="view-sub-tasks-btn" onclick="openTaskDetailModal('${task.id}')">📋 查看 ${task.subTasks.length} 个子计划</div>`;
     }
 
     html += `<span class="btn-add-sub" onclick="showSubInput('${task.id}')">➕ 添加步骤</span><input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')">`;
@@ -2535,6 +2523,7 @@ function generateTaskDOM(task, ds, options = {}) {
             const interactive = e.target.closest('input, button, textarea, select, a, .btn-icon, .more-menu-container, .task-meta, .task-note-area, .btn-add-sub, .add-sub-task-input, .progress-task-container, .sub-task-list, .btn-count-plus, .btn-count-minus, .btn-count-end');
             if (interactive) return;
             if (e.target.closest('.task-text')) return;
+            if (e.target.closest('.view-sub-tasks-btn')) return; // 让提示按钮的 onclick 正常工作
             openTaskDetailModal(task.id);
         });
     }
