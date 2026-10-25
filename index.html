@@ -350,18 +350,26 @@ body.dark-mode .count-display b { color: #60a5fa; }
 .btn-count-end { color: #27ae60; }
 .btn-count-end:hover { background: rgba(39,174,96,.15) !important; }
 
-.main-task-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-.main-task-left { display: flex; align-items: flex-start; flex: 1; flex-wrap: wrap; gap: 4px; }
+.main-task-header { display: flex; flex-direction: column; gap: 8px; }
+.main-task-top-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; width: 100%; }
+.main-task-title-area { display: flex; align-items: flex-start; flex: 1; min-width: 0; flex-wrap: wrap; gap: 4px; }
+
+.task-badges-row { display: flex; flex-wrap: wrap; gap: 6px; font-size: var(--font-small); }
+.task-badge { padding: 2px 6px; border-radius: 4px; background: var(--bg-sidebar); color: var(--text-muted); border: 1px solid var(--border-color); display: inline-flex; align-items: center; gap: 2px; font-weight: 600; }
+.task-badge.urgent { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+body.dark-mode .task-badge.urgent { background: #3a1c1c; color: #fca5a5; border-color: #7f1d1d; }
+.task-badge.warning { background: #fef3c7; color: #b45309; border-color: #fcd34d; }
+body.dark-mode .task-badge.warning { background: #3a2e12; color: #fbbf24; border-color: #6b5a20; }
+
+.progress-row { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 4px; }
+.progress-row .progress-task-bar-bg { flex: 1; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; }
+.progress-row .progress-task-bar-fill { height: 100%; background: var(--accent-color); border-radius: 4px; transition: width .3s; }
+.progress-row .progress-text { font-size: var(--font-hint); font-weight: bold; color: var(--text-muted); min-width: 40px; text-align: right; }
+
 .task-checkbox { width: 16px; height: 16px; margin-right: 8px; cursor: pointer; accent-color: var(--accent-color); margin-top: 2px; }
 .task-text-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .task-text { font-weight: 500; word-break: break-all; font-size: var(--font-content); }
 .task-completed { text-decoration: line-through; color: var(--text-muted); }
-.progress-task-container { display: flex; align-items: center; gap: 6px; flex: 1; flex-wrap: wrap; }
-.progress-task-bar-bg { flex: 1; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-right: 4px; }
-.progress-task-bar-fill { height: 100%; background: var(--accent-color); border-radius: 4px; }
-.btn-plus-one { background: var(--accent-color); color: #fff; border: none; border-radius: 4px; padding: 2px 7px; font-size: var(--font-hint); cursor: pointer; font-weight: bold; }
-.btn-minus-one { background: var(--text-muted); color: #fff; border: none; border-radius: 4px; padding: 2px 7px; font-size: var(--font-hint); cursor: pointer; font-weight: bold; }
-.progress-text { font-size: var(--font-hint); font-weight: bold; color: var(--text-muted); min-width: 40px; text-align: right; }
 
 .task-meta { display: flex; align-items: center; gap: 6px; font-size: var(--font-hint); flex-wrap: wrap; }
 .btn-icon { cursor: pointer; color: var(--text-muted); font-size: var(--font-hint); padding: 2px 4px; border-radius: 4px; transition: background 0.2s; }
@@ -915,14 +923,11 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
-    { version: 'v2.19.1', date: '2025-10-26', changes: [
-        '修复：在详情弹窗中点击“添加步骤”不显示输入框的 Bug'
-    ]},
-    { version: 'v2.19.0', date: '2025-10-26', changes: [
-        '修复：详情弹窗中子任务没有 -1 按钮的问题',
-        '修复：详情弹窗中点击添加步骤没有输入框的问题',
-        '新增：精力转经验的折损率设置（默认 80%），可在设置中调整',
-        '优化：整合数据备份、导入导出、自动备份至同一面板下'
+    { version: 'v2.20.0', date: '2026-05-18', changes: [
+        '优化：日计划卡片排版，进度条移到了名字和状态的正下方，更加清晰',
+        '优化：设置的「预计时长」「精力」「目标次数」现在直接以彩色标签显示在名字下方',
+        '优化：添加了截止日期的倒计时，直观显示「剩余 N 天」或「逾期 N 天」，并伴有颜色警示',
+        '优化：简化了卡片上的操作按钮，避免冗余占位'
     ]}
 ];
 
@@ -2488,22 +2493,24 @@ function generateTaskDOM(task, ds, options = {}) {
     if (task.countOnly) {
         div.innerHTML = `
             <div class="main-task-header">
-                <div class="main-task-left">
-                    <span style="font-size:1.2em;">🔄</span>
-                    <span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${task.text}</span>
-                    <span class="count-display">累计 <b>${task.countTotal || 0}</b> 次</span>
-                </div>
-                <div class="task-meta">
-                    <button class="btn-count-minus" onclick="decrementCountTask('${task.id}')" title="撤销一次">-1</button>
-                    <button class="btn-count-plus" onclick="incrementCountTask('${task.id}')" title="累计一次">+1</button>
-                    <span class="btn-icon btn-count-end" title="结束此任务" onclick="endCountTask('${task.id}')" style="font-weight:bold;font-size:1em;">🏁</span>
-                    <span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span>
-                    <div class="more-menu-container">
-                        <span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span>
-                        <div class="more-menu">
-                            <div class="more-menu-item" onclick="toggleCountOnly('${task.id}')">↩️ 转为普通任务</div>
-                            <div class="more-menu-item" onclick="setTaskEnergyCost('${task.id}')">⚡ 精力消耗</div>
-                            <div class="more-menu-item" onclick="deleteTask('${task.id}')">🗑️ 删除</div>
+                <div class="main-task-top-row">
+                    <div class="main-task-title-area">
+                        <span style="font-size:1.2em;">🔄</span>
+                        <span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${task.text}</span>
+                        <span class="count-display">累计 <b>${task.countTotal || 0}</b> 次</span>
+                    </div>
+                    <div class="task-meta">
+                        <button class="btn-count-minus" onclick="decrementCountTask('${task.id}')" title="撤销一次">-1</button>
+                        <button class="btn-count-plus" onclick="incrementCountTask('${task.id}')" title="累计一次">+1</button>
+                        <span class="btn-icon btn-count-end" title="结束此任务" onclick="endCountTask('${task.id}')" style="font-weight:bold;font-size:1em;">🏁</span>
+                        <span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span>
+                        <div class="more-menu-container">
+                            <span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span>
+                            <div class="more-menu">
+                                <div class="more-menu-item" onclick="toggleCountOnly('${task.id}')">↩️ 转为普通任务</div>
+                                <div class="more-menu-item" onclick="setTaskEnergyCost('${task.id}')">⚡ 精力消耗</div>
+                                <div class="more-menu-item" onclick="deleteTask('${task.id}')">🗑️ 删除</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2513,44 +2520,55 @@ function generateTaskDOM(task, ds, options = {}) {
     }
 
     const taskDone = isTaskDone(task, ds);
-    const loopC = task.recurringType ? 'active' : '';
-    const loopL = task.recurringType ? `<span class="loop-label">${task.recurringType}</span>` : '';
-    const pinC = task.pinned ? 'active' : '';
-    let dlC = '', dlT = '⏰ 设置截止日期';
-    if (task.deadline && !taskDone && task.deadline < ds) { dlC = 'overdue'; dlT = '⚠️ 已逾期！'; }
     const hasSub = task.subTasks && task.subTasks.length > 0;
     const mp = getTaskProgress(task, ds);
+    
     const mainCb = `<input type="checkbox" class="task-checkbox" ${taskDone ? 'checked' : ''} onchange="toggleMainTask('${task.id}')">`;
     const editT = `<span class="task-text ${taskDone ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;">${task.text}</span>`;
-    let headerLeft;
-    if (task.target || hasSub) {
-        const isCountOnly = task.target && !hasSub;
-        const pct = Math.min(100, Math.round((mp.done / mp.total) * 100));
-        headerLeft = `<div class="progress-task-container">${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}<div class="progress-task-bar-bg" style="width:80px;margin-left:8px;"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div><span class="progress-text">${mp.done}/${mp.total}</span>${isCountOnly ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}</div>`;
-    } else {
-        headerLeft = `${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}`;
-    }
+    const loopL = task.recurringType ? `<span class="loop-label">${task.recurringType}</span>` : '';
+
+    // 构建状态标签
+    let badgesHtml = '';
+    if (task.estimate) badgesHtml += `<span class="task-badge">⏱ ${task.estimate}</span>`;
     const defEC = task.target ? 1 : 10;
-    const ec = task.energyCost !== undefined ? task.energyCost : defEC;
+    if (task.energyCost !== undefined && task.energyCost !== defEC) {
+        badgesHtml += `<span class="task-badge">⚡ ${task.energyCost}</span>`;
+    }
+    if (task.target && !hasSub) badgesHtml += `<span class="task-badge">🎯 目标 ${mp.total} 次</span>`;
+    if (task.deadline) {
+        const dlDate = new Date(task.deadline + 'T00:00:00');
+        const dsDate = new Date(ds + 'T00:00:00');
+        const diffDays = Math.round((dlDate - dsDate) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) {
+            badgesHtml += `<span class="task-badge urgent">⚠️ 已逾期 ${Math.abs(diffDays)} 天</span>`;
+        } else if (diffDays === 0) {
+            badgesHtml += `<span class="task-badge urgent">📅 今天截止</span>`;
+        } else if (diffDays <= 3) {
+            badgesHtml += `<span class="task-badge warning">📅 剩 ${diffDays} 天</span>`;
+        } else {
+            badgesHtml += `<span class="task-badge">📅 剩 ${diffDays} 天</span>`;
+        }
+    }
+
+    // 构建操作按钮
     const cbSet = new Set(appData.commonBtns);
     let btnsHtml = '', moreBtnsHtml = '';
     const canSkip = !!(task.deadline || task.recurringType);
-    const estLabel = task.estimate ? `⏱ ${task.estimate}` : '⏱';
     const allBtns = [
         { key: 'skip', icon: '⏭️', title: '今天暂不完成', cls: 'btn-skip-task', action: `onclick="skipTaskForToday('${task.id}')"`, show: canSkip },
-        { key: 'estimate', icon: '⏱', title: '预计时长', label: estLabel, action: `onclick="setTaskEstimate('${task.id}')"` },
-        { key: 'energy', icon: '⚡', title: '精力消耗', label: `⚡${ec}`, action: `onclick="setTaskEnergyCost('${task.id}')"` },
-        { key: 'pin', icon: '📌', title: '置顶', cls: pinC, action: `onclick="togglePinTask('${task.id}')"` },
+        { key: 'estimate', icon: '⏱', title: '预计时长', action: `onclick="setTaskEstimate('${task.id}')"` },
+        { key: 'energy', icon: '⚡', title: '精力消耗', action: `onclick="setTaskEnergyCost('${task.id}')"` },
+        { key: 'pin', icon: '📌', title: '置顶', cls: task.pinned ? 'active' : '', action: `onclick="togglePinTask('${task.id}')"` },
         { key: 'target', icon: '#', title: '次数', action: `onclick="setTaskTarget('${task.id}')"` },
-        { key: 'loop', icon: '🔁', title: '循环', cls: loopC, action: `onclick="toggleRecurring('${task.id}')"` },
+        { key: 'loop', icon: '🔁', title: '循环', cls: task.recurringType ? 'active' : '', action: `onclick="toggleRecurring('${task.id}')"` },
         { key: 'count', icon: '🔄', title: '转为计数任务', action: `onclick="toggleCountOnly('${task.id}')"` },
-        { key: 'deadline', icon: '📅', title: dlT, custom: `<input type="date" class="deadline-input ${dlC}" value="${task.deadline || ''}" onchange="setDeadline('${task.id}', this.value)">`, action: `title="${dlT}"` },
+        { key: 'deadline', icon: '📅', title: '设置截止日期', action: `onclick="setDeadline('${task.id}', prompt('设置截止日期 (YYYY-MM-DD，留空取消)：', '${task.deadline || ''}'))"` },
         { key: 'delete', icon: '🗑️', title: '删除', cls: 'btn-delete-task', action: `onclick="deleteTask('${task.id}')"` }
     ];
+    
     allBtns.forEach(btn => {
         if (btn.show === false) return;
-        let inner = btn.label || btn.icon;
-        if (btn.custom) inner = `<span style="display:flex;align-items:center;gap:4px;"><span style="font-size:var(--font-hint);color:var(--text-muted);">📅</span>${btn.custom}</span>`;
+        let inner = btn.icon;
         const fullBtn = `<span class="btn-icon ${btn.cls||''}" ${btn.action} ${btn.title ? `title="${btn.title}"` : ''} style="font-weight:bold;">${inner}</span>`;
         if (cbSet.has(btn.key)) btnsHtml += fullBtn;
         else moreBtnsHtml += `<div class="more-menu-item" ${btn.action}>${btn.icon} ${btn.title}</div>`;
@@ -2559,7 +2577,33 @@ function generateTaskDOM(task, ds, options = {}) {
     if (moreBtnsHtml) {
         moreMenuHtml = `<div class="more-menu-container"><span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span><div class="more-menu">${moreBtnsHtml}</div></div>`;
     }
-    let html = `<div class="main-task-header"><div class="main-task-left">${headerLeft}</div><div class="task-meta">${btnsHtml}${moreMenuHtml}</div></div>`;
+
+    let headerHtml = `
+        <div class="main-task-top-row">
+            <div class="main-task-title-area">
+                ${mainCb}
+                <div class="task-text-wrap">${editT}</div>
+                ${loopL}
+            </div>
+            <div class="task-meta">${btnsHtml}${moreMenuHtml}</div>
+        </div>`;
+
+    if (badgesHtml) {
+        headerHtml += `<div class="task-badges-row">${badgesHtml}</div>`;
+    }
+
+    if (task.target || hasSub) {
+        const pct = Math.min(100, Math.round((mp.done / mp.total) * 100));
+        const isCountOnly = task.target && !hasSub;
+        headerHtml += `
+            <div class="progress-row">
+                <div class="progress-task-bar-bg"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div>
+                <span class="progress-text">${mp.done}/${mp.total}</span>
+                ${isCountOnly && !taskDone ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}
+            </div>`;
+    }
+
+    let html = `<div class="main-task-header">${headerHtml}</div>`;
 
     if (hasSub && showSubTasks) {
         html += `<div class="sub-task-list" data-task-id="${task.id}">`;
@@ -3277,8 +3321,14 @@ window.toggleExerciseRecurring = function(id) {
     renderDayExercises(); renderWeekBoard(); saveDataToFile(appData);
 };
 window.setDeadline = function(id, v) {
+    if (v === null) return;
     const t = appData.tasks.find(t => t.id === id);
-    if (t) { t.deadline = v; renderDayPlan(); refreshDetailModalIfOpen(); }
+    if (t) { 
+        const nv = v.trim();
+        if (nv) t.deadline = nv;
+        else delete t.deadline;
+        renderDayPlan(); refreshDetailModalIfOpen(); saveDataToFile(appData);
+    }
 };
 window.addExerciseCategory = function() {
     const n = prompt("新锻炼大类名称：");
