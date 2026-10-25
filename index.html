@@ -391,11 +391,11 @@ body.dark-mode .task-note-area.has-note { background: #1a2a3a; border-color: #3b
 .sub-task-item.sortable-ghost { opacity: 0.5; background: var(--hover-bg); }
 .sub-task-left { display: flex; align-items: center; flex: 1; flex-wrap: wrap; gap: 4px; min-width: 0; }
 .sub-task-item .task-checkbox { width: 14px; height: 14px; margin-right: 4px; }
-.sub-prog-container { display: flex; align-items: center; gap: 4px; margin-left: 8px; }
-.sub-prog-bar-bg { flex: 1; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; width: 60px; }
+.sub-prog-container { display: flex; align-items: center; gap: 4px; margin-left: 8px; flex-shrink: 0; }
+.sub-prog-bar-bg { flex: 1; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; width: 60px; min-width: 20px; }
 .sub-prog-bar-fill { height: 100%; background: var(--accent-color); border-radius: 3px; }
 .sub-prog-text { font-size: var(--font-small); color: var(--text-muted); width: 32px; text-align: right; }
-.sub-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px; flex-shrink: 0; }
+.sub-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 .btn-sub-plus { background: var(--hover-bg); color: var(--text-main); border: none; border-radius: 4px; padding: 0px 6px; font-size: var(--font-hint); cursor: pointer; font-weight: bold; }
 .btn-sub-count { cursor: pointer; color: var(--accent-color); font-size: var(--font-small); padding: 2px 6px; border: 1px solid var(--accent-color); border-radius: 4px; font-weight: 700; background: rgba(35,131,226,.08); white-space: nowrap; transition: all .15s; }
 .btn-sub-count:hover { background: var(--accent-color); color: #fff; }
@@ -408,7 +408,7 @@ body.dark-mode .btn-sub-count { background: rgba(59,130,246,.15); }
 .sub-more-item { padding: 6px 10px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 6px; font-size: var(--font-hint); color: var(--text-main); white-space: nowrap; }
 .sub-more-item:hover { background: var(--hover-bg); }
 
-.add-sub-task-input { margin-left: 24px; margin-top: 8px; font-size: var(--font-hint); padding: 4px 8px; border: 1px dashed var(--border-color); width: calc(100% - 24px); display: none; border-radius: 4px; background: var(--bg-input); color: var(--text-main); }
+.add-sub-task-input { margin-left: 24px; margin-top: 8px; font-size: var(--font-hint); padding: 6px 10px; border: 1px solid var(--accent-color); width: calc(100% - 24px); display: none; border-radius: 4px; background: var(--bg-input); color: var(--text-main); outline: none; box-shadow: 0 0 0 2px rgba(35,131,226,.2); transition: border .2s; }
 .btn-add-sub { font-size: var(--font-hint); color: var(--accent-color); cursor: pointer; margin-left: 24px; margin-top: 4px; display: inline-block; font-weight: 500; }
 .sub-fold-btn { margin-left: 24px; margin-top: 4px; font-size: var(--font-hint); color: var(--accent-color); cursor: pointer; font-weight: 600; display: inline-block; user-select: none; padding: 2px 6px; border-radius: 4px; background: var(--hover-bg); }
 .sub-fold-btn:hover { background: var(--border-color); }
@@ -727,11 +727,13 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 </div>
 <div class="section-box" style="border-color:#fde68a;">
 <div class="panel-content">
-<h2 style="color:#b45309;">⚡ 精力设置</h2>
+<h2 style="color:#b45309;">⚡ 精力与经验设置</h2>
 <div style="margin-top:6px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">今日精力上限 (<span id="energy-max-val">100</span>)</div>
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">50</span><input type="range" id="energy-max-slider" min="50" max="200" step="10" value="100" oninput="changeEnergyMax(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">200</span></div>
 <div style="margin-top:8px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力警告阈值 (<span id="energy-warn-val">30</span>)</div>
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">10</span><input type="range" id="energy-warn-slider" min="10" max="100" step="5" value="30" oninput="changeEnergyWarn(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">100</span></div>
+<div style="margin-top:8px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力转经验折损率 (<span id="exp-ratio-val">80</span>%)</div>
+<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">10%</span><input type="range" id="exp-ratio-slider" min="10" max="100" step="5" value="80" oninput="changeExpRatio(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">100%</span></div>
 </div>
 </div>
 <div class="section-box" style="border-color:#c5cae9;">
@@ -782,21 +784,16 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 </div>
 </div>
 </div>
-<div class="section-box">
-<div class="panel-content">
-<h2>💾 备份与清理</h2>
-<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-<button class="btn btn-sm" onclick="exportData()">📤 导出</button>
-<label class="btn btn-sm" style="cursor:pointer;">📥 导入<input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)"></label>
-<button class="btn btn-danger btn-sm" onclick="resetAllData()" style="margin-left:auto;">🚨 清空</button>
-</div>
-</div>
-</div>
 <div class="section-box span-full" style="border-color:#90caf9;">
 <details class="settings-details">
-<summary style="color:#1565c0;">📁 自动备份到文件夹</summary>
+<summary style="color:#1565c0;">💾 数据备份与管理</summary>
 <div class="panel-content" style="padding-top:0;">
-<p>每 N 分钟把数据覆盖写入所选文件夹的 <code>myWorkspace_backup.json</code>。<br><span style="color:#e65100;">需 Chrome / Edge，通过 https 或 localhost 打开。</span></p>
+<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+<button class="btn btn-sm" onclick="exportData()">📤 导出 JSON</button>
+<label class="btn btn-sm" style="cursor:pointer;">📥 导入 JSON<input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)"></label>
+<button class="btn btn-danger btn-sm" onclick="resetAllData()" style="margin-left:auto;">🚨 清空所有数据</button>
+</div>
+<p style="margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px;">📁 <b>自动备份到文件夹</b>：每 N 分钟把数据覆盖写入所选文件夹的 <code>myWorkspace_backup.json</code>。<br><span style="color:#e65100;">需 Chrome / Edge，通过 https 或 localhost 打开。</span></p>
 <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;">
 <button class="btn btn-sm btn-primary" onclick="chooseBackupFolder()">📂 选择文件夹</button>
 <button class="btn btn-sm" id="btn-restore-backup-folder" style="display:none;color:#1565c0;border-color:#90caf9;animation:pulse 2s infinite;" onclick="restoreBackupFolder()">🔄 恢复文件夹权限</button>
@@ -884,7 +881,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 </div>
 <div class="rpg-modal-grid" id="rpg-modal-grid"></div>
 <div class="rpg-modal-tips">
-💡 <b>经验规则</b>：每完成一次任务获得与精力消耗相同的 EXP。等级越高升级所需经验越多。<br>
+💡 <b>经验规则</b>：每完成一次任务获得与精力消耗相同的 EXP（按设置中的折损率）。等级越高升级所需经验越多。<br>
 ⚠️ <b>低精力惩罚</b>：精力低于警告阈值时，完成任务获得的经验减半。低于 -20 时只加 1 点。<br>
 💡 <b>属性提升</b>：学习任务→智力+1；锻炼→体力+1；其他→创造力+1；带次数目标达成→专注+1；毅力=连续打卡天数。
 </div>
@@ -918,10 +915,14 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
-    { version: 'v2.18.1', date: '2025-10-26', changes: [
-        '修复：左侧栏数值延迟更新问题，移除所有 alert 阻塞，调整底层渲染顺序确保实时响应',
-        '修复：左侧日完成度计算逻辑，现在会正确包含“纯计数”任务的进度',
-        '修复：取消母计划导致经验清零的问题，优化经验扣减保护逻辑'
+    { version: 'v2.19.1', date: '2025-10-26', changes: [
+        '修复：在详情弹窗中点击“添加步骤”不显示输入框的 Bug'
+    ]},
+    { version: 'v2.19.0', date: '2025-10-26', changes: [
+        '修复：详情弹窗中子任务没有 -1 按钮的问题',
+        '修复：详情弹窗中点击添加步骤没有输入框的问题',
+        '新增：精力转经验的折损率设置（默认 80%），可在设置中调整',
+        '优化：整合数据备份、导入导出、自动备份至同一面板下'
     ]}
 ];
 
@@ -953,7 +954,7 @@ let appData = {
     fonts: { title: "18px", content: "14px", hint: "12px", small: "10px" },
     radius: "8px",
     viewYear: new Date().getFullYear(), viewMonth: new Date().getMonth(), viewWeekBaseDate: getTodayString(),
-    _lastModified: 1, energyMax: 100, energyWarnThreshold: 30, dailyEnergy: {},
+    _lastModified: 1, energyMax: 100, energyWarnThreshold: 30, expRatio: 0.8, dailyEnergy: {},
     rpg: { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' },
     panelLayout: { order: ['learning', 'other', 'exercise'], spans: {}, sizes: {} },
     levelConfig: { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) },
@@ -1176,6 +1177,7 @@ function ensureEnergyData() {
     
     if (!appData.energyMax) appData.energyMax = 100;
     if (appData.energyWarnThreshold === undefined) appData.energyWarnThreshold = 30;
+    if (appData.expRatio === undefined) appData.expRatio = 0.8;
     const def = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
     if (!appData.rpg) appData.rpg = { ...def };
     else Object.keys(def).forEach(k => { if (appData.rpg[k] === undefined) appData.rpg[k] = def[k]; });
@@ -1228,7 +1230,10 @@ function adjustExp(delta) {
     if (delta > 0) {
         const remain = getTodayEnergyRemaining();
         if (remain <= -20) finalDelta = 1;
-        else if (remain < (appData.energyWarnThreshold || 30)) finalDelta = Math.max(1, Math.floor(delta * 0.5));
+        else if (remain < (appData.energyWarnThreshold || 30)) finalDelta = Math.max(1, Math.floor(delta * 0.5 * appData.expRatio));
+        else finalDelta = Math.max(1, Math.floor(delta * appData.expRatio));
+    } else if (delta < 0) {
+        finalDelta = Math.floor(delta * appData.expRatio);
     }
     appData.rpg.exp = Math.max(0, appData.rpg.exp + finalDelta);
     return finalDelta;
@@ -1321,11 +1326,13 @@ function renderEnergyAndRPG() {
     const mLv = document.getElementById('mobile-rpg-lv'), mEn = document.getElementById('mobile-rpg-energy');
     if (mLv) mLv.innerText = 'Lv.' + level;
     if (mEn) { mEn.innerText = '⚡' + remaining; mEn.style.color = critical ? '#ff0000' : (low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309')); }
-    const maxV = document.getElementById('energy-max-val'), warnV = document.getElementById('energy-warn-val');
+    const maxV = document.getElementById('energy-max-val'), warnV = document.getElementById('energy-warn-val'), expRV = document.getElementById('exp-ratio-val');
     if (maxV) maxV.innerText = max;
     if (warnV) warnV.innerText = appData.energyWarnThreshold;
+    if (expRV) expRV.innerText = Math.round(appData.expRatio * 100);
     const maxS = document.getElementById('energy-max-slider'); if (maxS) maxS.value = max;
     const warnS = document.getElementById('energy-warn-slider'); if (warnS) warnS.value = appData.energyWarnThreshold;
+    const expRS = document.getElementById('exp-ratio-slider'); if (expRS) expRS.value = Math.round(appData.expRatio * 100);
     const editMap = { 'rpg-edit-exp': rpg.exp, 'rpg-edit-int': rpg.int, 'rpg-edit-vit': rpg.vit, 'rpg-edit-cre': rpg.cre, 'rpg-edit-foc': rpg.foc, 'rpg-edit-wil': rpg.wil };
     Object.keys(editMap).forEach(id => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = editMap[id]; });
     if (appData.commonBtns) document.querySelectorAll('#common-btns-config input[type="checkbox"]').forEach(cb => { cb.checked = appData.commonBtns.includes(cb.value); });
@@ -1414,6 +1421,7 @@ window.restoreEnergy = function(type) {
 };
 window.changeEnergyMax = function(val) { ensureEnergyData(); appData.energyMax = parseInt(val) || 100; renderEnergyAndRPG(); saveDataToFile(appData); };
 window.changeEnergyWarn = function(val) { ensureEnergyData(); appData.energyWarnThreshold = parseInt(val) || 30; renderEnergyAndRPG(); saveDataToFile(appData); };
+window.changeExpRatio = function(val) { ensureEnergyData(); appData.expRatio = parseFloat(val) / 100; renderEnergyAndRPG(); saveDataToFile(appData); };
 window.editRPGValue = function(key, val) {
     ensureEnergyData();
     const num = parseInt(val);
@@ -2578,7 +2586,7 @@ function generateTaskDOM(task, ds, options = {}) {
         html += `<div class="view-sub-tasks-btn" onclick="openTaskDetailModal('${task.id}')">📋 查看 ${task.subTasks.length} 个子计划</div>`;
     }
 
-    html += `<span class="btn-add-sub" onclick="showSubInput('${task.id}')">➕ 添加步骤</span><input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')">`;
+    html += `<span class="btn-add-sub" onclick="showSubInput('${task.id}', this)">➕ 添加步骤</span><input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')">`;
     html += `<div class="task-note-area ${task.note ? 'has-note' : ''}" id="note-area-${task.id}" onclick="editTaskNote('${task.id}', this)">${task.note || '📝 点击添加备注...'}</div>`;
     div.innerHTML = html;
 
@@ -2637,7 +2645,6 @@ window.incrementCountTask = function(taskId) {
     adjustExp(ec);
     logTaskAction(getTodayString(), t.id, t.text, 'count', 1);
     
-    // 优先更新侧边栏
     renderEnergyAndRPG();
     updateFixedProgressBars();
     saveDataToFile(appData);
@@ -2656,7 +2663,7 @@ window.decrementCountTask = function(taskId) {
     const ec = t.energyCost || 1;
     const today = getTodayString();
     appData.dailyEnergy[today] = Math.max(0, (appData.dailyEnergy[today] || 0) - ec);
-    appData.rpg.exp = Math.max(0, appData.rpg.exp - ec);
+    appData.rpg.exp = Math.max(0, appData.rpg.exp - Math.floor(ec * appData.expRatio));
     logTaskAction(today, t.id, t.text, 'count', -1);
     
     renderEnergyAndRPG();
@@ -3390,7 +3397,14 @@ window.toggleSubTask = function(tid, sid) {
     renderDayPlan(); renderCalendar();
     refreshDetailModalIfOpen();
 };
-window.showSubInput = function(id) { const i = document.getElementById(`input-${id}`); if (i) { i.style.display = 'block'; i.focus(); } };
+window.showSubInput = function(id, el) { 
+    const i = el ? el.nextElementSibling : document.getElementById(`input-${id}`); 
+    if (i) { 
+        i.style.display = 'block'; 
+        i.focus(); 
+        setTimeout(() => { i.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
+    } 
+};
 window.addSubTask = function(e, tid) {
     if (e.key !== 'Enter' || !e.target.value.trim()) return;
     const t = appData.tasks.find(t => t.id === tid);
