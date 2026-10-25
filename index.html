@@ -271,10 +271,10 @@ body.dark-mode .week-column .exercise-capsule { background: #1b3322; border-colo
 .week-column .exercise-capsule .ex-del-btn { margin-left: auto; cursor: pointer; color: var(--danger-color); font-weight: bold; padding: 0 4px; opacity: .5; transition: opacity .2s; }
 .week-column .exercise-capsule .ex-del-btn:hover { opacity: 1; }
 
-/* 悬浮抽屉——PC 端覆盖左侧栏，宽度更大 */
-.week-drawer-panel { position: fixed; left: 0; top: 50%; transform: translate(-105%, -50%); transition: transform .35s cubic-bezier(.2,.8,.3,1), opacity .25s, visibility .35s; width: 420px; max-width: 90vw; max-height: 88vh; z-index: 550; background: var(--bg-card); border: 1px solid var(--border-color); border-left: none; border-radius: 0 var(--radius) var(--radius) 0; box-shadow: 4px 0 24px rgba(0,0,0,.22); display: flex; flex-direction: column; overflow: hidden; opacity: 0; visibility: hidden; pointer-events: none; }
+/* 悬浮抽屉——贴顶到底，覆盖左侧栏 */
+.week-drawer-panel { position: fixed; left: 0; top: 0; bottom: 0; height: 100vh; transform: translateX(-105%); transition: transform .35s cubic-bezier(.2,.8,.3,1), opacity .25s, visibility .35s; width: 380px; max-width: 90vw; z-index: 550; background: var(--bg-card); border-right: 1px solid var(--border-color); box-shadow: 4px 0 24px rgba(0,0,0,.22); display: flex; flex-direction: column; overflow: hidden; opacity: 0; visibility: hidden; pointer-events: none; }
 body.dark-mode .week-drawer-panel { box-shadow: 4px 0 24px rgba(0,0,0,.6); }
-.week-drawer-panel.open { transform: translate(0, -50%); opacity: 1; visibility: visible; pointer-events: auto; transition: transform .35s cubic-bezier(.2,.8,.3,1), opacity .25s, visibility 0s; }
+.week-drawer-panel.open { transform: translateX(0); opacity: 1; visibility: visible; pointer-events: auto; transition: transform .35s cubic-bezier(.2,.8,.3,1), opacity .25s, visibility 0s; }
 .week-drawer-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border-color); background: var(--bg-panel-header); font-weight: 700; font-size: var(--font-content); flex-shrink: 0; }
 .week-drawer-close { cursor: pointer; color: var(--text-muted); padding: 4px 10px; border-radius: 6px; font-size: 1.1em; transition: background .2s, color .2s; user-select: none; line-height: 1; }
 .week-drawer-close:hover { background: var(--hover-bg); color: var(--danger-color); }
@@ -287,7 +287,7 @@ body.dark-mode .week-drawer-panel { box-shadow: 4px 0 24px rgba(0,0,0,.6); }
 .week-drawer-tab:hover { filter: brightness(1.1); }
 .week-drawer-tab.hidden { opacity: 0; pointer-events: none; transform: translateY(-50%) translateX(-20px); }
 #view-week { transition: padding-left .35s cubic-bezier(.2,.8,.3,1); }
-#view-week.drawer-open { padding-left: 436px; }
+#view-week.drawer-open { padding-left: 392px; }
 
 .fixed-block-capsule { padding: 8px 14px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 20px; cursor: grab; font-size: var(--font-content); font-weight: 600; color: #92400e; display: flex; align-items: center; gap: 6px; user-select: none; }
 body.dark-mode .fixed-block-capsule { background: #2a2412; border-color: #6b5a20; color: #fbbf24; }
@@ -761,7 +761,6 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
     <label><input type="checkbox" value="loop" onchange="updateCommonBtn('loop', this.checked)"> 🔁 循环</label>
     <label><input type="checkbox" value="count" onchange="updateCommonBtn('count', this.checked)"> 🔄 计数</label>
     <label><input type="checkbox" value="deadline" onchange="updateCommonBtn('deadline', this.checked)"> 📅 截止日期</label>
-    <label><input type="checkbox" value="view" onchange="updateCommonBtn('view', this.checked)"> 👁️ 查看详情（可选）</label>
     <label><input type="checkbox" value="delete" onchange="updateCommonBtn('delete', this.checked)"> 🗑️ 删除</label>
 </div>
 </div>
@@ -898,47 +897,44 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <script>
 /* ==================== 更新日志 ==================== */
 const APP_CHANGELOG = [
-    { version: 'v2.13.0', date: '2025-10-25', changes: [
-        '修复：更新日志日期错乱问题（全部调整为历史日期）',
-        '优化：周待办抽屉覆盖侧边栏，宽度更大、内容不易被删除按钮遮挡',
-        '优化：累计计数任务在周时间池里带 -1/+1 按钮，可直接操作',
-        '优化：日计划点击母计划卡片空白区域直接查看详情，去掉独立查看按钮',
-        '新增：累计计数任务支持 -1 撤销操作（返还精力/经验）',
-        '优化：子任务按钮缩略为 ⋮ 菜单，避免拥挤'
+    { version: 'v2.14.0', date: '2025-10-25', changes: [
+        '优化：周计划待办弹窗贴顶贴底，中间不留空隙，与右侧周计划间距减小',
+        '同步：日计划里的任务，只要没被拖入时间池，都会显示在周计划待办中（不限制本周内）',
+        '修复：彻底移除日计划任务卡片右侧的 👁️ 查看详情按钮，统一通过点击空白处查看'
     ]},
-    { version: 'v2.12.0', date: '2025-10-24', changes: [
-        '新增：周计划待办池每个任务右上角显示 🗑️ 删除按钮，可直接删除',
-        '修复：累计计数任务拖入周视图后不再铺满整周',
-        '优化：子任务计数转换按钮 🔄计数 加边框，更明显易点'
+    { version: 'v2.13.0', date: '2025-10-24', changes: [
+        '新增：累计计数任务周时间池显示 -1/+1 按钮',
+        '优化：日计划点击母计划卡片空白查看详情',
+        '新增：累计计数任务 -1 撤销功能',
+        '优化：子任务按钮缩略为 ⋮ 菜单'
     ]},
-    { version: 'v2.11.0', date: '2025-10-23', changes: [
-        '修复：详情弹窗内点击 +1/-1 后进度条、计数不刷新',
-        '新增：子计划可独立开启纯计数模式',
-        '优化：预计完成时长直接显示在 ⏱ 按钮上',
-        '优化：日计划默认隐藏「查看详情」按钮',
-        '修复：从周计划拖入时间槽后取消，任务会回到原日期'
+    { version: 'v2.12.0', date: '2025-10-23', changes: [
+        '新增：周计划待办池任务带删除按钮',
+        '修复：累计计数任务周视图不铺开',
+        '优化：子任务计数按钮加边框'
     ]},
-    { version: 'v2.10.0', date: '2025-10-22', changes: ['纯计数任务','背景加深区分','子任务收起','设置扩展','月计划悬停','循环任务只占一格'] },
-    { version: 'v2.9.0', date: '2025-10-21', changes: ['移除「未安排」列','截止任务按天显示','今天暂不完成','周课表字体调大'] },
-    { version: 'v2.8.0', date: '2025-10-20', changes: ['循环任务遵守截止日期','华丽升级弹框','课表块填满+圆角','抽屉彻底收回','时间段拖拽排序'] },
-    { version: 'v2.7.0', date: '2025-10-19', changes: ['待办池升级为悬浮抽屉','拖拽边缘自动滚动'] },
-    { version: 'v2.6.0', date: '2025-10-18', changes: ['固定块可无限次拖入','一键取消'] },
-    { version: 'v2.5.0', date: '2025-10-17', changes: ['课表视图','精力下限 -20'] },
-    { version: 'v2.4.0', date: '2025-10-16', changes: ['循环任务自动结束','统计图表化'] },
-    { version: 'v2.3.0', date: '2025-10-15', changes: ['计数型循环进度'] },
-    { version: 'v2.2.0', date: '2025-10-14', changes: ['字体大小细分','子任务拖拽'] },
-    { version: 'v2.1.0', date: '2025-10-13', changes: ['任务详情加宽','常用按钮'] },
-    { version: 'v2.0.0', date: '2025-10-12', changes: ['母计划备注'] },
-    { version: 'v1.9.0', date: '2025-10-11', changes: ['独立逾期任务'] },
-    { version: 'v1.8.0', date: '2025-10-10', changes: ['黑暗模式'] },
-    { version: 'v1.7.0', date: '2025-10-09', changes: ['周计划跳转'] },
-    { version: 'v1.6.0', date: '2025-10-08', changes: ['任务折叠弹框'] },
-    { version: 'v1.5.0', date: '2025-10-07', changes: ['默认显示今天'] },
-    { version: 'v1.4.0', date: '2025-10-06', changes: ['属性动画','自定义等级'] },
-    { version: 'v1.3.0', date: '2025-10-05', changes: ['任务折叠弹框'] },
-    { version: 'v1.2.0', date: '2025-10-04', changes: ['精力系统','RPG编辑'] },
-    { version: 'v1.1.0', date: '2025-10-03', changes: ['预计时长','拖拽'] },
-    { version: 'v1.0.0', date: '2025-10-02', changes: ['初始版本'] }
+    { version: 'v2.11.0', date: '2025-10-22', changes: ['详情弹窗刷新','子计划纯计数','时长显示合并','隐藏默认查看','拖拽回原日期'] },
+    { version: 'v2.10.0', date: '2025-10-21', changes: ['纯计数任务','背景加深','子任务收起','设置扩展','月计划悬停','循环单格'] },
+    { version: 'v2.9.0', date: '2025-10-20', changes: ['移除未安排列','截止任务按天','今天暂不完成','周课表字体调大'] },
+    { version: 'v2.8.0', date: '2025-10-19', changes: ['循环遵守截止','华丽升级','课表填满圆角','抽屉彻底收回','时间段拖拽'] },
+    { version: 'v2.7.0', date: '2025-10-18', changes: ['待办悬浮抽屉','拖拽边缘滚动'] },
+    { version: 'v2.6.0', date: '2025-10-17', changes: ['固定块无限拖','一键取消'] },
+    { version: 'v2.5.0', date: '2025-10-16', changes: ['课表视图','精力下限 -20'] },
+    { version: 'v2.4.0', date: '2025-10-15', changes: ['循环自动结束','统计图表化'] },
+    { version: 'v2.3.0', date: '2025-10-14', changes: ['计数型循环进度'] },
+    { version: 'v2.2.0', date: '2025-10-13', changes: ['字体大小细分','子任务拖拽'] },
+    { version: 'v2.1.0', date: '2025-10-12', changes: ['任务详情加宽','常用按钮'] },
+    { version: 'v2.0.0', date: '2025-10-11', changes: ['母计划备注'] },
+    { version: 'v1.9.0', date: '2025-10-10', changes: ['独立逾期任务'] },
+    { version: 'v1.8.0', date: '2025-10-09', changes: ['黑暗模式'] },
+    { version: 'v1.7.0', date: '2025-10-08', changes: ['周计划跳转'] },
+    { version: 'v1.6.0', date: '2025-10-07', changes: ['任务折叠弹框'] },
+    { version: 'v1.5.0', date: '2025-10-06', changes: ['默认显示今天'] },
+    { version: 'v1.4.0', date: '2025-10-05', changes: ['属性动画','自定义等级'] },
+    { version: 'v1.3.0', date: '2025-10-04', changes: ['任务折叠弹框'] },
+    { version: 'v1.2.0', date: '2025-10-03', changes: ['精力系统','RPG编辑'] },
+    { version: 'v1.1.0', date: '2025-10-02', changes: ['预计时长','拖拽'] },
+    { version: 'v1.0.0', date: '2025-10-01', changes: ['初始版本'] }
 ];
 
 const DEFAULT_LEVELS = [
@@ -1114,10 +1110,9 @@ function getTasksForDate(dateStr, options = {}) {
         if (filteredDirect.includes(t) || deadlineRange.includes(t)) return false;
         return isRecurringMatch(t.recurringType, t.date, dateStr);
     });
-    // 累计计数任务：设置了 timeSlot 则只在 t.date 那天显示（防铺满周视图），否则日计划每天都显示
     const countOnlyTasks = appData.tasks.filter(t => {
         if (!t.countOnly || t.countEnded || t.date === 'pool' || !t.date || t.date > dateStr) return false;
-        if (t.timeSlot) return dateStr === t.date;
+        if (t.timeSlot && dateStr !== t.date) return false;
         if (filteredDirect.includes(t)) return false;
         return true;
     });
@@ -1903,7 +1898,6 @@ function renderCalendar() {
     }
 }
 
-/* 周视图任务 DOM */
 function createWeekTaskDOM(t, ds) {
     const item = document.createElement('div');
     item.className = 'task-item';
@@ -1911,7 +1905,6 @@ function createWeekTaskDOM(t, ds) {
     item.ondragstart = (e) => drag(e, t.id);
 
     if (t.countOnly) {
-        // 累计计数任务在周视图特殊渲染（显示计数、+1/-1 按钮）
         item.classList.add('count-task');
         const text = document.createElement('span');
         text.className = 'task-text';
@@ -1948,7 +1941,6 @@ function createWeekTaskDOM(t, ds) {
         item.appendChild(cb); item.appendChild(text);
     }
 
-    // 取消按钮
     if (t.timeSlot || t._poolOrigin) {
         item.classList.add('in-slot');
         const rm = document.createElement('span');
@@ -1960,7 +1952,6 @@ function createWeekTaskDOM(t, ds) {
         item.appendChild(rm);
     }
 
-    // 删除按钮
     const del = document.createElement('span');
     del.className = 'task-delete-btn';
     del.innerText = '🗑️';
@@ -2008,7 +1999,6 @@ function renderWeekBoard() {
             col.className = 'week-column' + (isToday ? ' today-col' : '');
             col.innerHTML = `<div class="week-column-header" onclick="jumpToDay('${ds}')">${dn} <br><span style="font-size:var(--font-small);color:var(--text-muted);">${new Date(ds).getMonth()+1}/${new Date(ds).getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
             getTasksForDate(ds).forEach(t => {
-                // 累计计数任务未设置 timeSlot 时不显示在周列表（避免整周铺开）
                 if (t.countOnly && !t.timeSlot) return;
                 const item = createWeekTaskDOM(t, ds);
                 if (t.timeSlot) {
@@ -2220,19 +2210,20 @@ function renderTaskPool() {
             // 累计计数任务：只有 date='pool' 时显示在待办里
             if (t.countOnly) return t.date === 'pool';
             if (t.date === 'pool') return true;
-            if (t.date && weekDates.includes(t.date) && (!t.timeSlot || !appData.timeSlots.find(x => x.id === t.timeSlot))) return true;
+            // 放宽限制：只要是没有时间槽的任务，都在待办中显示，不管它是哪一天
+            if (!t.timeSlot) return true;
             return false;
         }).forEach(t => {
             const ds = t.date === 'pool' ? appData.selectedDate : t.date;
             const item = createWeekTaskDOM(t, ds);
             if (t.date === 'pool') {
                 const tag = document.createElement('span'); tag.className = 'task-tag'; tag.innerText = '待安排'; item.appendChild(tag);
-            } else {
+            } else if (t.date && t.date !== 'pool') {
                 const d = new Date(t.date + 'T00:00:00');
                 const tagText = t.date === td ? '今日' : `${d.getMonth()+1}/${d.getDate()}`;
                 const tag = document.createElement('span'); tag.className = 'task-tag'; tag.innerText = tagText; item.appendChild(tag);
             }
-            pool.appendChild(tag ? item : item);
+            pool.appendChild(item);
         });
     });
     appData.tasks.filter(t => t.date !== 'pool' && t.date < td && !isTaskDone(t, t.date) && !t.countOnly).forEach(t => {
@@ -2485,8 +2476,8 @@ function generateTaskDOM(task, ds, options = {}) {
     let btnsHtml = '', moreBtnsHtml = '';
     const canSkip = !!(task.deadline || task.recurringType);
     const estLabel = task.estimate ? `⏱ ${task.estimate}` : '⏱';
+    // 移除 view 按钮（直接点击空白处查看）
     const allBtns = [
-        { key: 'view', icon: '👁️', title: '查看详情', action: `onclick="openTaskDetailModal('${task.id}')"` },
         { key: 'skip', icon: '⏭️', title: '今天暂不完成', cls: 'btn-skip-task', action: `onclick="skipTaskForToday('${task.id}')"`, show: canSkip },
         { key: 'estimate', icon: '⏱', title: '预计时长', label: estLabel, action: `onclick="setTaskEstimate('${task.id}')"` },
         { key: 'energy', icon: '⚡', title: '精力消耗', label: `⚡${ec}`, action: `onclick="setTaskEnergyCost('${task.id}')"` },
@@ -2538,13 +2529,12 @@ function generateTaskDOM(task, ds, options = {}) {
     html += `<div class="task-note-area ${task.note ? 'has-note' : ''}" id="note-area-${task.id}" onclick="editTaskNote('${task.id}', this)">${task.note || '📝 点击添加备注...'}</div>`;
     div.innerHTML = html;
 
-    // 点击空白区域打开详情（仅当有子任务且未展开）
     if (hasSub && !showSubTasks) {
         div.classList.add('clickable-for-detail');
         div.addEventListener('click', function(e) {
             const interactive = e.target.closest('input, button, textarea, select, a, .btn-icon, .more-menu-container, .task-meta, .task-note-area, .btn-add-sub, .add-sub-task-input, .progress-task-container, .sub-task-list, .btn-count-plus, .btn-count-minus, .btn-count-end');
             if (interactive) return;
-            if (e.target.closest('.task-text')) return; // 双击编辑文字，不触发
+            if (e.target.closest('.task-text')) return;
             openTaskDetailModal(task.id);
         });
     }
@@ -2599,7 +2589,6 @@ window.incrementCountTask = function(taskId) {
     refreshDetailModalIfOpen();
 };
 
-/* -1 撤销：返还精力与经验 */
 window.decrementCountTask = function(taskId) {
     const t = appData.tasks.find(x => x.id === taskId);
     if (!t || !t.countOnly) return;
