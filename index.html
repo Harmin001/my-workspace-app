@@ -320,8 +320,8 @@ body.dark-mode .week-column .exercise-capsule { background: #1b3322; border-colo
 .week-column .exercise-capsule .ex-del-btn:hover { opacity: 1; }
 
 /* 悬浮抽屉——贴顶到底，覆盖左侧栏 */
-.week-drawer-panel { position: fixed; left: 0; top: 0; bottom: 0; height: 100vh; transform: translateX(-105%); transition: transform .35s cubic-bezier(.2,.8,.3,1), opacity .25s, visibility .35s; width: 380px; max-width: 90vw; z-index: 550; background: var(--bg-card); border-right: 1px solid var(--border-color); box-shadow: none; display: flex; flex-direction: column; overflow: hidden; opacity: 0; visibility: hidden; pointer-events: none; }
-body.dark-mode .week-drawer-panel { border-right-color: #333; }
+.week-drawer-panel { position: fixed; left: 0; top: 0; bottom: 0; height: 100vh; transform: translateX(-105%); transition: transform .35s cubic-bezier(.2,.8,.3,1), opacity .25s, visibility .35s; width: 380px; max-width: 90vw; z-index: 550; background: var(--bg-card); border-right: 1px solid var(--border-color); box-shadow: 4px 0 24px rgba(0,0,0,.15); display: flex; flex-direction: column; overflow: hidden; opacity: 0; visibility: hidden; pointer-events: none; }
+body.dark-mode .week-drawer-panel { border-right-color: #333; box-shadow: 4px 0 24px rgba(0,0,0,.5); }
 .week-drawer-panel.open { transform: translateX(0); opacity: 1; visibility: visible; pointer-events: auto; transition: transform .35s cubic-bezier(.2,.8,.3,1), opacity .25s, visibility 0s; }
 .week-drawer-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border-color); background: var(--bg-panel-header); font-weight: 700; font-size: var(--font-content); flex-shrink: 0; }
 .week-drawer-close { cursor: pointer; color: var(--text-muted); padding: 4px 10px; border-radius: 6px; font-size: 1.1em; transition: background .2s, color .2s; user-select: none; line-height: 1; }
@@ -336,6 +336,7 @@ body.dark-mode .week-drawer-panel { border-right-color: #333; }
 .week-drawer-tab.hidden { opacity: 0; pointer-events: none; transform: translateY(-50%) translateX(-20px); }
 #view-week { transition: padding-left .35s cubic-bezier(.2,.8,.3,1); }
 #view-week.drawer-open { padding-left: 380px; }
+#view-week.drawer-open .year-header { padding-left: 0; }
 
 .fixed-block-capsule { padding: 8px 14px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 20px; cursor: grab; font-size: var(--font-content); font-weight: 600; color: #92400e; display: flex; align-items: center; gap: 6px; user-select: none; }
 body.dark-mode .fixed-block-capsule { background: #2a2412; border-color: #6b5a20; color: #fbbf24; }
@@ -954,17 +955,14 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.17.2', date: '2025-10-26', changes: [
+        '修复：累计计数任务拖入时间池产生重叠、无法多次拖拽的问题',
+        '优化：点击待办抽屉时，右侧周计划池不再向右缩放，并增加阴影区分',
+        '修复：左侧栏进度条更新滞后，必须点设置才刷新的问题'
+    ]},
     { version: 'v2.17.1', date: '2025-10-26', changes: [
         '修复：由于备份数据裁剪过度导致月计划、年计划空白报错的问题',
         '优化：增强了系统底层数据的容错能力，避免数据缺失导致白屏'
-    ]},
-    { version: 'v2.17.0', date: '2025-10-26', changes: [
-        '优化：统计弹窗底部新增操作记录展示，可查看具体干了什么',
-        '优化：备份文件导出与自动备份大幅缩减体积，去除冗余字段',
-        '优化：自动备份若存在历史文件夹，界面会有醒目的恢复提示',
-        '优化：左侧栏「回到今天」与「日计划」合并为一行，更节省空间',
-        '修复：周计划待办抽屉与时间池间距过大的问题',
-        '修复：累计计数任务拖拽进时间池后，池子里消失无法再次拖拽的问题'
     ]}
 ];
 
@@ -2017,7 +2015,7 @@ function renderCalendar() {
     }
 }
 
-function createWeekTaskDOM(t, ds) {
+function createWeekTaskDOM(t, ds, options = {}) {
     const item = document.createElement('div');
     item.className = 'task-item';
     item.draggable = true;
@@ -2029,6 +2027,22 @@ function createWeekTaskDOM(t, ds) {
         text.className = 'task-text';
         text.innerText = `🔄 ${t.text} (${t.countTotal || 0}次)`;
         item.appendChild(text);
+        
+        if (options.slotDate && options.slotId) {
+            item.classList.add('in-slot');
+            const rm = document.createElement('span');
+            rm.className = 'task-unschedule-btn';
+            rm.innerText = '↩️';
+            rm.title = '移出时间池';
+            rm.onclick = (e) => {
+                e.stopPropagation(); e.preventDefault();
+                t.timeSlots = (t.timeSlots || []).filter(k => k !== (options.slotDate + '_' + options.slotId));
+                saveDataToFile(appData); renderWeekBoard(); renderTaskPool();
+            };
+            rm.ondragstart = (e) => e.stopPropagation();
+            item.appendChild(rm);
+        }
+        return item;
     } else {
         const p = getTaskProgress(t, ds);
         const isDone = isTaskDone(t, ds);
@@ -2182,11 +2196,20 @@ function renderWeekBoard() {
             cell.dataset.timeslot = ts.id;
             cell.ondrop = (e) => handleDrop(e, ds, ts.id);
             cell.ondragover = allowDrop;
-            getTasksForDate(ds).filter(t => t.timeSlot === ts.id).forEach(t => {
+            
+            // 渲染普通任务
+            getTasksForDate(ds).filter(t => t.timeSlot === ts.id && !t.countOnly).forEach(t => {
                 const item = createWeekTaskDOM(t, ds);
                 item.classList.add('lecture-task');
                 cell.appendChild(item);
             });
+            // 渲染计数任务
+            appData.tasks.filter(t => t.countOnly && t.timeSlots && t.timeSlots.includes(ds + '_' + ts.id)).forEach(t => {
+                const item = createWeekTaskDOM(t, ds, { slotDate: ds, slotId: ts.id });
+                item.classList.add('lecture-task');
+                cell.appendChild(item);
+            });
+            
             const fbSched = (appData.fixedBlockSchedule && appData.fixedBlockSchedule[ds]) || {};
             (fbSched[ts.id] || []).forEach(fbi => {
                 const fbEl = document.createElement('div');
@@ -3002,6 +3025,24 @@ function handleDrop(ev, td, timeslot) {
     if (draggedTaskId) {
         const t = appData.tasks.find(t => t.id === draggedTaskId);
         if (t) {
+            if (t.countOnly && td !== 'pool') {
+                if (timeslot) {
+                    if (!t.timeSlots) t.timeSlots = [];
+                    const key = td + '_' + timeslot;
+                    if (!t.timeSlots.includes(key)) t.timeSlots.push(key);
+                    saveDataToFile(appData);
+                    renderWeekBoard(); renderTaskPool();
+                    draggedTaskId = null;
+                    return;
+                }
+            } else if (t.countOnly && td === 'pool') {
+                t.timeSlots = [];
+                saveDataToFile(appData);
+                renderWeekBoard(); renderTaskPool();
+                draggedTaskId = null;
+                return;
+            }
+            
             if (td === 'pool') {
                 t.date = 'pool';
                 delete t.timeSlot;
@@ -3406,6 +3447,7 @@ document.getElementById('yearly-goals').addEventListener('input', e => syncGoal(
 document.getElementById('yearly-goals-bottom').addEventListener('input', e => syncGoal(e.target.value));
 
 function updateFixedProgressBars() {
+    clearProgressCache(); // 强制清理缓存，确保左侧进度实时准确
     ensureEnergyData();
     const td = getTodayString();
     const y = new Date().getFullYear();
