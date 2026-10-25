@@ -955,14 +955,10 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
-    { version: 'v2.17.2', date: '2025-10-26', changes: [
-        '修复：累计计数任务拖入时间池产生重叠、无法多次拖拽的问题',
-        '优化：点击待办抽屉时，右侧周计划池不再向右缩放，并增加阴影区分',
-        '修复：左侧栏进度条更新滞后，必须点设置才刷新的问题'
-    ]},
-    { version: 'v2.17.1', date: '2025-10-26', changes: [
-        '修复：由于备份数据裁剪过度导致月计划、年计划空白报错的问题',
-        '优化：增强了系统底层数据的容错能力，避免数据缺失导致白屏'
+    { version: 'v2.17.3', date: '2025-10-26', changes: [
+        '修复：取消勾选母计划导致经验值清零、进度全部丢失的问题',
+        '修复：任务详情弹窗中，点击 +/- 进度条不实时刷新的问题',
+        '优化：RPG 属性界面数据渲染逻辑，数值变动实时同步，无需切换页面'
     ]}
 ];
 
@@ -3121,9 +3117,6 @@ function toggleTaskCompletion(t, ds) {
                     setSubTaskDone(s, ds, true);
                     if (!sw) adjustAttr(t.type, 1);
                 } else {
-                    const r = getSubCurrent(s, ds, t) * (s.energyCost || 1);
-                    adjustTodayEnergy(-r); adjustExp(-r);
-                    setSubCurrent(s, ds, 0);
                     setSubTaskDone(s, ds, false);
                     if (sw) adjustAttr(t.type, -1);
                 }
@@ -3146,9 +3139,6 @@ function toggleTaskCompletion(t, ds) {
             setTaskDone(t, ds, true);
             adjustAttr(t.type, 1); adjustAttr('focus', 1); updateStreak();
         } else {
-            const r = getTaskCurrent(t, ds) * (t.energyCost || 1);
-            adjustTodayEnergy(-r); adjustExp(-r);
-            setTaskCurrent(t, ds, 0);
             setTaskDone(t, ds, false);
             adjustAttr(t.type, -1); adjustAttr('focus', -1);
         }
@@ -3955,6 +3945,8 @@ document.addEventListener('drop', stopAutoScroll, true);
         document.getElementById('target-peer-id').value = localStorage.getItem('last_connected_peer');
         setTimeout(() => initPeer(false, true), 500);
     }
+    
+    // 强制刷新 RPG UI 的定时器，防止由于个别事件未触发导致渲染丢失
     setInterval(() => {
         if (document.hidden) return;
         const today = getTodayString();
@@ -3964,7 +3956,7 @@ document.addEventListener('drop', stopAutoScroll, true);
             if (document.getElementById('view-month').classList.contains('active')) renderCalendar();
         }
         renderEnergyAndRPG();
-    }, 60000);
+    }, 5000); // 5秒静默同步一次
 })();
 </script>
 </body>
