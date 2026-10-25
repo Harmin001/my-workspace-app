@@ -45,7 +45,6 @@ body { font-family: var(--font-family); background-color: var(--bg-main); color:
 .sidebar-goal-input:focus { border-color: var(--accent-color); }
 .sidebar-goal-input:empty:before { content: attr(placeholder); color: #aaa; pointer-events: none; display: block; }
 
-/* 进度条网格化（两行，每行两个） */
 .fixed-progress-bars { width: 100%; padding: 0 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
 .prog-row { display: flex; flex-direction: column; gap: 2px; cursor: pointer; padding: 4px; border-radius: 6px; transition: background 0.2s; }
 .prog-row:hover { background: var(--hover-bg); }
@@ -56,8 +55,6 @@ body { font-family: var(--font-family); background-color: var(--bg-main); color:
 .energy-rpg-panel { padding: 0 8px; margin-top: 10px; padding-bottom: 10px; }
 .rpg-card { background: linear-gradient(135deg, #fff8e7 0%, #ffefc2 100%); border: 1px solid #e8c26a; border-radius: var(--radius); padding: 8px 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,.6); transition: all 0.3s; }
 body.dark-mode .rpg-card { background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%); border-color: #444; box-shadow: inset 0 1px 0 rgba(0,0,0,.5); }
-
-/* 精力条改成左右布局 */
 .rpg-energy-section { display: flex; gap: 8px; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px dashed rgba(180,83,9,.25); align-items: stretch; }
 body.dark-mode .rpg-energy-section { border-bottom-color: #444; }
 .energy-left { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
@@ -173,6 +170,16 @@ body.dark-mode .levelup-exp { color: #fbbf24; }
 .chart-bar:hover::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; background: var(--bg-card); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-color); white-space: nowrap; }
 .chart-label { font-size: 10px; color: var(--text-muted); text-align: center; }
 
+/* 新增的操作记录样式 */
+.stats-ops-section { margin-top: 16px; border-top: 1px dashed var(--border-color); padding-top: 12px; }
+.stats-ops-title { font-size: var(--font-content); font-weight: 700; color: var(--text-main); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.stats-ops-list { max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.ops-row { display: flex; justify-content: space-between; font-size: var(--font-hint); padding: 6px 10px; background: var(--bg-sidebar); border-radius: 6px; color: var(--text-main); }
+.ops-name { font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ops-detail { flex-shrink: 0; display: flex; gap: 8px; }
+.ops-done { color: #27ae60; font-weight: 700; }
+.ops-count { color: #f2994a; font-weight: 700; }
+
 .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .view-container { flex: 1; padding: 24px; overflow-y: auto; display: none; flex-direction: column; }
 .view-container.active { display: flex; }
@@ -220,7 +227,6 @@ body.dark-mode .deadline-preview { background: #3a1c1c; }
 .week-grid-cell.today-col { background: #f4f8fd; }
 body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
 
-/* 周时间池任务：字体加大、上下左右居中 */
 .week-grid-cell > .task-item.lecture-task { 
     flex: 1 1 0; 
     min-height: 36px; 
@@ -232,8 +238,8 @@ body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
     box-shadow: 0 2px 6px rgba(0,0,0,0.12); 
     display: flex; 
     flex-direction: column; 
-    align-items: center; /* 水平居中 */
-    justify-content: center; /* 垂直居中 */
+    align-items: center; 
+    justify-content: center; 
     font-size: 13px; 
     position: relative; 
     overflow: hidden; 
@@ -254,6 +260,7 @@ body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
 .week-grid-cell > .task-item.lecture-task.count-task { 
     background: linear-gradient(135deg, #93c5fd 0%, #bfdbfe 100%); 
     color: #1e3a8a; 
+    cursor: pointer;
 }
 .week-grid-cell > .task-item.lecture-task.count-task .task-text { 
     color: #1e3a8a; 
@@ -319,7 +326,7 @@ body.dark-mode .week-column .exercise-capsule { background: #1b3322; border-colo
 .week-column .exercise-capsule .ex-del-btn { margin-left: auto; cursor: pointer; color: var(--danger-color); font-weight: bold; padding: 0 4px; opacity: .5; transition: opacity .2s; }
 .week-column .exercise-capsule .ex-del-btn:hover { opacity: 1; }
 
-/* 悬浮抽屉——贴顶到底，覆盖左侧栏 */
+/* 悬浮抽屉 */
 .week-drawer-panel { position: fixed; left: 0; top: 0; bottom: 0; height: 100vh; transform: translateX(-105%); transition: transform .35s cubic-bezier(.2,.8,.3,1), opacity .25s, visibility .35s; width: 380px; max-width: 90vw; z-index: 550; background: var(--bg-card); border-right: 1px solid var(--border-color); box-shadow: 4px 0 24px rgba(0,0,0,.22); display: flex; flex-direction: column; overflow: hidden; opacity: 0; visibility: hidden; pointer-events: none; }
 body.dark-mode .week-drawer-panel { box-shadow: 4px 0 24px rgba(0,0,0,.6); }
 .week-drawer-panel.open { transform: translateX(0); opacity: 1; visibility: visible; pointer-events: auto; transition: transform .35s cubic-bezier(.2,.8,.3,1), opacity .25s, visibility 0s; }
@@ -335,7 +342,7 @@ body.dark-mode .week-drawer-panel { box-shadow: 4px 0 24px rgba(0,0,0,.6); }
 .week-drawer-tab:hover { filter: brightness(1.1); }
 .week-drawer-tab.hidden { opacity: 0; pointer-events: none; transform: translateY(-50%) translateX(-20px); }
 #view-week { transition: padding-left .35s cubic-bezier(.2,.8,.3,1); }
-#view-week.drawer-open { padding-left: 380px; }
+#view-week.drawer-open { padding-left: 380px !important; padding-top: 12px !important; padding-right: 12px !important; padding-bottom: 12px !important; }
 
 .fixed-block-capsule { padding: 8px 14px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 20px; cursor: grab; font-size: var(--font-content); font-weight: 600; color: #92400e; display: flex; align-items: center; gap: 6px; user-select: none; }
 body.dark-mode .fixed-block-capsule { background: #2a2412; border-color: #6b5a20; color: #fbbf24; }
@@ -346,10 +353,8 @@ body.dark-mode .fixed-block-item { background: linear-gradient(135deg, #3a2e12 0
 .fixed-block-item .fb-del { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); cursor: pointer; font-size: var(--font-small); color: var(--danger-color); font-weight: bold; opacity: .6; padding: 1px 3px; border-radius: 3px; line-height: 1; }
 .fixed-block-item .fb-del:hover { opacity: 1; background: rgba(235,87,87,.15); }
 
-/* 左上角返回箭头 */
 .task-unschedule-btn { position: absolute; top: 4px; left: 4px; font-size: var(--font-small); line-height: 1; cursor: pointer; color: #fff; background: rgba(0,0,0,.25); opacity: .85; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: opacity .2s, background .2s; z-index: 2; }
 .task-unschedule-btn:hover { opacity: 1; background: rgba(235,87,87,.85); }
-/* 右上角删除按钮 */
 .task-delete-btn { position: absolute; top: 4px; right: 4px; font-size: var(--font-small); line-height: 1; cursor: pointer; color: var(--danger-color); background: rgba(255,255,255,.85); opacity: .7; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: opacity .2s, background .2s; z-index: 2; }
 body.dark-mode .task-delete-btn { background: rgba(0,0,0,.4); }
 .task-delete-btn:hover { opacity: 1; background: #ffebee; }
@@ -574,7 +579,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
     .stats-left, .stats-right { flex: 1; width: 100%; }
     .common-btns-grid { grid-template-columns: repeat(2, 1fr); }
     .week-drawer-panel { width: 88vw; max-width: 88vw; }
-    #view-week.drawer-open { padding-left: 12px; }
+    #view-week.drawer-open { padding-left: 12px !important; padding-top: 12px !important; padding-right: 12px !important; padding-bottom: 12px !important; }
 }
 </style>
 </head>
@@ -585,8 +590,10 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <div class="nav-item" data-target="year">📊 全年</div>
 <div class="nav-item active" data-target="month">📅 月计划</div>
 <div class="nav-item" data-target="week">🗓️ 周计划</div>
-<div class="nav-item" data-target="day">📝 日计划</div>
-<div class="nav-item" onclick="jumpToToday()" style="color:var(--accent-color);font-weight:700;">📍 回到今天</div>
+<div class="nav-item" data-target="day" style="justify-content: space-between;">
+    <span>📝 日计划</span>
+    <span onclick="event.stopPropagation(); jumpToToday()" style="cursor:pointer; opacity:0.6; padding:2px 6px; font-size:14px;" title="回到今天">📍</span>
+</div>
 <div class="nav-item" data-target="settings">⚙️ 设置</div>
 <div class="sidebar-footer">
 <div class="sidebar-goal-box">
@@ -933,6 +940,10 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
     <div class="stats-left" id="stats-left-content"></div>
     <div class="stats-right"><div class="chart-title">近期活跃度趋势 (总计)</div><div class="bar-chart" id="stats-chart-content"></div></div>
 </div>
+<div class="stats-ops-section">
+    <div class="stats-ops-title">📝 操作与完成记录</div>
+    <div class="stats-ops-list" id="stats-ops-content"></div>
+</div>
 </div>
 </div>
 
@@ -952,36 +963,31 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.17.0', date: '2025-10-26', changes: [
+        '新增：统计弹窗不仅显示进度，还展示该时段内的操作与完成记录',
+        '优化：备份数据会自动剔除空对象/数组等冗余字段，减小文件体积',
+        '优化：自动备份授权改为「点击页面即可静默恢复」，减少重复选择文件夹',
+        '优化：左侧栏的「回到今天」图标合并到「日计划」右侧',
+        '优化：展开周待办时，右侧时间池间距缩小，更紧凑',
+        '优化：纯计数任务可无限次拖入时间池（作为独立排期），待办中不消失'
+    ]},
     { version: 'v2.16.0', date: '2025-10-25', changes: [
         '优化：周时间池里的任务文字加大，且上下左右居中',
-        '新增：月计划悬停某日时，不仅显示完成了什么，还显示「做了什么」（如计数任务+1/-1合并）',
-        '新增：左侧栏添加「📍 回到今天」按钮，方便从其他日期快速跳回'
+        '新增：月计划悬停某日时，不仅显示完成了什么，还显示「做了什么」',
+        '新增：左侧栏添加「📍 回到今天」按钮'
     ]},
     { version: 'v2.15.0', date: '2025-10-24', changes: [
         '修复：日计划有子计划时显示「📋 查看 N 个子计划」提示',
-        '优化：周计划待办抽屉与右侧周计划间距紧贴，无空隙',
-        '优化：周计划时间池里的移回待办统一改成左上角 ↩️ 箭头',
+        '优化：周计划待办抽屉与右侧周计划间距紧贴',
+        '优化：周时间池里的移回待办统一改成左上角 ↩️ 箭头',
         '优化：左侧栏进度条改为 2 行 x 2 列网格显示',
-        '优化：左侧栏精力恢复按钮移到精力条右侧上下排列，节省空间',
-        '优化：周计划时间池的累计计数任务只显示标题，不再展示加减按钮',
-        '修复：日计划中创建的累计计数任务（非 pool）现在也会出现在周计划待办池中'
+        '优化：左侧栏精力恢复按钮移到精力条右侧上下排列',
+        '优化：周计划时间池的累计计数任务只显示标题',
+        '修复：日计划中创建的累计计数任务也会出现在周计划待办池中'
     ]},
-    { version: 'v2.14.0', date: '2025-10-23', changes: [
-        '优化：周计划待办弹窗贴顶贴底，中间不留空隙',
-        '同步：日计划里未拖入时间池的任务都显示在周待办',
-        '修复：彻底移除日计划中的 👁️ 查看详情按钮'
-    ]},
-    { version: 'v2.13.0', date: '2025-10-22', changes: [
-        '新增：累计计数任务周时间池显示 -1/+1 按钮',
-        '优化：日计划点击母计划卡片空白查看详情',
-        '新增：累计计数任务 -1 撤销功能',
-        '优化：子任务按钮缩略为 ⋮ 菜单'
-    ]},
-    { version: 'v2.12.0', date: '2025-10-21', changes: [
-        '新增：周计划待办池任务带删除按钮',
-        '修复：累计计数任务周视图不铺开',
-        '优化：子任务计数按钮加边框'
-    ]},
+    { version: 'v2.14.0', date: '2025-10-23', changes: ['周待办弹窗贴顶贴底','日计划未拖入时间池的均显示在周待办','移除查看详情按钮'] },
+    { version: 'v2.13.0', date: '2025-10-22', changes: ['计数任务周视图带按钮','点击空白查看详情','计数任务支持撤销','子任务按钮缩略'] },
+    { version: 'v2.12.0', date: '2025-10-21', changes: ['周待办任务带删除','计数任务周视图不铺开','子任务计数按钮加边框'] },
     { version: 'v2.11.0', date: '2025-10-20', changes: ['详情弹窗刷新','子计划纯计数','时长合并','隐藏默认查看','拖拽回原日期'] },
     { version: 'v2.10.0', date: '2025-10-19', changes: ['纯计数任务','背景加深','子任务收起','设置扩展','月计划悬停','循环单格'] },
     { version: 'v2.9.0', date: '2025-10-18', changes: ['移除未安排列','截止任务按天','今天暂不完成','周课表字体调大'] },
@@ -1042,6 +1048,7 @@ let appData = {
     timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS)),
     fixedBlocks: JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS)),
     fixedBlockSchedule: {},
+    countSchedules: {}, // 计数任务的独立排期
     maxVisible: 5,
     animationEnabled: true
 };
@@ -1267,6 +1274,7 @@ function setSubCurrent(sub, dateStr, val) {
 function ensureEnergyData() {
     if (!appData.dailyEnergy) appData.dailyEnergy = {};
     if (!appData.dailyLogs) appData.dailyLogs = {};
+    if (!appData.countSchedules) appData.countSchedules = {};
     if (!appData.energyMax) appData.energyMax = 100;
     if (appData.energyWarnThreshold === undefined) appData.energyWarnThreshold = 30;
     const def = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
@@ -1292,6 +1300,32 @@ function ensureEnergyData() {
     if (appData.animationEnabled === undefined) appData.animationEnabled = true;
 }
 
+// ---------------- 清理数据以减小体积 ----------------
+function cleanDataForSave(obj) {
+    if (obj === null || obj === undefined) return obj;
+    if (Array.isArray(obj)) {
+        const arr = obj.map(cleanDataForSave).filter(i => i !== undefined && i !== null);
+        return arr;
+    }
+    if (typeof obj === 'object') {
+        const newObj = {};
+        let hasProps = false;
+        for (let k in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, k)) {
+                // 过滤掉临时字段
+                if (['_prevDate', '_poolOrigin'].includes(k)) continue;
+                const val = cleanDataForSave(obj[k]);
+                if (val !== undefined && val !== null && val !== '' && !(Array.isArray(val) && val.length === 0) && !(typeof val === 'object' && Object.keys(val).length === 0)) {
+                    newObj[k] = val;
+                    hasProps = true;
+                }
+            }
+        }
+        return hasProps ? newObj : undefined;
+    }
+    return obj;
+}
+
 function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
     if (!appData.dailyLogs) appData.dailyLogs = {};
     if (!appData.dailyLogs[dateStr]) appData.dailyLogs[dateStr] = {};
@@ -1302,10 +1336,17 @@ function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
     log.name = taskName;
     if (actionType === 'count') {
         log.delta += delta;
+        if (log.delta === 0) delete appData.dailyLogs[dateStr][taskId].delta;
     } else if (actionType === 'complete') {
         log.completed = 1;
     } else if (actionType === 'uncomplete') {
         log.completed = 0;
+    }
+    if (log.delta === 0 && log.completed === 0) {
+        delete appData.dailyLogs[dateStr][taskId];
+    }
+    if (Object.keys(appData.dailyLogs[dateStr]).length === 0) {
+        delete appData.dailyLogs[dateStr];
     }
 }
 
@@ -1315,6 +1356,7 @@ function adjustTodayEnergy(delta) {
     ensureEnergyData();
     const today = getTodayString();
     appData.dailyEnergy[today] = Math.max(0, (appData.dailyEnergy[today] || 0) + delta);
+    if (appData.dailyEnergy[today] === 0) delete appData.dailyEnergy[today];
 }
 function adjustExp(delta) {
     ensureEnergyData();
@@ -1504,6 +1546,7 @@ window.restoreEnergy = function(type) {
     const amt = { nap: 40, break: 15 }[type] || 15;
     const today = getTodayString();
     appData.dailyEnergy[today] = Math.max(0, (appData.dailyEnergy[today] || 0) - amt);
+    if (appData.dailyEnergy[today] === 0) delete appData.dailyEnergy[today];
     renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.changeEnergyMax = function(val) { ensureEnergyData(); appData.energyMax = parseInt(val) || 100; renderEnergyAndRPG(); saveDataToFile(appData); };
@@ -1654,6 +1697,12 @@ window.deleteTimeSlot = function(id) {
             if (Object.keys(appData.fixedBlockSchedule[d]).length === 0) delete appData.fixedBlockSchedule[d];
         });
     }
+    if (appData.countSchedules) {
+        Object.keys(appData.countSchedules).forEach(d => {
+            if (appData.countSchedules[d][id]) delete appData.countSchedules[d][id];
+            if (Object.keys(appData.countSchedules[d]).length === 0) delete appData.countSchedules[d];
+        });
+    }
     renderTimeSlotConfig(); saveDataToFile(appData); renderWeekBoard(); renderTaskPool();
 };
 window.resetTimeSlots = function() {
@@ -1663,15 +1712,16 @@ window.resetTimeSlots = function() {
 };
 
 function getDataSignature(data) {
-    const copy = JSON.parse(JSON.stringify(data));
+    const copy = cleanDataForSave(JSON.parse(JSON.stringify(data)));
     delete copy.selectedDate; delete copy.viewYear; delete copy.viewMonth; delete copy.viewWeekBaseDate; delete copy._lastModified;
     return JSON.stringify(copy);
 }
 function saveDataToFile(data) {
     clearProgressCache();
-    const sig = getDataSignature(data);
+    const cleaned = cleanDataForSave(data);
+    const sig = JSON.stringify(cleaned);
     const changed = sig !== lastSavedSignature;
-    if (!isSyncing && changed) { data._lastModified = Date.now(); lastSavedSignature = getDataSignature(data); }
+    if (!isSyncing && changed) { data._lastModified = Date.now(); lastSavedSignature = sig; }
     saveLocalStorage();
     if (conn && conn.open && !isSyncing && changed) {
         clearTimeout(syncDebounceTimer);
@@ -1682,7 +1732,10 @@ function saveDataToFile(data) {
         }, 200);
     }
 }
-function saveLocalStorage() { localStorage.setItem('myWorkspaceAppData', JSON.stringify(appData)); }
+function saveLocalStorage() { 
+    const cleaned = cleanDataForSave(appData);
+    localStorage.setItem('myWorkspaceAppData', JSON.stringify(cleaned)); 
+}
 window.changeThemeMode = function(mode) { appData.themeMode = mode; document.body.classList.toggle('dark-mode', mode === 'dark'); saveDataToFile(appData); };
 function changeTheme(color) { appData.themeColor = color; document.documentElement.style.setProperty('--accent-color', color); if (!isSyncing) saveDataToFile(appData); }
 window.changeFontSetting = function(key, val) {
@@ -1862,6 +1915,10 @@ window.openStatsModal = function(type) {
     document.getElementById('stats-modal-title').innerText = title;
     let ld = 0, od = 0, ed = 0;
     let cur = new Date(s); const end = new Date(e);
+    
+    // 用于操作记录
+    const taskStats = {}; // { taskName: { done: 0, count: 0 } }
+
     while (cur <= end) {
         const d = formatDate(cur.getFullYear(), cur.getMonth(), cur.getDate());
         getTasksForDate(d).forEach(t => {
@@ -1876,6 +1933,15 @@ window.openStatsModal = function(type) {
             const ex = appData.exercises.find(e => e.name === n);
             if (ex && ex.subTasks) ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) ed++; });
         });
+
+        if (appData.dailyLogs && appData.dailyLogs[d]) {
+            Object.values(appData.dailyLogs[d]).forEach(log => {
+                if (!taskStats[log.name]) taskStats[log.name] = { done: 0, count: 0 };
+                if (log.completed) taskStats[log.name].done += 1;
+                if (log.delta) taskStats[log.name].count += log.delta;
+            });
+        }
+
         cur.setDate(cur.getDate() + 1);
     }
     const maxVal = Math.max(ld, od, ed, 1);
@@ -1909,6 +1975,21 @@ window.openStatsModal = function(type) {
         chartHtml += `<div class="chart-col"><div class="chart-bar" style="height:${hPct}%;" data-val="${d.val}"></div><div class="chart-label">${d.label}</div></div>`;
     });
     document.getElementById('stats-chart-content').innerHTML = chartHtml;
+
+    // 渲染操作记录
+    let opsHtml = '';
+    const entries = Object.values(taskStats).filter(st => st.done > 0 || st.count !== 0);
+    if (entries.length === 0) {
+        opsHtml = '<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:10px 0;">暂无操作记录</div>';
+    } else {
+        opsHtml = entries.map(st => {
+            let dHtml = st.done > 0 ? `<span class="ops-done">✓ 完成</span>` : '';
+            let cHtml = st.count !== 0 ? `<span class="ops-count">${st.count > 0 ? '+' : ''}${st.count}</span>` : '';
+            return `<div class="ops-row"><span class="ops-name" title="${st.name}">${st.name}</span><div class="ops-detail">${dHtml}${cHtml}</div></div>`;
+        }).join('');
+    }
+    document.getElementById('stats-ops-content').innerHTML = opsHtml;
+
     document.getElementById('stats-modal').classList.add('active');
 };
 window.closeStatsModal = function() { document.getElementById('stats-modal').classList.remove('active'); };
@@ -2108,6 +2189,31 @@ function renderWeekBoard() {
                 }
                 col.appendChild(item);
             });
+            
+            // 移动端计数任务排期
+            const cSched = (appData.countSchedules && appData.countSchedules[ds]) || {};
+            Object.keys(cSched).forEach(tsId => {
+                const tsl = appData.timeSlots.find(x => x.id === tsId);
+                cSched[tsId].forEach(cInst => {
+                    const t = appData.tasks.find(x => x.id === cInst.taskId);
+                    if (!t || t.countEnded) return;
+                    const item = createWeekTaskDOM(t, ds);
+                    item.classList.add('count-task');
+                    const tag = document.createElement('span'); tag.style = 'font-size:10px;color:var(--text-muted);margin-left:4px;'; tag.innerText = (tsl ? tsl.label.split('-')[0] : '');
+                    item.appendChild(tag);
+                    
+                    const rm = document.createElement('span');
+                    rm.className = 'task-unschedule-btn';
+                    rm.innerText = '↩️';
+                    rm.title = '取消排期';
+                    rm.onclick = (e) => { e.stopPropagation(); e.preventDefault(); removeCountSchedule(ds, tsId, cInst.id); };
+                    rm.ondragstart = (e) => e.stopPropagation();
+                    item.appendChild(rm);
+                    
+                    col.appendChild(item);
+                });
+            });
+
             const manual = appData.exerciseSchedule[ds] || [];
             const rec = appData.exercises.filter(e => isRecurringMatch(e.recurringType, ds)).map(e => e.name);
             const names = [...new Set([...manual, ...rec])];
@@ -2180,11 +2286,34 @@ function renderWeekBoard() {
             cell.dataset.timeslot = ts.id;
             cell.ondrop = (e) => handleDrop(e, ds, ts.id);
             cell.ondragover = allowDrop;
-            getTasksForDate(ds).filter(t => t.timeSlot === ts.id).forEach(t => {
+            
+            // 普通任务
+            getTasksForDate(ds).filter(t => !t.countOnly && t.timeSlot === ts.id).forEach(t => {
                 const item = createWeekTaskDOM(t, ds);
                 item.classList.add('lecture-task');
                 cell.appendChild(item);
             });
+            
+            // 计数任务排期
+            const cSched = (appData.countSchedules && appData.countSchedules[ds]) || {};
+            (cSched[ts.id] || []).forEach(cInst => {
+                const t = appData.tasks.find(x => x.id === cInst.taskId);
+                if (!t || t.countEnded) return;
+                const item = createWeekTaskDOM(t, ds);
+                item.classList.add('lecture-task');
+                item.classList.add('count-task');
+                
+                const rm = document.createElement('span');
+                rm.className = 'task-unschedule-btn';
+                rm.innerText = '↩️';
+                rm.title = '取消排期';
+                rm.onclick = (e) => { e.stopPropagation(); e.preventDefault(); removeCountSchedule(ds, ts.id, cInst.id); };
+                rm.ondragstart = (e) => e.stopPropagation();
+                item.appendChild(rm);
+                
+                cell.appendChild(item);
+            });
+            
             const fbSched = (appData.fixedBlockSchedule && appData.fixedBlockSchedule[ds]) || {};
             (fbSched[ts.id] || []).forEach(fbi => {
                 const fbEl = document.createElement('div');
@@ -2200,11 +2329,28 @@ function renderWeekBoard() {
     });
 }
 
+window.removeCountSchedule = function(ds, tsId, instId) {
+    if (!appData.countSchedules?.[ds]?.[tsId]) return;
+    appData.countSchedules[ds][tsId] = appData.countSchedules[ds][tsId].filter(x => x.id !== instId);
+    if (appData.countSchedules[ds][tsId].length === 0) delete appData.countSchedules[ds][tsId];
+    if (Object.keys(appData.countSchedules[ds]).length === 0) delete appData.countSchedules[ds];
+    saveDataToFile(appData); renderWeekBoard();
+};
+
 window.deleteTaskFromWeek = function(id) {
     const t = appData.tasks.find(x => x.id === id);
     if (!t) return;
     if (!confirm(`删除任务【${t.text}】？`)) return;
     appData.tasks = appData.tasks.filter(x => x.id !== id);
+    if (appData.countSchedules) {
+        Object.keys(appData.countSchedules).forEach(d => {
+            Object.keys(appData.countSchedules[d]).forEach(ts => {
+                appData.countSchedules[d][ts] = appData.countSchedules[d][ts].filter(c => c.taskId !== id);
+                if (appData.countSchedules[d][ts].length === 0) delete appData.countSchedules[d][ts];
+            });
+            if (Object.keys(appData.countSchedules[d]).length === 0) delete appData.countSchedules[d];
+        });
+    }
     saveDataToFile(appData);
     renderTaskPool(); renderWeekBoard(); renderDayPlan(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
     refreshDetailModalIfOpen();
@@ -2300,7 +2446,7 @@ function renderTaskPool() {
         const pool = type === 'learning' ? pl : po;
         appData.tasks.filter(t => {
             if (t.type !== type) return false;
-            // 只要没有分配时间槽，无论在日计划哪一天，都在池子里显示
+            if (t.countOnly) return true; // 计数任务永远在池子里
             if (t.date === 'pool') return true;
             if (!t.timeSlot) return true;
             return false;
@@ -2692,6 +2838,7 @@ window.decrementCountTask = function(taskId) {
     const ec = t.energyCost || 1;
     const today = getTodayString();
     appData.dailyEnergy[today] = Math.max(0, (appData.dailyEnergy[today] || 0) - ec);
+    if (appData.dailyEnergy[today] === 0) delete appData.dailyEnergy[today];
     appData.rpg.exp = Math.max(0, appData.rpg.exp - ec);
     logTaskAction(today, t.id, t.text, 'count', -1);
     saveDataToFile(appData);
@@ -2994,18 +3141,36 @@ function handleDrop(ev, td, timeslot) {
     if (draggedTaskId) {
         const t = appData.tasks.find(t => t.id === draggedTaskId);
         if (t) {
-            if (td === 'pool') {
-                t.date = 'pool';
-                delete t.timeSlot;
-                delete t._poolOrigin;
-                delete t._prevDate;
+            // 对纯计数任务特殊处理：支持无限次拖入时间池，待办中不消失
+            if (t.countOnly && td !== 'pool' && timeslot) {
+                if (!appData.countSchedules) appData.countSchedules = {};
+                if (!appData.countSchedules[td]) appData.countSchedules[td] = {};
+                if (!appData.countSchedules[td][timeslot]) appData.countSchedules[td][timeslot] = [];
+                if (!appData.countSchedules[td][timeslot].find(c => c.taskId === t.id)) {
+                    appData.countSchedules[td][timeslot].push({
+                        id: 'csch_' + Date.now(),
+                        taskId: t.id,
+                        name: t.text
+                    });
+                }
+            } else if (td === 'pool') {
+                if (t.countOnly) {
+                    // 计数任务拖回 pool 忽略
+                } else {
+                    t.date = 'pool';
+                    delete t.timeSlot;
+                    delete t._poolOrigin;
+                    delete t._prevDate;
+                }
             } else {
-                if (t.date === 'pool') t._poolOrigin = true;
-                else if (timeslot && !t._prevDate && t.date !== td) t._prevDate = t.date;
-                t.date = td;
-                if (timeslot !== undefined) {
-                    if (timeslot === '') delete t.timeSlot;
-                    else t.timeSlot = timeslot;
+                if (!t.countOnly) {
+                    if (t.date === 'pool') t._poolOrigin = true;
+                    else if (timeslot && !t._prevDate && t.date !== td) t._prevDate = t.date;
+                    t.date = td;
+                    if (timeslot !== undefined) {
+                        if (timeslot === '') delete t.timeSlot;
+                        else t.timeSlot = timeslot;
+                    }
                 }
             }
         }
@@ -3027,6 +3192,15 @@ function handleDrop(ev, td, timeslot) {
 window.deleteTask = function(id) {
     if (!confirm('删除这个任务？')) return;
     appData.tasks = appData.tasks.filter(t => t.id !== id);
+    if (appData.countSchedules) {
+        Object.keys(appData.countSchedules).forEach(d => {
+            Object.keys(appData.countSchedules[d]).forEach(ts => {
+                appData.countSchedules[d][ts] = appData.countSchedules[d][ts].filter(c => c.taskId !== id);
+                if (appData.countSchedules[d][ts].length === 0) delete appData.countSchedules[d][ts];
+            });
+            if (Object.keys(appData.countSchedules[d]).length === 0) delete appData.countSchedules[d];
+        });
+    }
     renderDayPlan(); renderCalendar(); renderTaskPool(); renderYearHeatmap(); updateFixedProgressBars(); saveDataToFile(appData);
     refreshDetailModalIfOpen();
 };
@@ -3433,7 +3607,8 @@ function updateFixedProgressBars() {
 }
 
 window.exportData = function() {
-    const s = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+    const cleaned = cleanDataForSave(appData);
+    const s = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cleaned, null, 2));
     const a = document.createElement('a');
     a.setAttribute("href", s); a.setAttribute("download", `backup_${getTodayString()}.json`);
     document.body.appendChild(a); a.click(); a.remove();
@@ -3539,7 +3714,8 @@ window.performBackup = async function(silent) {
         if (p !== 'granted') { p = await backupDirHandle.requestPermission({ mode: 'readwrite' }); if (p !== 'granted') throw new Error('无写入权限'); }
         const fh = await backupDirHandle.getFileHandle('myWorkspace_backup.json', { create: true });
         const w = await fh.createWritable();
-        await w.write(JSON.stringify(appData, null, 2));
+        const cleaned = cleanDataForSave(appData);
+        await w.write(JSON.stringify(cleaned, null, 2));
         await w.close();
         lastBackupTime = Date.now();
         lastBackupModified = appData._lastModified || 0;
@@ -3557,7 +3733,7 @@ function updateBackupUI() {
     const rb = document.getElementById('btn-restore-backup-folder');
     if (!s) return;
     if (backupDirHandle) { s.innerText = `状态：✅ 已开启，每 ${autoBackupIntervalMin} 分钟备份`; s.style.color = '#2e7d32'; if (sb) sb.style.display = ''; if (rb) rb.style.display = 'none'; }
-    else if (pendingBackupHandle) { s.innerText = '状态：检测到上次文件夹，点击"恢复文件夹"重新授权'; s.style.color = '#f2994a'; if (sb) sb.style.display = 'none'; if (rb) rb.style.display = ''; }
+    else if (pendingBackupHandle) { s.innerText = '状态：检测到上次文件夹，点击页面任意位置即可恢复'; s.style.color = '#f2994a'; if (sb) sb.style.display = 'none'; if (rb) rb.style.display = ''; }
     else { s.innerText = '状态：未开启'; s.style.color = ''; if (sb) sb.style.display = 'none'; if (rb) rb.style.display = 'none'; }
     if (l) {
         if (lastBackupTime) {
@@ -3576,6 +3752,23 @@ async function tryRestoreBackupFolder() {
         else if (p === 'prompt') { pendingBackupHandle = h; updateBackupUI(); }
     } catch (e) {}
 }
+// 全局静默授权点击恢复
+document.addEventListener('click', async function resumeBackupOnInteraction() {
+    if (pendingBackupHandle && !backupDirHandle) {
+        try {
+            const p = await pendingBackupHandle.requestPermission({ mode: 'readwrite' });
+            if (p === 'granted') {
+                backupDirHandle = pendingBackupHandle; 
+                pendingBackupHandle = null; 
+                startAutoBackupTimer(); 
+                updateBackupUI();
+                showMiniToast('✅ 自动备份文件夹已恢复授权');
+            }
+        } catch(e) {}
+    }
+}, { once: false });
+// 使用 once: false 但在授权成功后 pendingBackupHandle 会被置空，自然不再重复触发
+
 window.addEventListener('beforeunload', (e) => {
     if ((appData._lastModified || 0) === lastBackupModified) return;
     if (backupDirHandle) performBackup(true);
