@@ -39,11 +39,42 @@ body { font-family: var(--font-family); background-color: var(--bg-main); color:
 .nav-item:hover { background-color: var(--hover-bg); transform: translateX(2px); }
 .nav-item.active { background-color: var(--hover-bg); font-weight: bold; }
 .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; border-top: 1px solid var(--border-color); padding-top: 16px; }
-.sidebar-goal-box { margin-bottom: 24px; padding: 0 8px; }
+.sidebar-goal-box { margin-bottom: 16px; padding: 0 8px; }
 .sidebar-goal-title { font-size: var(--font-hint); font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
 .sidebar-goal-input { width: 100%; min-height: 40px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 8px; font-size: var(--font-content); font-family: inherit; background: var(--bg-input); color: var(--text-main); outline: none; white-space: pre-wrap; word-break: break-word; transition: border .2s; }
 .sidebar-goal-input:focus { border-color: var(--accent-color); }
 .sidebar-goal-input:empty:before { content: attr(placeholder); color: #aaa; pointer-events: none; display: block; }
+
+/* 学习方法栏 */
+.sidebar-methods-box { margin-bottom: 16px; padding: 0 8px; }
+.sidebar-methods-title { font-size: var(--font-hint); font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 4px; cursor: pointer; user-select: none; transition: color .2s; }
+.sidebar-methods-title:hover { color: var(--text-main); }
+.methods-toggle { font-size: 10px; transition: transform .25s; display: inline-block; }
+.methods-toggle.collapsed { transform: rotate(-90deg); }
+.sidebar-methods-content { display: block; }
+.sidebar-methods-content.collapsed { display: none; }
+.sidebar-methods-input {
+    width: 100%;
+    min-height: 100px;
+    max-height: 240px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 8px;
+    font-size: var(--font-content);
+    font-family: inherit;
+    background: var(--bg-input);
+    color: var(--text-main);
+    outline: none;
+    resize: vertical;
+    line-height: 1.6;
+    transition: border .2s;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.sidebar-methods-input:focus { border-color: var(--accent-color); }
+.sidebar-methods-input::placeholder { color: #aaa; }
 
 .fixed-progress-bars { width: 100%; padding: 0 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
 .prog-row { display: flex; flex-direction: column; gap: 2px; cursor: pointer; padding: 4px; border-radius: 6px; transition: background 0.2s; }
@@ -574,6 +605,15 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <div class="sidebar-goal-title">🎯 我的目标</div>
 <div class="sidebar-goal-input" id="yearly-goals" contenteditable="true" placeholder="写下核心目标..."></div>
 </div>
+<div class="sidebar-methods-box">
+    <div class="sidebar-methods-title" onclick="toggleMethodsBox()">
+        <span>📚 学习方法</span>
+        <span class="methods-toggle" id="methods-toggle-icon">▼</span>
+    </div>
+    <div class="sidebar-methods-content" id="methods-content-box">
+        <textarea class="sidebar-methods-input" id="learning-methods-textarea" placeholder="记录下你的学习方法，下次就不会忘啦..."></textarea>
+    </div>
+</div>
 <div class="fixed-progress-bars">
 <div class="prog-row" onclick="openStatsModal('year')">
     <div class="prog-label-row"><span>年完成度</span><span id="prog-year-text">0%</span></div>
@@ -932,6 +972,10 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.21.5', date: '2026-05-22', changes: [
+        '新增：左侧栏「📚 学习方法」栏，可随时记录学到的学习方法，像 txt 一样自由书写',
+        '学习方法支持折叠/展开，随数据一同备份和 P2P 同步'
+    ]},
     { version: 'v2.21.4', date: '2026-05-21', changes: [
         '优化：父任务、子任务的循环/预计时长/精力消耗/次数/截止日期等状态徽章统一靠右对齐',
         '优化：RPG 面板「今日精力」的数字挪到进度条右下角，不再挤占标题行'
@@ -977,6 +1021,7 @@ let appData = {
     ],
     exerciseSchedule: {}, dailyExerciseChecks: {}, dailyReflections: {}, dailyLogs: {},
     selectedDate: getTodayString(), yearlyGoals: "",
+    learningMethods: "", methodsCollapsed: false,
     themeColor: "#2383e2", themeMode: "light",
     fonts: { title: "18px", content: "14px", hint: "12px", small: "10px" },
     radius: "8px",
@@ -1225,6 +1270,8 @@ function ensureEnergyData() {
     if (!Array.isArray(appData.fixedBlocks)) appData.fixedBlocks = JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS));
     if (appData.maxVisible === undefined) appData.maxVisible = 5;
     if (appData.animationEnabled === undefined) appData.animationEnabled = true;
+    if (appData.learningMethods === undefined) appData.learningMethods = "";
+    if (appData.methodsCollapsed === undefined) appData.methodsCollapsed = false;
 }
 
 function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
@@ -1512,6 +1559,42 @@ window.openRPGModal = function() {
     document.getElementById('rpg-modal').classList.add('active');
 };
 window.closeRPGModal = function() { document.getElementById('rpg-modal').classList.remove('active'); };
+
+/* ============ 学习方法栏 ============ */
+window.toggleMethodsBox = function() {
+    const box = document.getElementById('methods-content-box');
+    const icon = document.getElementById('methods-toggle-icon');
+    if (!box) return;
+    const willCollapse = !box.classList.contains('collapsed');
+    box.classList.toggle('collapsed', willCollapse);
+    if (icon) icon.classList.toggle('collapsed', willCollapse);
+    appData.methodsCollapsed = willCollapse;
+    saveDataToFile(appData);
+};
+function initLearningMethods() {
+    const ta = document.getElementById('learning-methods-textarea');
+    const box = document.getElementById('methods-content-box');
+    const icon = document.getElementById('methods-toggle-icon');
+    if (!ta) return;
+    ta.value = appData.learningMethods || '';
+    ta.addEventListener('input', e => {
+        appData.learningMethods = e.target.value;
+        saveDataToFile(appData);
+    });
+    if (appData.methodsCollapsed) {
+        if (box) box.classList.add('collapsed');
+        if (icon) icon.classList.add('collapsed');
+    }
+}
+function refreshLearningMethodsTextarea() {
+    const ta = document.getElementById('learning-methods-textarea');
+    const box = document.getElementById('methods-content-box');
+    const icon = document.getElementById('methods-toggle-icon');
+    if (ta) ta.value = appData.learningMethods || '';
+    if (box) box.classList.toggle('collapsed', !!appData.methodsCollapsed);
+    if (icon) icon.classList.toggle('collapsed', !!appData.methodsCollapsed);
+}
+/* ============ 学习方法栏 ============ */
 
 function renderLevelConfig() {
     ensureEnergyData();
@@ -3607,6 +3690,7 @@ window.importData = function(e) {
                 if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
                 renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
                 renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
+                refreshLearningMethodsTextarea();
                 saveDataToFile(appData);
                 alert('导入成功！');
             }
@@ -3885,7 +3969,7 @@ window.connectToPeer = function(targetId = null) {
 function mergeData(local, remote) {
     const merged = JSON.parse(JSON.stringify(local));
     
-    const configKeys = ['yearlyGoals', 'themeColor', 'themeMode', 'fonts', 'radius', 'energyMax', 'energyWarnThreshold', 'expRatio', 'levelConfig', 'commonBtns', 'maxVisible', 'animationEnabled', 'panelLayout'];
+    const configKeys = ['yearlyGoals', 'learningMethods', 'methodsCollapsed', 'themeColor', 'themeMode', 'fonts', 'radius', 'energyMax', 'energyWarnThreshold', 'expRatio', 'levelConfig', 'commonBtns', 'maxVisible', 'animationEnabled', 'panelLayout'];
     configKeys.forEach(k => {
         if (remote[k] !== undefined) merged[k] = remote[k];
     });
@@ -4034,6 +4118,7 @@ function applyRemoteData(payload) {
     lastRpgState = null;
     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
     renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
+    refreshLearningMethodsTextarea();
     saveLocalStorage();
     setTimeout(() => { isSyncing = false; }, 100);
 }
@@ -4188,6 +4273,7 @@ document.addEventListener('drop', stopAutoScroll, true);
     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
     initDragAndDrop(); renderTimeSlotConfig(); updateBackupUI(); renderEnergyAndRPG(); renderChangelog(); renderLevelConfig();
     renderP2PHistory(); renderFixedBlockPool();
+    initLearningMethods();
     const sh = localStorage.getItem('my_p2p_host_id');
     if (sh) document.getElementById('my-peer-id').innerText = sh;
     tryRestoreBackupFolder();
