@@ -45,37 +45,6 @@ body { font-family: var(--font-family); background-color: var(--bg-main); color:
 .sidebar-goal-input:focus { border-color: var(--accent-color); }
 .sidebar-goal-input:empty:before { content: attr(placeholder); color: #aaa; pointer-events: none; display: block; }
 
-/* 学习方法栏 */
-.sidebar-methods-box { margin-bottom: 16px; padding: 0 8px; }
-.sidebar-methods-title { font-size: var(--font-hint); font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 4px; cursor: pointer; user-select: none; transition: color .2s; }
-.sidebar-methods-title:hover { color: var(--text-main); }
-.methods-toggle { font-size: 10px; transition: transform .25s; display: inline-block; }
-.methods-toggle.collapsed { transform: rotate(-90deg); }
-.sidebar-methods-content { display: block; }
-.sidebar-methods-content.collapsed { display: none; }
-.sidebar-methods-input {
-    width: 100%;
-    min-height: 100px;
-    max-height: 240px;
-    overflow-y: auto;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    padding: 8px;
-    font-size: var(--font-content);
-    font-family: inherit;
-    background: var(--bg-input);
-    color: var(--text-main);
-    outline: none;
-    resize: vertical;
-    line-height: 1.6;
-    transition: border .2s;
-    box-sizing: border-box;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-.sidebar-methods-input:focus { border-color: var(--accent-color); }
-.sidebar-methods-input::placeholder { color: #aaa; }
-
 .fixed-progress-bars { width: 100%; padding: 0 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
 .prog-row { display: flex; flex-direction: column; gap: 2px; cursor: pointer; padding: 4px; border-radius: 6px; transition: background 0.2s; }
 .prog-row:hover { background: var(--hover-bg); }
@@ -541,17 +510,180 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 .view-all-btn:hover { background: var(--hover-bg); }
 .mini-toast { position: fixed; left: 50%; bottom: 120px; transform: translateX(-50%); background: rgba(0,0,0,.8); color: #fff; padding: 8px 18px; border-radius: 20px; font-size: 13px; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity .3s; font-weight: 600; }
 
+/* ============ 学习方法编辑器 ============ */
+#view-methods { padding: 16px 24px; }
+#view-methods .year-header { margin-bottom: 12px; }
+.methods-editor-wrap { flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: hidden; }
+.methods-toolbar {
+    flex-shrink: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 10px;
+    background: var(--bg-panel-header);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.methods-toolbar .tb-group {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    padding: 0 6px;
+    border-right: 1px solid var(--border-color);
+    flex-wrap: nowrap;
+}
+.methods-toolbar .tb-group:last-child { border-right: none; }
+.methods-toolbar button {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s, color .15s;
+    user-select: none;
+    font-family: inherit;
+}
+.methods-toolbar button:hover { background: var(--hover-bg); }
+.methods-toolbar button.active { background: var(--accent-color); color: #fff; }
+.methods-toolbar select {
+    height: 30px;
+    padding: 0 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 12px;
+    background: var(--bg-input);
+    color: var(--text-main);
+    cursor: pointer;
+    outline: none;
+    font-family: inherit;
+}
+.methods-toolbar select:focus { border-color: var(--accent-color); }
+.tb-color-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    background: var(--bg-input);
+    overflow: hidden;
+    transition: background .15s;
+}
+.tb-color-wrap:hover { background: var(--hover-bg); }
+.tb-color-wrap::after {
+    content: 'A';
+    position: absolute;
+    bottom: 0;
+    right: 1px;
+    font-size: 9px;
+    font-weight: 900;
+    color: var(--text-main);
+    pointer-events: none;
+}
+.tb-color-wrap .tb-color-swatch {
+    width: 18px;
+    height: 8px;
+    border-radius: 2px;
+    border: 1px solid rgba(0,0,0,.15);
+    pointer-events: none;
+}
+.tb-color-wrap input[type="color"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+.methods-paper {
+    flex: 1;
+    overflow-y: auto;
+    background: #ececec;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    display: flex;
+    justify-content: center;
+    min-height: 0;
+}
+body.dark-mode .methods-paper { background: #141414; }
+.methods-content {
+    width: 100%;
+    max-width: 900px;
+    min-height: 100%;
+    background: #ffffff;
+    padding: 56px 64px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.08);
+    border-radius: 4px;
+    outline: none;
+    font-size: 15px;
+    line-height: 1.85;
+    color: #333333;
+    font-family: var(--font-family);
+    word-break: break-word;
+    transition: box-shadow .2s;
+}
+.methods-content:focus { box-shadow: 0 4px 24px rgba(35,131,226,.15); }
+body.dark-mode .methods-content { background: #2a2a2a; color: #e0e0e0; box-shadow: 0 4px 20px rgba(0,0,0,.6); }
+.methods-content:empty:before {
+    content: attr(data-placeholder);
+    color: #aaa;
+    pointer-events: none;
+    display: block;
+}
+.methods-content h1 { font-size: 2em; margin: 0.6em 0 0.4em; font-weight: 700; line-height: 1.3; color: #1a1a1a; }
+.methods-content h2 { font-size: 1.5em; margin: 0.6em 0 0.4em; font-weight: 700; line-height: 1.35; color: #1a1a1a; }
+.methods-content h3 { font-size: 1.2em; margin: 0.6em 0 0.4em; font-weight: 700; line-height: 1.4; color: #1a1a1a; }
+.methods-content p { margin: 0.5em 0; }
+.methods-content ul, .methods-content ol { margin: 0.5em 0; padding-left: 1.8em; }
+.methods-content li { margin: 0.2em 0; }
+.methods-content blockquote {
+    margin: 0.8em 0;
+    padding: 6px 14px;
+    border-left: 3px solid var(--accent-color);
+    background: rgba(35,131,226,.06);
+    color: #555;
+    border-radius: 0 4px 4px 0;
+}
+.methods-content hr { margin: 1.2em 0; border: none; border-top: 1px solid #e0e0e0; }
+.methods-content a { color: var(--accent-color); text-decoration: underline; }
+body.dark-mode .methods-content h1, body.dark-mode .methods-content h2, body.dark-mode .methods-content h3 { color: #f0f0f0; }
+body.dark-mode .methods-content blockquote { background: rgba(59,130,246,.12); color: #a0a0a0; }
+body.dark-mode .methods-content hr { border-top-color: #444; }
+
 @media(max-width: 900px) { .settings-grid { grid-template-columns: 1fr; gap: 12px; } .rpg-edit-grid { grid-template-columns: repeat(2, 1fr); } }
 @media(max-width: 768px) {
     body { flex-direction: column; }
     .sidebar { width: 100%; height: auto; order: 2; border-right: none; border-top: 1px solid var(--border-color); padding: 8px 4px; flex-direction: row; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; z-index: 100; background: rgba(247,247,245,.95); backdrop-filter: blur(10px); }
     body.dark-mode .sidebar { background: rgba(30,30,30,.95); }
     .sidebar-title, .sidebar-footer { display: none; }
-    .nav-item { flex-direction: column; padding: 6px 0; font-size: var(--font-hint); gap: 2px; flex: 1; text-align: center; margin-bottom: 0; border-radius: var(--radius); }
+    .nav-item { flex-direction: column; padding: 6px 2px; font-size: var(--font-small); gap: 2px; flex: 1; text-align: center; margin-bottom: 0; border-radius: var(--radius); }
     .nav-item:hover { transform: none; background-color: transparent; }
     .nav-item.active { background-color: var(--hover-bg); color: var(--accent-color); font-weight: bold; }
     .main-content { order: 1; height: calc(100vh - 65px); }
     .view-container { padding: 12px; }
+    #view-methods { padding: 8px 10px; }
+    .methods-paper { padding: 12px 6px; }
+    .methods-content { padding: 24px 18px; font-size: 14px; }
+    .methods-toolbar { padding: 6px; gap: 3px; }
+    .methods-toolbar .tb-group { padding: 0 3px; }
+    .methods-toolbar button { min-width: 26px; height: 26px; padding: 0 5px; font-size: 12px; }
+    .methods-toolbar select { height: 26px; font-size: 11px; padding: 0 4px; }
+    .tb-color-wrap { width: 26px; height: 26px; }
     .day-panels-grid { flex-direction: column; gap: 16px; }
     .section-box { width: 100% !important; height: auto !important; min-height: 250px; resize: none; }
     .calendar-wrapper { padding: 8px; margin-bottom: 12px; }
@@ -599,20 +731,12 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
     <span>📝 日计划</span>
     <span onclick="jumpToToday(event)" style="color:var(--accent-color);font-weight:700;font-size:var(--font-hint);padding:2px 6px;border-radius:4px;background:rgba(35,131,226,.1);" title="回到今天">📍 今天</span>
 </div>
+<div class="nav-item" data-target="methods">📚 学习方法</div>
 <div class="nav-item" data-target="settings">⚙️ 设置</div>
 <div class="sidebar-footer">
 <div class="sidebar-goal-box">
 <div class="sidebar-goal-title">🎯 我的目标</div>
 <div class="sidebar-goal-input" id="yearly-goals" contenteditable="true" placeholder="写下核心目标..."></div>
-</div>
-<div class="sidebar-methods-box">
-    <div class="sidebar-methods-title" onclick="toggleMethodsBox()">
-        <span>📚 学习方法</span>
-        <span class="methods-toggle" id="methods-toggle-icon">▼</span>
-    </div>
-    <div class="sidebar-methods-content" id="methods-content-box">
-        <textarea class="sidebar-methods-input" id="learning-methods-textarea" placeholder="记录下你的学习方法，下次就不会忘啦..."></textarea>
-    </div>
 </div>
 <div class="fixed-progress-bars">
 <div class="prog-row" onclick="openStatsModal('year')">
@@ -739,6 +863,89 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 </div>
 </div>
 <div class="bottom-summary"><h2>💭 今日反思</h2><textarea id="daily-reflection-textarea" placeholder="今天过得怎么样？有什么想记录的？" oninput="handleReflectionInput(this.value)"></textarea></div>
+</div>
+
+<div class="view-container" id="view-methods">
+<div class="year-header">
+    <h1>📚 学习方法</h1>
+    <div style="font-size:var(--font-hint);color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+        <span id="methods-save-status">💾 自动保存</span>
+    </div>
+</div>
+<div class="methods-editor-wrap">
+    <div class="methods-toolbar" id="methods-toolbar">
+        <div class="tb-group">
+            <select id="methods-format-select" data-cmd="formatBlock" title="段落样式">
+                <option value="p">正文</option>
+                <option value="h1">标题 1</option>
+                <option value="h2">标题 2</option>
+                <option value="h3">标题 3</option>
+                <option value="blockquote">引用</option>
+            </select>
+            <select id="methods-font-select" data-cmd="fontName" title="字体">
+                <option value="">系统默认</option>
+                <option value="'Microsoft YaHei', '微软雅黑', sans-serif">微软雅黑</option>
+                <option value="SimSun, '宋体', serif">宋体</option>
+                <option value="SimHei, '黑体', sans-serif">黑体</option>
+                <option value="KaiTi, '楷体', serif">楷体</option>
+                <option value="FangSong, '仿宋', serif">仿宋</option>
+                <option value="Arial, Helvetica, sans-serif">Arial</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="'Times New Roman', serif">Times New Roman</option>
+                <option value="Consolas, Monaco, monospace">等宽 Consolas</option>
+            </select>
+            <select id="methods-size-select" data-cmd="fontSize" title="字号">
+                <option value="12">12</option>
+                <option value="14" selected>14</option>
+                <option value="16">16</option>
+                <option value="18">18</option>
+                <option value="20">20</option>
+                <option value="24">24</option>
+                <option value="28">28</option>
+                <option value="32">32</option>
+                <option value="36">36</option>
+                <option value="48">48</option>
+            </select>
+        </div>
+        <div class="tb-group">
+            <button type="button" data-cmd="bold" title="加粗 (Ctrl+B)" style="font-weight:900;">B</button>
+            <button type="button" data-cmd="italic" title="斜体 (Ctrl+I)" style="font-style:italic;font-family:Georgia,serif;">I</button>
+            <button type="button" data-cmd="underline" title="下划线 (Ctrl+U)" style="text-decoration:underline;">U</button>
+            <button type="button" data-cmd="strikeThrough" title="删除线" style="text-decoration:line-through;">S</button>
+        </div>
+        <div class="tb-group">
+            <label class="tb-color-wrap" title="文字颜色">
+                <span class="tb-color-swatch" id="forecolor-swatch" style="background:#333333;"></span>
+                <input type="color" id="methods-forecolor" data-cmd="foreColor" value="#333333">
+            </label>
+            <label class="tb-color-wrap" title="高亮颜色">
+                <span class="tb-color-swatch" id="hilitecolor-swatch" style="background:#ffe066;"></span>
+                <input type="color" id="methods-hilitecolor" data-cmd="hiliteColor" value="#ffe066">
+            </label>
+        </div>
+        <div class="tb-group">
+            <button type="button" data-cmd="insertUnorderedList" title="无序列表">☰</button>
+            <button type="button" data-cmd="insertOrderedList" title="有序列表" style="font-family:monospace;">1.</button>
+        </div>
+        <div class="tb-group">
+            <button type="button" data-cmd="justifyLeft" title="左对齐" style="text-align:left;justify-content:flex-start;">左</button>
+            <button type="button" data-cmd="justifyCenter" title="居中">中</button>
+            <button type="button" data-cmd="justifyRight" title="右对齐" style="justify-content:flex-end;">右</button>
+            <button type="button" data-cmd="justifyFull" title="两端对齐">均</button>
+        </div>
+        <div class="tb-group">
+            <button type="button" data-cmd="undo" title="撤销 (Ctrl+Z)">↶</button>
+            <button type="button" data-cmd="redo" title="重做 (Ctrl+Y)">↷</button>
+        </div>
+        <div class="tb-group">
+            <button type="button" data-cmd="removeFormat" title="清除格式" style="font-style:italic;">T<sub style="font-size:9px;">x</sub></button>
+            <button type="button" data-cmd="insertHorizontalRule" title="插入分隔线" style="font-weight:900;">—</button>
+        </div>
+    </div>
+    <div class="methods-paper">
+        <div class="methods-content" id="methods-content" contenteditable="true" data-placeholder="在这里记录你的学习方法… 可以像 Word 一样调整字体、大小、颜色、加粗、列表等。"></div>
+    </div>
+</div>
 </div>
 
 <div class="view-container" id="view-settings">
@@ -972,6 +1179,11 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.22.0', date: '2026-05-23', changes: [
+        '新增：左侧栏「📚 学习方法」导航页，右侧打开类似 Word 的富文本编辑器',
+        '支持：段落样式、字体、字号、加粗、斜体、下划线、删除线、文字颜色、高亮颜色、有序/无序列表、对齐、撤销/重做、清除格式、插入分隔线',
+        '学习方法内容随数据自动保存、随 JSON 导出/导入、随 P2P 同步'
+    ]},
     { version: 'v2.21.5', date: '2026-05-22', changes: [
         '新增：左侧栏「📚 学习方法」栏，可随时记录学到的学习方法，像 txt 一样自由书写',
         '学习方法支持折叠/展开，随数据一同备份和 P2P 同步'
@@ -1021,7 +1233,7 @@ let appData = {
     ],
     exerciseSchedule: {}, dailyExerciseChecks: {}, dailyReflections: {}, dailyLogs: {},
     selectedDate: getTodayString(), yearlyGoals: "",
-    learningMethods: "", methodsCollapsed: false,
+    learningMethods: "", learningMethodsHtml: "", methodsCollapsed: false,
     themeColor: "#2383e2", themeMode: "light",
     fonts: { title: "18px", content: "14px", hint: "12px", small: "10px" },
     radius: "8px",
@@ -1271,6 +1483,7 @@ function ensureEnergyData() {
     if (appData.maxVisible === undefined) appData.maxVisible = 5;
     if (appData.animationEnabled === undefined) appData.animationEnabled = true;
     if (appData.learningMethods === undefined) appData.learningMethods = "";
+    if (appData.learningMethodsHtml === undefined) appData.learningMethodsHtml = "";
     if (appData.methodsCollapsed === undefined) appData.methodsCollapsed = false;
 }
 
@@ -1560,41 +1773,203 @@ window.openRPGModal = function() {
 };
 window.closeRPGModal = function() { document.getElementById('rpg-modal').classList.remove('active'); };
 
-/* ============ 学习方法栏 ============ */
-window.toggleMethodsBox = function() {
-    const box = document.getElementById('methods-content-box');
-    const icon = document.getElementById('methods-toggle-icon');
-    if (!box) return;
-    const willCollapse = !box.classList.contains('collapsed');
-    box.classList.toggle('collapsed', willCollapse);
-    if (icon) icon.classList.toggle('collapsed', willCollapse);
-    appData.methodsCollapsed = willCollapse;
-    saveDataToFile(appData);
-};
-function initLearningMethods() {
-    const ta = document.getElementById('learning-methods-textarea');
-    const box = document.getElementById('methods-content-box');
-    const icon = document.getElementById('methods-toggle-icon');
-    if (!ta) return;
-    ta.value = appData.learningMethods || '';
-    ta.addEventListener('input', e => {
-        appData.learningMethods = e.target.value;
-        saveDataToFile(appData);
-    });
-    if (appData.methodsCollapsed) {
-        if (box) box.classList.add('collapsed');
-        if (icon) icon.classList.add('collapsed');
+/* ============ 学习方法富文本编辑器 ============ */
+let methodsEditorInitialized = false;
+let methodsSavedRange = null;
+let methodsSaveTimer = null;
+let methodsStatusTimer = null;
+
+function methodsGetEditor() { return document.getElementById('methods-content'); }
+
+function methodsSaveSelection() {
+    const editor = methodsGetEditor();
+    if (!editor) return;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    if (editor.contains(range.startContainer) && editor.contains(range.endContainer)) {
+        methodsSavedRange = range.cloneRange();
     }
 }
-function refreshLearningMethodsTextarea() {
-    const ta = document.getElementById('learning-methods-textarea');
-    const box = document.getElementById('methods-content-box');
-    const icon = document.getElementById('methods-toggle-icon');
-    if (ta) ta.value = appData.learningMethods || '';
-    if (box) box.classList.toggle('collapsed', !!appData.methodsCollapsed);
-    if (icon) icon.classList.toggle('collapsed', !!appData.methodsCollapsed);
+function methodsRestoreSelection() {
+    if (!methodsSavedRange) return;
+    const editor = methodsGetEditor();
+    if (!editor) return;
+    const sel = window.getSelection();
+    try {
+        sel.removeAllRanges();
+        sel.addRange(methodsSavedRange);
+    } catch(e) {}
+    editor.focus();
 }
-/* ============ 学习方法栏 ============ */
+
+function methodsApplyFontSize(px) {
+    const editor = methodsGetEditor();
+    if (!editor) return;
+    methodsRestoreSelection();
+    try { document.execCommand('fontSize', false, '7'); } catch(e) {}
+    editor.querySelectorAll('font[size="7"]').forEach(font => {
+        const span = document.createElement('span');
+        span.style.fontSize = px + 'px';
+        span.innerHTML = font.innerHTML;
+        font.parentNode.replaceChild(span, font);
+    });
+}
+
+function methodsSetStatus(txt, color) {
+    const el = document.getElementById('methods-save-status');
+    if (!el) return;
+    if (txt) el.innerText = txt;
+    if (color) el.style.color = color;
+    clearTimeout(methodsStatusTimer);
+    methodsStatusTimer = setTimeout(() => {
+        if (el) { el.innerText = '💾 自动保存'; el.style.color = ''; }
+    }, 1600);
+}
+
+function methodsTriggerSave() {
+    const editor = methodsGetEditor();
+    if (!editor) return;
+    clearTimeout(methodsSaveTimer);
+    methodsSaveTimer = setTimeout(() => {
+        appData.learningMethodsHtml = editor.innerHTML;
+        // 兼容旧纯文本字段
+        appData.learningMethods = editor.innerText || '';
+        saveDataToFile(appData);
+        methodsSetStatus('✅ 已保存', '#2e7d32');
+    }, 500);
+}
+
+function methodsUpdateToolbarState() {
+    const editor = methodsGetEditor();
+    const toolbar = document.getElementById('methods-toolbar');
+    if (!editor || !toolbar) return;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !editor.contains(sel.anchorNode)) return;
+    ['bold','italic','underline','strikeThrough','insertUnorderedList','insertOrderedList','justifyLeft','justifyCenter','justifyRight','justifyFull'].forEach(cmd => {
+        const btn = toolbar.querySelector(`button[data-cmd="${cmd}"]`);
+        if (!btn) return;
+        let state = false;
+        try { state = document.queryCommandState(cmd); } catch(e) {}
+        btn.classList.toggle('active', state);
+    });
+}
+
+function methodsExecCommand(cmd, val) {
+    const editor = methodsGetEditor();
+    if (!editor) return;
+    methodsRestoreSelection();
+    try {
+        if (cmd === 'fontSize') methodsApplyFontSize(parseInt(val) || 14);
+        else if (cmd === 'removeFormat') {
+            document.execCommand('removeFormat', false, null);
+            document.execCommand('formatBlock', false, 'p');
+        } else {
+            document.execCommand(cmd, false, val);
+        }
+    } catch(e) { console.warn(e); }
+    editor.focus();
+    methodsUpdateToolbarState();
+    methodsTriggerSave();
+}
+
+function initMethodsEditor() {
+    if (methodsEditorInitialized) return;
+    methodsEditorInitialized = true;
+    const editor = methodsGetEditor();
+    const toolbar = document.getElementById('methods-toolbar');
+    if (!editor || !toolbar) return;
+
+    // 初始内容
+    refreshMethodsEditorContent();
+
+    // 选区保存 / 状态更新
+    document.addEventListener('selectionchange', () => {
+        if (document.activeElement === editor) {
+            methodsSaveSelection();
+            methodsUpdateToolbarState();
+        }
+    });
+
+    // 输入自动保存
+    editor.addEventListener('input', methodsTriggerSave);
+    editor.addEventListener('mouseup', methodsSaveSelection);
+    editor.addEventListener('keyup', methodsSaveSelection);
+    editor.addEventListener('blur', () => {
+        // blur 时也强制触发一次保存，避免切页丢失
+        clearTimeout(methodsSaveTimer);
+        appData.learningMethodsHtml = editor.innerHTML;
+        appData.learningMethods = editor.innerText || '';
+        saveDataToFile(appData);
+    });
+
+    // 快捷键 Ctrl+B / I / U 等由浏览器原生处理，这里只处理保存
+
+    // 工具栏：按钮点击（mousedown 阻止默认以保住选区）
+    toolbar.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button')) e.preventDefault();
+    });
+    toolbar.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-cmd]');
+        if (!btn) return;
+        e.preventDefault();
+        const cmd = btn.dataset.cmd;
+        methodsExecCommand(cmd);
+    });
+
+    // 下拉框
+    toolbar.querySelectorAll('select[data-cmd]').forEach(sel => {
+        sel.addEventListener('change', () => {
+            const cmd = sel.dataset.cmd;
+            const val = sel.value;
+            methodsExecCommand(cmd, val);
+        });
+    });
+
+    // 颜色选择
+    const foreColorInput = document.getElementById('methods-forecolor');
+    const foreColorSwatch = document.getElementById('forecolor-swatch');
+    const hiliteColorInput = document.getElementById('methods-hilitecolor');
+    const hiliteColorSwatch = document.getElementById('hilitecolor-swatch');
+    if (foreColorInput) {
+        foreColorInput.addEventListener('input', () => { if (foreColorSwatch) foreColorSwatch.style.background = foreColorInput.value; });
+        foreColorInput.addEventListener('change', () => {
+            methodsExecCommand('foreColor', foreColorInput.value);
+        });
+    }
+    if (hiliteColorInput) {
+        hiliteColorInput.addEventListener('input', () => { if (hiliteColorSwatch) hiliteColorSwatch.style.background = hiliteColorInput.value; });
+        hiliteColorInput.addEventListener('change', () => {
+            const editor = methodsGetEditor();
+            if (!editor) return;
+            methodsRestoreSelection();
+            let ok = false;
+            try { ok = document.execCommand('hiliteColor', false, hiliteColorInput.value); } catch(e) { ok = false; }
+            if (!ok) {
+                try { document.execCommand('backColor', false, hiliteColorInput.value); } catch(e) {}
+            }
+            editor.focus();
+            methodsTriggerSave();
+        });
+    }
+
+    // 粘贴时清理外部样式，只保留纯文本或基本结构（更稳）
+    editor.addEventListener('paste', (e) => {
+        // 允许原生粘贴，但兜底防止粘贴后高度跳变；不做强干预
+    });
+}
+
+function refreshMethodsEditorContent() {
+    const editor = methodsGetEditor();
+    if (!editor) return;
+    if (document.activeElement === editor) return;
+    let html = appData.learningMethodsHtml || '';
+    if (!html && appData.learningMethods) {
+        html = escapeHtml(appData.learningMethods).split('\n').map(line => line ? `<p>${line}</p>` : '<p><br></p>').join('');
+    }
+    if (editor.innerHTML !== html) editor.innerHTML = html || '';
+}
+/* ============ 学习方法富文本编辑器 ============ */
 
 function renderLevelConfig() {
     ensureEnergyData();
@@ -3106,6 +3481,7 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
         else if (t === 'year') renderYearHeatmap();
         else if (t === 'week') { renderWeekBoard(); renderTaskPool(); renderExercisePool(); renderFixedBlockPool(); }
         else if (t === 'day') { renderDayPlan(); applyPanelLayout(); }
+        else if (t === 'methods') { initMethodsEditor(); refreshMethodsEditorContent(); }
         else if (t === 'settings') {
             renderP2PHistory(); updateBackupUI(); renderChangelog(); renderLevelConfig(); renderEnergyAndRPG(); renderTimeSlotConfig();
             const sh = localStorage.getItem('my_p2p_host_id');
@@ -3690,7 +4066,7 @@ window.importData = function(e) {
                 if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
                 renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
                 renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
-                refreshLearningMethodsTextarea();
+                refreshMethodsEditorContent();
                 saveDataToFile(appData);
                 alert('导入成功！');
             }
@@ -3969,7 +4345,7 @@ window.connectToPeer = function(targetId = null) {
 function mergeData(local, remote) {
     const merged = JSON.parse(JSON.stringify(local));
     
-    const configKeys = ['yearlyGoals', 'learningMethods', 'methodsCollapsed', 'themeColor', 'themeMode', 'fonts', 'radius', 'energyMax', 'energyWarnThreshold', 'expRatio', 'levelConfig', 'commonBtns', 'maxVisible', 'animationEnabled', 'panelLayout'];
+    const configKeys = ['yearlyGoals', 'learningMethods', 'learningMethodsHtml', 'methodsCollapsed', 'themeColor', 'themeMode', 'fonts', 'radius', 'energyMax', 'energyWarnThreshold', 'expRatio', 'levelConfig', 'commonBtns', 'maxVisible', 'animationEnabled', 'panelLayout'];
     configKeys.forEach(k => {
         if (remote[k] !== undefined) merged[k] = remote[k];
     });
@@ -4118,7 +4494,7 @@ function applyRemoteData(payload) {
     lastRpgState = null;
     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
     renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
-    refreshLearningMethodsTextarea();
+    refreshMethodsEditorContent();
     saveLocalStorage();
     setTimeout(() => { isSyncing = false; }, 100);
 }
@@ -4273,7 +4649,7 @@ document.addEventListener('drop', stopAutoScroll, true);
     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
     initDragAndDrop(); renderTimeSlotConfig(); updateBackupUI(); renderEnergyAndRPG(); renderChangelog(); renderLevelConfig();
     renderP2PHistory(); renderFixedBlockPool();
-    initLearningMethods();
+    initMethodsEditor();
     const sh = localStorage.getItem('my_p2p_host_id');
     if (sh) document.getElementById('my-peer-id').innerText = sh;
     tryRestoreBackupFolder();
