@@ -320,7 +320,7 @@ body.dark-mode .task-delete-btn { background: rgba(0,0,0,.4); }
 .task-delete-btn:hover { opacity: 1; background: #ffebee; }
 
 .day-panels-grid { display: flex; flex-wrap: wrap; gap: 20px; flex: 1; align-items: flex-start; margin-bottom: 24px; }
-.section-box { width: calc((100% - 40px)/3); min-width: 220px; border: 1px solid var(--border-color); border-radius: var(--radius); display: flex; flex-direction: column; background: var(--bg-card); position: relative; height: 350px; resize: both; overflow: hidden; min-height: 200px; }
+.section-box { width: calc((100% - 60px)/4); min-width: 200px; border: 1px solid var(--border-color); border-radius: var(--radius); display: flex; flex-direction: column; background: var(--bg-card); position: relative; height: 350px; resize: both; overflow: hidden; min-height: 200px; }
 .section-box.span-full { width: 100% !important; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-panel-header); border-radius: var(--radius) var(--radius) 0 0; flex-shrink: 0; cursor: grab; }
 .panel-header h2 { margin: 0; font-size: var(--font-content); display: flex; align-items: center; gap: 6px; }
@@ -338,6 +338,17 @@ body.dark-mode .main-task-item:hover { background: #252b33; border-left-color: v
 body.dark-mode .main-task-item.pinned-task { background: #2a1e11; border-left-color: #f2994a; }
 .main-task-item.count-only-task { background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%); border-left-color: #2383e2; }
 body.dark-mode .main-task-item.count-only-task { background: linear-gradient(135deg, #1a2a3a 0%, #1f2937 100%); border-left-color: #3b82f6; }
+
+/* 待办清单里的任务卡片特殊样式 */
+.main-task-item.todo-task-item {
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+    border-left-color: #9b51e0;
+    cursor: grab;
+}
+.main-task-item.todo-task-item:hover { background: linear-gradient(135deg, #f3e8ff 0%, #ead8ff 100%); border-left-color: #7e22ce; }
+body.dark-mode .main-task-item.todo-task-item { background: linear-gradient(135deg, #2a1e33 0%, #201528 100%); border-left-color: #9b51e0; }
+body.dark-mode .main-task-item.todo-task-item:hover { background: linear-gradient(135deg, #33234a 0%, #281840 100%); border-left-color: #b678ff; }
+
 .main-task-item.clickable-for-detail { cursor: pointer; }
 .main-task-item.clickable-for-detail::after { content: '👆 点击空白处查看详情'; position: absolute; bottom: 4px; right: 8px; font-size: 9px; color: var(--text-muted); opacity: .5; pointer-events: none; }
 .count-display { display: inline-flex; align-items: baseline; gap: 3px; font-size: var(--font-hint); color: #1976d2; font-weight: 600; white-space: nowrap; }
@@ -839,6 +850,14 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 <div class="view-container" id="view-day">
 <h1 id="day-title">📝 日计划</h1>
 <div class="day-panels-grid" id="day-panels-grid">
+<div class="section-box" data-panel="todo">
+<div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 📋 待办清单</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div>
+<div class="panel-content">
+<div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="添加待办 (支持：任务名 * 100)" id="todo-input"></div>
+<div id="todo-list" class="task-drop-zone" data-type="todo" data-completed="false"></div>
+<p style="font-size:var(--font-small);color:var(--text-muted);margin-top:8px;line-height:1.5;">💡 这里是一直显示的清单，随时可增删，不支持完成或设置属性。把它拖入「学习」或「其他」才算正式开始处理。</p>
+</div>
+</div>
 <div class="section-box" data-panel="learning">
 <div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 📚 学习</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div>
 <div class="panel-content">
@@ -1179,6 +1198,13 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.23.0', date: '2026-05-24', changes: [
+        '新增：日计划「📋 待办清单」大类，独立于学习/其他，长期显示',
+        '待办清单里的任务不能完成、不能设置属性，只作为「想法池」保留',
+        '可以创建子任务（也不能完成，纯记录）',
+        '把待办任务拖入学习/其他后，才正式成为可执行任务（可勾选、可设属性、计入进度）',
+        '可以随时把学习/其他里的任务拖回待办清单，重新变回「想法」状态'
+    ]},
     { version: 'v2.22.0', date: '2026-05-23', changes: [
         '新增：左侧栏「📚 学习方法」导航页，右侧打开类似 Word 的富文本编辑器',
         '支持：段落样式、字体、字号、加粗、斜体、下划线、删除线、文字颜色、高亮颜色、有序/无序列表、对齐、撤销/重做、清除格式、插入分隔线',
@@ -1240,7 +1266,7 @@ let appData = {
     viewYear: new Date().getFullYear(), viewMonth: new Date().getMonth(), viewWeekBaseDate: getTodayString(),
     _lastModified: 1, energyMax: 100, energyWarnThreshold: 30, expRatio: 0.8, dailyEnergy: {},
     rpg: { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' },
-    panelLayout: { order: ['learning', 'other', 'exercise'], spans: {}, sizes: {} },
+    panelLayout: { order: ['todo', 'learning', 'other', 'exercise'], spans: {}, sizes: {} },
     levelConfig: { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) },
     commonBtns: ['skip', 'target', 'loop', 'deadline', 'delete'],
     timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS)),
@@ -1342,12 +1368,14 @@ function getTasksForDate(dateStr, options = {}) {
     const includeDeadlineRange = options.includeDeadlineRange !== false;
     const filteredDirect = appData.tasks.filter(t => {
         if (t.date !== dateStr || t.date === 'pool') return false;
+        if (t.type === 'todo') return false;
         if (t.skipDates && t.skipDates[dateStr] && dateStr !== t.deadline) return false;
         return true;
     });
     let deadlineRange = [];
     if (includeDeadlineRange) {
         deadlineRange = appData.tasks.filter(t => {
+            if (t.type === 'todo') return false;
             if (!t.deadline || t.recurringType || t.countOnly || t.date === 'pool' || !t.date) return false;
             if (t.date > dateStr || dateStr > t.deadline) return false;
             if (filteredDirect.includes(t)) return false;
@@ -1356,6 +1384,7 @@ function getTasksForDate(dateStr, options = {}) {
         });
     }
     const recurring = appData.tasks.filter(t => {
+        if (t.type === 'todo') return false;
         if (!t.recurringType || t.date === 'pool' || t.date > dateStr) return false;
         if (t.timeSlot && dateStr !== t.date) return false;
         if (t.deadline && dateStr > t.deadline) return false;
@@ -1366,6 +1395,7 @@ function getTasksForDate(dateStr, options = {}) {
         return isRecurringMatch(t.recurringType, t.date, dateStr);
     });
     const countOnlyTasks = appData.tasks.filter(t => {
+        if (t.type === 'todo') return false;
         if (!t.countOnly || t.countEnded || t.date === 'pool' || !t.date || t.date > dateStr) return false;
         if (t.timeSlot && dateStr !== t.date) return false;
         if (filteredDirect.includes(t)) return false;
@@ -1465,8 +1495,9 @@ function ensureEnergyData() {
     const def = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
     if (!appData.rpg) appData.rpg = { ...def };
     else Object.keys(def).forEach(k => { if (appData.rpg[k] === undefined) appData.rpg[k] = def[k]; });
-    if (!appData.panelLayout) appData.panelLayout = { order: ['learning', 'other', 'exercise'], spans: {}, sizes: {} };
-    if (!appData.panelLayout.order) appData.panelLayout.order = ['learning', 'other', 'exercise'];
+    if (!appData.panelLayout) appData.panelLayout = { order: ['todo', 'learning', 'other', 'exercise'], spans: {}, sizes: {} };
+    if (!appData.panelLayout.order) appData.panelLayout.order = ['todo', 'learning', 'other', 'exercise'];
+    if (!appData.panelLayout.order.includes('todo')) appData.panelLayout.order.unshift('todo');
     if (!appData.panelLayout.spans) appData.panelLayout.spans = {};
     if (!appData.panelLayout.sizes) appData.panelLayout.sizes = {};
     if (!appData.levelConfig || !Array.isArray(appData.levelConfig.levels) || appData.levelConfig.levels.length === 0)
@@ -1485,6 +1516,8 @@ function ensureEnergyData() {
     if (appData.learningMethods === undefined) appData.learningMethods = "";
     if (appData.learningMethodsHtml === undefined) appData.learningMethodsHtml = "";
     if (appData.methodsCollapsed === undefined) appData.methodsCollapsed = false;
+    // 兼容：已有的历史任务如果没有 type 字段（旧版本可能没有），默认设为 learning（避免影响）
+    // 但保留 todo 状态
 }
 
 function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
@@ -1727,6 +1760,7 @@ window.changeAnimation = function(val) { ensureEnergyData(); appData.animationEn
 window.setTaskEnergyCost = function(taskId) {
     const task = appData.tasks.find(t => t.id === taskId);
     if (!task) return;
+    if (task.type === 'todo') { showMiniToast('待办清单里的任务不能设置属性，拖入学习/其他后再设置'); return; }
     const cur = task.energyCost || (task.target ? 1 : 10);
     const val = prompt(`设置【${task.text}】精力消耗：`, cur);
     if (val === null) return;
@@ -1736,6 +1770,7 @@ window.setTaskEnergyCost = function(taskId) {
 window.setSubTaskEnergyCost = function(taskId, subId) {
     const task = appData.tasks.find(t => t.id === taskId);
     if (!task || !task.subTasks) return;
+    if (task.type === 'todo') { showMiniToast('待办清单里的任务不能设置属性'); return; }
     const sub = task.subTasks.find(s => s.id === subId);
     if (!sub) return;
     const cur = sub.energyCost || (sub.target ? 1 : 5);
@@ -1833,7 +1868,6 @@ function methodsTriggerSave() {
     clearTimeout(methodsSaveTimer);
     methodsSaveTimer = setTimeout(() => {
         appData.learningMethodsHtml = editor.innerHTML;
-        // 兼容旧纯文本字段
         appData.learningMethods = editor.innerText || '';
         saveDataToFile(appData);
         methodsSetStatus('✅ 已保存', '#2e7d32');
@@ -1880,10 +1914,8 @@ function initMethodsEditor() {
     const toolbar = document.getElementById('methods-toolbar');
     if (!editor || !toolbar) return;
 
-    // 初始内容
     refreshMethodsEditorContent();
 
-    // 选区保存 / 状态更新
     document.addEventListener('selectionchange', () => {
         if (document.activeElement === editor) {
             methodsSaveSelection();
@@ -1891,21 +1923,16 @@ function initMethodsEditor() {
         }
     });
 
-    // 输入自动保存
     editor.addEventListener('input', methodsTriggerSave);
     editor.addEventListener('mouseup', methodsSaveSelection);
     editor.addEventListener('keyup', methodsSaveSelection);
     editor.addEventListener('blur', () => {
-        // blur 时也强制触发一次保存，避免切页丢失
         clearTimeout(methodsSaveTimer);
         appData.learningMethodsHtml = editor.innerHTML;
         appData.learningMethods = editor.innerText || '';
         saveDataToFile(appData);
     });
 
-    // 快捷键 Ctrl+B / I / U 等由浏览器原生处理，这里只处理保存
-
-    // 工具栏：按钮点击（mousedown 阻止默认以保住选区）
     toolbar.addEventListener('mousedown', (e) => {
         if (e.target.closest('button')) e.preventDefault();
     });
@@ -1917,7 +1944,6 @@ function initMethodsEditor() {
         methodsExecCommand(cmd);
     });
 
-    // 下拉框
     toolbar.querySelectorAll('select[data-cmd]').forEach(sel => {
         sel.addEventListener('change', () => {
             const cmd = sel.dataset.cmd;
@@ -1926,7 +1952,6 @@ function initMethodsEditor() {
         });
     });
 
-    // 颜色选择
     const foreColorInput = document.getElementById('methods-forecolor');
     const foreColorSwatch = document.getElementById('forecolor-swatch');
     const hiliteColorInput = document.getElementById('methods-hilitecolor');
@@ -1952,11 +1977,6 @@ function initMethodsEditor() {
             methodsTriggerSave();
         });
     }
-
-    // 粘贴时清理外部样式，只保留纯文本或基本结构（更稳）
-    editor.addEventListener('paste', (e) => {
-        // 允许原生粘贴，但兜底防止粘贴后高度跳变；不做强干预
-    });
 }
 
 function refreshMethodsEditorContent() {
@@ -2420,7 +2440,7 @@ function renderCalendar() {
             const t = appData.dailyReflections[ds].trim();
             refl = `<div class="reflection-preview" title="${t}">📝 ${t.length > 6 ? t.substring(0,6)+'...' : t}</div>`;
         }
-        const dl = appData.tasks.filter(t => t.deadline === ds && !t.completed && !t.countOnly);
+        const dl = appData.tasks.filter(t => t.deadline === ds && !t.completed && !t.countOnly && t.type !== 'todo');
         let dHtml = '';
         if (dl.length > 0) {
             const dt = dl.map(t => t.text).join(', ');
@@ -2784,7 +2804,7 @@ function renderTaskPool() {
             pool.appendChild(item);
         });
     });
-    appData.tasks.filter(t => t.date !== 'pool' && t.date < td && !isTaskDone(t, t.date) && !t.countOnly).forEach(t => {
+    appData.tasks.filter(t => t.type !== 'todo' && t.date !== 'pool' && t.date < td && !isTaskDone(t, t.date) && !t.countOnly).forEach(t => {
         hasOverdue = true;
         const item = createWeekTaskDOM(t, t.date);
         const tag = document.createElement('span'); tag.className = 'task-tag overdue'; tag.innerText = `逾期 ${t.date.substring(5)}`;
@@ -2829,12 +2849,14 @@ window.enableTaskEdit = function(span, taskId, subId) {
 window.setTaskEstimate = function(taskId) {
     const t = appData.tasks.find(t => t.id === taskId);
     if (!t) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务不能设置属性，拖入学习/其他后再设置'); return; }
     const v = prompt('预计完成时长：', t.estimate || '');
     if (v !== null) { if (v.trim()) t.estimate = v.trim(); else delete t.estimate; renderDayPlan(); renderTaskPool(); renderWeekBoard(); saveDataToFile(appData); refreshDetailModalIfOpen(); }
 };
 window.setSubTaskEstimate = function(taskId, subId) {
     const t = appData.tasks.find(t => t.id === taskId);
     if (!t || !t.subTasks) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务不能设置属性'); return; }
     const s = t.subTasks.find(s => s.id === subId);
     if (!s) return;
     const v = prompt(`设置【${s.text}】预计完成时长：`, s.estimate || '');
@@ -2865,6 +2887,7 @@ window.refreshDetailModalIfOpen = function() {
 window.openTaskDetailModal = function(taskId) {
     const t = appData.tasks.find(t => t.id === taskId);
     if (!t) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务没有详情，把它拖入学习/其他后再查看'); return; }
     currentDetailTaskId = taskId;
     const ds = appData.selectedDate;
     document.getElementById('task-detail-modal-title').innerText = `🔍 任务详情`;
@@ -2991,7 +3014,51 @@ function renderSubTaskHtml(task, sub, ds) {
         </div>`;
 }
 
+// 生成待办清单里的简化任务卡片
+function generateTodoTaskDOM(task) {
+    const div = document.createElement('div');
+    div.className = 'main-task-item todo-task-item';
+    div.dataset.taskId = task.id;
+    let html = `
+        <div class="main-task-header">
+            <div class="main-task-top-row">
+                <div class="main-task-title-area">
+                    <span style="font-size:1.2em;">📋</span>
+                    <span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${escapeHtml(task.text)}</span>
+                    <span class="task-badge" style="color:#7e22ce;background:#f3e8ff;border-color:#d8b4fe;">拖入学习/其他开始处理</span>
+                </div>
+                <div class="task-right-group">
+                    <div class="task-meta">
+                        <span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    // 子任务（只读，无勾选框、无操作菜单）
+    if (task.subTasks && task.subTasks.length > 0) {
+        html += `<div class="todo-sub-list" style="margin-left:24px;margin-top:8px;padding-left:12px;border-left:2px solid var(--border-color);display:flex;flex-direction:column;gap:4px;">`;
+        task.subTasks.forEach(s => {
+            html += `<div class="todo-sub-item" style="display:flex;align-items:center;justify-content:space-between;padding:2px 6px;font-size:var(--font-hint);color:var(--text-main);border-radius:4px;">
+                <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+                    <span style="color:var(--text-muted);font-size:10px;">◦</span>
+                    <span ondblclick="enableTaskEdit(this, '${task.id}', '${s.id}')" title="双击编辑" style="cursor:text;word-break:break-all;">${escapeHtml(s.text)}</span>
+                </div>
+                <span onclick="deleteSubTask('${task.id}', '${s.id}')" title="删除" style="cursor:pointer;color:var(--text-muted);padding:0 4px;opacity:.6;flex-shrink:0;">🗑️</span>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+    // 子任务输入框 & 添加按钮
+    html += `<input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')">`;
+    html += `<div style="margin-top:8px;"><span class="action-pill-btn" onclick="showSubInput('${task.id}', this)">➕ 步骤</span></div>`;
+    div.innerHTML = html;
+    return div;
+}
+
 function generateTaskDOM(task, ds, options = {}) {
+    // 待办清单里的任务走简化分支
+    if (task.type === 'todo') return generateTodoTaskDOM(task);
+
     const showSubTasks = !!options.showSubTasks;
     const div = document.createElement('div');
     div.className = `main-task-item ${task.pinned ? 'pinned-task' : ''} ${task.countOnly ? 'count-only-task' : ''}`;
@@ -3165,6 +3232,7 @@ function generateTaskDOM(task, ds, options = {}) {
 window.skipTaskForToday = function(taskId) {
     const t = appData.tasks.find(x => x.id === taskId);
     if (!t) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务不能跳过'); return; }
     const ds = appData.selectedDate;
     if (!t.skipDates) t.skipDates = {};
     t.skipDates[ds] = true;
@@ -3176,6 +3244,7 @@ window.skipTaskForToday = function(taskId) {
 window.toggleCountOnly = function(taskId) {
     const t = appData.tasks.find(x => x.id === taskId);
     if (!t) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务不能转为计数任务，拖入学习/其他后再设置'); return; }
     if (t.countOnly) {
         delete t.countOnly; delete t.countTotal; delete t.countEnded;
         showMiniToast('已转为普通任务');
@@ -3197,6 +3266,7 @@ window.toggleCountOnly = function(taskId) {
 window.incrementCountTask = function(taskId) {
     const t = appData.tasks.find(x => x.id === taskId);
     if (!t || !t.countOnly) return;
+    if (t.type === 'todo') return;
     t.countTotal = (t.countTotal || 0) + 1;
     const ec = t.energyCost || 1;
     adjustTodayEnergy(ec);
@@ -3216,6 +3286,7 @@ window.incrementCountTask = function(taskId) {
 window.decrementCountTask = function(taskId) {
     const t = appData.tasks.find(x => x.id === taskId);
     if (!t || !t.countOnly) return;
+    if (t.type === 'todo') return;
     if ((t.countTotal || 0) <= 0) { showMiniToast('已经没有可撤销的计数了'); return; }
     t.countTotal = t.countTotal - 1;
     const ec = t.energyCost || 1;
@@ -3237,6 +3308,7 @@ window.decrementCountTask = function(taskId) {
 window.endCountTask = function(taskId) {
     const t = appData.tasks.find(x => x.id === taskId);
     if (!t || !t.countOnly) return;
+    if (t.type === 'todo') return;
     if (!confirm(`结束【${t.text}】？累计 ${t.countTotal || 0} 次。`)) return;
     t.countEnded = true;
     adjustAttr(t.type, 1);
@@ -3255,6 +3327,7 @@ window.endCountTask = function(taskId) {
 window.toggleSubCountOnly = function(tid, sid) {
     const t = appData.tasks.find(x => x.id === tid);
     if (!t || !t.subTasks) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的子任务不能转换类型'); return; }
     const s = t.subTasks.find(x => x.id === sid);
     if (!s) return;
     if (s.countOnly) {
@@ -3277,6 +3350,7 @@ window.toggleSubCountOnly = function(tid, sid) {
 window.incrementSubCount = function(tid, sid) {
     const t = appData.tasks.find(x => x.id === tid);
     if (!t || !t.subTasks) return;
+    if (t.type === 'todo') return;
     const s = t.subTasks.find(x => x.id === sid);
     if (!s || !s.countOnly) return;
     s.countTotal = (s.countTotal || 0) + 1;
@@ -3295,6 +3369,7 @@ window.incrementSubCount = function(tid, sid) {
 window.endSubCount = function(tid, sid) {
     const t = appData.tasks.find(x => x.id === tid);
     if (!t || !t.subTasks) return;
+    if (t.type === 'todo') return;
     const s = t.subTasks.find(x => x.id === sid);
     if (!s || !s.countOnly) return;
     if (!confirm(`结束【${s.text}】？累计 ${s.countTotal || 0} 次。`)) return;
@@ -3314,6 +3389,23 @@ window.endSubCount = function(tid, sid) {
     refreshDetailModalIfOpen();
     showMiniToast(`🏁 已结束，累计 ${s.countTotal || 0} 次`);
 };
+
+function getTodoTasks() {
+    return appData.tasks.filter(t => t.type === 'todo');
+}
+
+function renderTodoList() {
+    const container = document.getElementById('todo-list');
+    if (!container) return;
+    container.innerHTML = '';
+    const tasks = getTodoTasks();
+    tasks.forEach(t => {
+        container.appendChild(generateTaskDOM(t, appData.selectedDate));
+    });
+    if (tasks.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-muted);font-size:var(--font-hint);text-align:center;padding:16px 8px;line-height:1.6;">📋 这里可以放一些「想法」<br>拖入学习 / 其他开始正式处理</div>';
+    }
+}
 
 function renderDayPlan() {
     ensureEnergyData();
@@ -3349,6 +3441,7 @@ function renderDayPlan() {
     });
     const rt = document.getElementById('daily-reflection-textarea');
     if (rt) rt.value = appData.dailyReflections[ds] || '';
+    renderTodoList();
     renderDayExercises();
     updateFixedProgressBars();
     saveDataToFile(appData);
@@ -3400,8 +3493,40 @@ function initTaskAndSubTaskDrag() {
                 if (!taskId) return;
                 const task = appData.tasks.find(t => t.id === taskId);
                 if (!task) return;
-                task.type = evt.to.dataset.type;
-                setTaskDone(task, appData.selectedDate, evt.to.dataset.completed === 'true');
+                const fromType = task.type || '';
+                const toType = evt.to.dataset.type;
+                const toCompleted = evt.to.dataset.completed === 'true';
+
+                if (toType === 'todo') {
+                    // 拖入待办清单 → 重置为「想法」状态
+                    task.type = 'todo';
+                    task.date = 'pool';
+                    delete task.timeSlot;
+                    delete task.pinned;
+                    task.completed = false;
+                    if (task.completions) delete task.completions;
+                    if (task.recurringEndedDate) delete task.recurringEndedDate;
+                    if (task.subTasks) task.subTasks.forEach(s => {
+                        s.completed = false;
+                        if (s.completions) delete s.completions;
+                    });
+                } else if (fromType === 'todo') {
+                    // 从待办清单拖入学习/其他 → 正式成为任务
+                    task.type = toType;
+                    task.date = appData.selectedDate;
+                    delete task.completed;
+                    if (task.completions) delete task.completions;
+                    if (task.subTasks) task.subTasks.forEach(s => {
+                        s.completed = false;
+                        if (s.completions) delete s.completions;
+                    });
+                } else {
+                    // 学习 ↔ 其他互拖
+                    task.type = toType;
+                    setTaskDone(task, appData.selectedDate, toCompleted);
+                }
+
+                // 排序：把任务插入到目标容器的对应位置
                 const newOrderIds = Array.from(evt.to.querySelectorAll('.main-task-item')).map(el => el.dataset.taskId).filter(Boolean);
                 appData.tasks = appData.tasks.filter(t => t.id !== taskId);
                 const insertIndex = appData.tasks.findIndex(t => newOrderIds.includes(t.id));
@@ -3508,6 +3633,7 @@ function dragFixedBlock(ev, id) { draggedFixedBlockId = id; draggedTaskId = null
 window.unscheduleTask = function(taskId) {
     const t = appData.tasks.find(x => x.id === taskId);
     if (!t) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务不参与排期'); return; }
     if (t._poolOrigin) { t.date = 'pool'; delete t._poolOrigin; }
     else if (t._prevDate) { t.date = t._prevDate; delete t._prevDate; }
     delete t.timeSlot;
@@ -3541,6 +3667,7 @@ function handleDrop(ev, td, timeslot) {
     if (draggedTaskId) {
         const t = appData.tasks.find(t => t.id === draggedTaskId);
         if (t) {
+            if (t.type === 'todo') { draggedTaskId = null; return; }
             if (t.countOnly && td !== 'pool') {
                 if (timeslot) {
                     if (!t.timeSlots) t.timeSlots = [];
@@ -3599,18 +3726,22 @@ window.deleteSubTask = function(tid, sid) {
     const t = appData.tasks.find(t => t.id === tid);
     if (t && t.subTasks) {
         t.subTasks = t.subTasks.filter(s => s.id !== sid);
-        if (t.subTasks.length > 0) syncParentTaskStatus(t, appData.selectedDate); else setTaskDone(t, appData.selectedDate, false);
+        if (t.subTasks.length > 0 && t.type !== 'todo') syncParentTaskStatus(t, appData.selectedDate);
+        else if (t.type !== 'todo') setTaskDone(t, appData.selectedDate, false);
         renderDayPlan(); renderCalendar(); updateFixedProgressBars(); saveDataToFile(appData);
         refreshDetailModalIfOpen();
     }
 };
 window.togglePinTask = function(id) {
     const t = appData.tasks.find(t => t.id === id);
-    if (t) { t.pinned = !t.pinned; renderDayPlan(); saveDataToFile(appData); refreshDetailModalIfOpen(); }
+    if (!t) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务不能置顶'); return; }
+    t.pinned = !t.pinned; renderDayPlan(); saveDataToFile(appData); refreshDetailModalIfOpen();
 };
 window.toggleMainTaskFromWeek = function(id, ds) {
     const t = appData.tasks.find(t => t.id === id);
     if (!t) return;
+    if (t.type === 'todo') return;
     toggleTaskCompletion(t, ds);
     
     renderEnergyAndRPG();
@@ -3621,6 +3752,7 @@ window.toggleMainTaskFromWeek = function(id, ds) {
     refreshDetailModalIfOpen();
 };
 function toggleTaskCompletion(t, ds) {
+    if (t.type === 'todo') return;
     const was = isTaskDone(t, ds);
     const will = !was;
     const hasSub = t.subTasks && t.subTasks.length > 0;
@@ -3683,6 +3815,7 @@ window.incrementTaskProgress = function(id) {
     const ds = appData.selectedDate;
     const t = appData.tasks.find(t => t.id === id);
     if (!t || !t.target) return;
+    if (t.type === 'todo') return;
     const cur = getTaskCurrent(t, ds);
     const c = t.energyCost || 1;
     setTaskCurrent(t, ds, cur + 1);
@@ -3707,6 +3840,7 @@ window.decrementTaskProgress = function(id) {
     const ds = appData.selectedDate;
     const t = appData.tasks.find(t => t.id === id);
     if (!t || !t.target) return;
+    if (t.type === 'todo') return;
     const c = t.energyCost || 1;
     const cur = getTaskCurrent(t, ds);
     if (cur > 0) {
@@ -3729,6 +3863,7 @@ window.incrementSubTaskProgress = function(tid, sid) {
     const ds = appData.selectedDate;
     const t = appData.tasks.find(t => t.id === tid);
     if (!t || !t.subTasks) return;
+    if (t.type === 'todo') return;
     const s = t.subTasks.find(s => s.id === sid);
     if (!s || !s.target) return;
     const cur = getSubCurrent(s, ds, t);
@@ -3752,6 +3887,7 @@ window.decrementSubTaskProgress = function(tid, sid) {
     const ds = appData.selectedDate;
     const t = appData.tasks.find(t => t.id === tid);
     if (!t || !t.subTasks) return;
+    if (t.type === 'todo') return;
     const s = t.subTasks.find(s => s.id === sid);
     if (!s || !s.target) return;
     const wt = isTaskDone(t, ds);
@@ -3775,6 +3911,7 @@ window.decrementSubTaskProgress = function(tid, sid) {
 window.setTaskTarget = function(id) {
     const t = appData.tasks.find(t => t.id === id);
     if (!t) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务不能设置属性，拖入学习/其他后再设置'); return; }
     const v = prompt("累计总次数 (0 取消)：", t.target || 0);
     if (v === null) return;
     const n = parseInt(v);
@@ -3788,6 +3925,7 @@ window.setTaskTarget = function(id) {
 window.setSubTaskTarget = function(tid, sid) {
     const t = appData.tasks.find(t => t.id === tid);
     if (!t || !t.subTasks) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务不能设置属性'); return; }
     const s = t.subTasks.find(s => s.id === sid);
     if (!s) return;
     const v = prompt(`设置【${s.text}】总次数 (0 取消)：`, s.target || 0);
@@ -3810,13 +3948,27 @@ function handleAddInput(e, type, dateStr, isPool) {
     appData.tasks.push(nt); e.target.value = '';
     if (isPool) { renderTaskPool(); saveDataToFile(appData); } else renderDayPlan();
 }
+function handleAddTodoInput(e) {
+    if (e.key !== 'Enter' || !e.target.value.trim()) return;
+    let text = e.target.value.trim(), target = 0;
+    const m = text.match(/\*\s*(\d+)$/);
+    if (m) { target = parseInt(m[1]); text = text.replace(/\*\s*\d+$/, '').trim(); }
+    const nt = { id: Date.now().toString(), text, type: 'todo', date: 'pool', completed: false, subTasks: [] };
+    if (target > 0) { nt.target = target; nt.current = 0; }
+    appData.tasks.push(nt);
+    e.target.value = '';
+    renderDayPlan();
+    saveDataToFile(appData);
+}
 document.getElementById('pool-input-learning').addEventListener('keypress', e => handleAddInput(e, 'learning', 'pool', true));
 document.getElementById('pool-input-other').addEventListener('keypress', e => handleAddInput(e, 'other', 'pool', true));
 document.getElementById('learning-input').addEventListener('keypress', e => handleAddInput(e, 'learning', appData.selectedDate, false));
 document.getElementById('other-input').addEventListener('keypress', e => handleAddInput(e, 'other', appData.selectedDate, false));
+document.getElementById('todo-input').addEventListener('keypress', handleAddTodoInput);
 window.toggleRecurring = function(id) {
     const t = appData.tasks.find(t => t.id === id);
     if (!t) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务不能设置循环，拖入学习/其他后再设置'); return; }
     const c = prompt("循环天数 (1=每日, 7=每周, 30=每月, 其他=自定义，留空取消)：");
     if (c === null || !c.trim()) { t.recurringType = ''; renderDayPlan(); refreshDetailModalIfOpen(); return; }
     const d = parseInt(c);
@@ -3838,12 +3990,12 @@ window.toggleExerciseRecurring = function(id) {
 window.setDeadline = function(id, v) {
     if (v === null) return;
     const t = appData.tasks.find(t => t.id === id);
-    if (t) { 
-        const nv = v.trim();
-        if (nv) t.deadline = nv;
-        else delete t.deadline;
-        renderDayPlan(); refreshDetailModalIfOpen(); saveDataToFile(appData);
-    }
+    if (!t) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务不能设置截止日期，拖入学习/其他后再设置'); return; }
+    const nv = v.trim();
+    if (nv) t.deadline = nv;
+    else delete t.deadline;
+    renderDayPlan(); refreshDetailModalIfOpen(); saveDataToFile(appData);
 };
 window.addExerciseCategory = function() {
     const n = prompt("新锻炼大类名称：");
@@ -3913,6 +4065,7 @@ window.toggleExerciseTask = function(exId, sid) {
 window.toggleMainTask = function(id) {
     const t = appData.tasks.find(t => t.id === id);
     if (!t) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的任务不能完成，拖入学习/其他后再处理'); return; }
     toggleTaskCompletion(t, appData.selectedDate);
     renderEnergyAndRPG();
     updateFixedProgressBars();
@@ -3924,6 +4077,7 @@ window.toggleSubTask = function(tid, sid) {
     const ds = appData.selectedDate;
     const t = appData.tasks.find(t => t.id === tid);
     if (!t || !t.subTasks) return;
+    if (t.type === 'todo') { showMiniToast('待办清单里的子任务不能完成'); return; }
     const s = t.subTasks.find(s => s.id === sid);
     if (!s) return;
     if (s.countOnly) return;
@@ -3986,7 +4140,9 @@ window.addSubTask = function(e, tid) {
     if (target > 0) { ns.target = target; ns.current = 0; }
     t.subTasks.push(ns);
     e.target.value = ''; e.target.style.display = 'none';
-    syncParentTaskStatus(t, appData.selectedDate); renderDayPlan(); renderCalendar();
+    if (t.type !== 'todo') syncParentTaskStatus(t, appData.selectedDate);
+    renderDayPlan(); renderCalendar();
+    saveDataToFile(appData);
     refreshDetailModalIfOpen();
 };
 function syncGoal(v) {
@@ -4356,6 +4512,9 @@ function mergeData(local, remote) {
             merged.tasks.push(rt);
         } else {
             const lt = localTasksMap.get(rt.id);
+            // 类型和日期的变化：以远端为准（用于 todo ↔ learning/other 的状态切换）
+            if (rt.type !== undefined && rt.type !== lt.type) lt.type = rt.type;
+            if (rt.date !== undefined && rt.date !== lt.date) lt.date = rt.date;
             lt.text = rt.text || lt.text;
             if (rt.completed !== undefined) lt.completed = rt.completed;
             if (rt.note !== undefined) lt.note = rt.note;
@@ -4366,6 +4525,7 @@ function mergeData(local, remote) {
             if (rt.countTotal !== undefined) lt.countTotal = Math.max(lt.countTotal || 0, rt.countTotal);
             if (rt.countEnded !== undefined) lt.countEnded = rt.countEnded || lt.countEnded;
             if (rt.estimate !== undefined) lt.estimate = rt.estimate;
+            if (rt.pinned !== undefined) lt.pinned = rt.pinned;
             
             if (rt.completions) {
                 if (!lt.completions) lt.completions = {};
@@ -4623,7 +4783,7 @@ document.addEventListener('drop', stopAutoScroll, true);
     appData.viewMonth = new Date().getMonth();
     appData.viewWeekBaseDate = getTodayString();
     appData.tasks.forEach(t => {
-        if (t.energyCost === undefined) t.energyCost = t.target ? 1 : 10;
+        if (t.energyCost === undefined && t.type !== 'todo') t.energyCost = t.target ? 1 : 10;
         if (t.subTasks) t.subTasks.forEach(s => { if (s.energyCost === undefined) s.energyCost = s.target ? 1 : 5; });
     });
     appData.exercises.forEach(ex => { if (ex.energyCost === undefined) ex.energyCost = 15; });
