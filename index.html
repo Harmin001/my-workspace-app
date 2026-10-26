@@ -350,28 +350,32 @@ body.dark-mode .count-display b { color: #60a5fa; }
 .btn-count-end { color: #27ae60; }
 .btn-count-end:hover { background: rgba(39,174,96,.15) !important; }
 
-.main-task-header { display: flex; flex-direction: column; gap: 8px; }
+.main-task-header { display: flex; flex-direction: column; gap: 6px; }
 .main-task-top-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; width: 100%; }
-.main-task-title-area { display: flex; align-items: flex-start; flex: 1; min-width: 0; flex-wrap: wrap; gap: 4px; }
+.main-task-title-area { display: flex; align-items: center; flex-wrap: wrap; flex: 1; min-width: 0; gap: 6px; }
 
-.task-badges-row { display: flex; flex-wrap: wrap; gap: 6px; font-size: var(--font-small); }
-.task-badge { padding: 2px 6px; border-radius: 4px; background: var(--bg-sidebar); color: var(--text-muted); border: 1px solid var(--border-color); display: inline-flex; align-items: center; gap: 2px; font-weight: 600; }
+.task-badges-inline { display: flex; flex-wrap: wrap; gap: 4px; font-size: var(--font-small); margin-left: 4px; }
+.task-badge { padding: 1px 6px; border-radius: 4px; background: var(--bg-sidebar); color: var(--text-muted); border: 1px solid var(--border-color); display: inline-flex; align-items: center; font-weight: 600; }
 .task-badge.urgent { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
 body.dark-mode .task-badge.urgent { background: #3a1c1c; color: #fca5a5; border-color: #7f1d1d; }
 .task-badge.warning { background: #fef3c7; color: #b45309; border-color: #fcd34d; }
 body.dark-mode .task-badge.warning { background: #3a2e12; color: #fbbf24; border-color: #6b5a20; }
 
-.progress-row { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 4px; }
-.progress-row .progress-task-bar-bg { flex: 1; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; }
-.progress-row .progress-task-bar-fill { height: 100%; background: var(--accent-color); border-radius: 4px; transition: width .3s; }
-.progress-row .progress-text { font-size: var(--font-hint); font-weight: bold; color: var(--text-muted); min-width: 40px; text-align: right; }
+.progress-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+.progress-actions-left { display: flex; gap: 6px; flex-shrink: 0; }
+.action-pill-btn { font-size: var(--font-small); color: var(--accent-color); background: var(--hover-bg); border: 1px dashed var(--accent-color); padding: 2px 8px; border-radius: 12px; cursor: pointer; user-select: none; font-weight: 600; transition: all 0.2s; white-space: nowrap; }
+.action-pill-btn:hover { background: var(--accent-color); color: #fff; border-style: solid; }
+.progress-right { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; justify-content: flex-end; }
+.progress-task-bar-bg { flex: 1; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; max-width: 120px; }
+.progress-task-bar-fill { height: 100%; background: var(--accent-color); border-radius: 4px; transition: width .3s; }
+.progress-text { font-size: var(--font-hint); font-weight: bold; color: var(--text-muted); min-width: 30px; text-align: right; }
 
-.task-checkbox { width: 16px; height: 16px; margin-right: 8px; cursor: pointer; accent-color: var(--accent-color); margin-top: 2px; }
-.task-text-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.task-checkbox { width: 16px; height: 16px; margin-right: 2px; cursor: pointer; accent-color: var(--accent-color); flex-shrink: 0; }
+.task-text-wrap { display: flex; flex-direction: column; min-width: 0; }
 .task-text { font-weight: 500; word-break: break-all; font-size: var(--font-content); }
 .task-completed { text-decoration: line-through; color: var(--text-muted); }
 
-.task-meta { display: flex; align-items: center; gap: 6px; font-size: var(--font-hint); flex-wrap: wrap; }
+.task-meta { display: flex; align-items: center; gap: 6px; font-size: var(--font-hint); flex-wrap: wrap; margin-left: auto; }
 .btn-icon { cursor: pointer; color: var(--text-muted); font-size: var(--font-hint); padding: 2px 4px; border-radius: 4px; transition: background 0.2s; }
 .btn-icon:hover { background: var(--hover-bg); }
 .btn-icon.active { color: var(--accent-color); }
@@ -390,9 +394,6 @@ body.dark-mode .task-badge.warning { background: #3a2e12; color: #fbbf24; border
 .task-note-area:hover { background: var(--hover-bg); border-color: var(--accent-color); }
 .task-note-area.has-note { border-left: 3px solid var(--accent-color); color: var(--text-main); background: #f4f8fd; border-style: solid; }
 body.dark-mode .task-note-area.has-note { background: #1a2a3a; border-color: #3b82f6; }
-
-.view-sub-tasks-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; margin-left: 24px; padding: 4px 10px; background: var(--hover-bg); border: 1px dashed var(--border-color); border-radius: 6px; font-size: var(--font-hint); color: var(--accent-color); font-weight: 600; cursor: pointer; transition: all .15s; }
-.view-sub-tasks-btn:hover { background: var(--border-color); border-color: var(--accent-color); }
 
 .sub-task-list { margin-left: 24px; margin-top: 8px; padding-left: 12px; border-left: 2px solid var(--border-color); display: flex; flex-direction: column; gap: 6px; min-height: 20px; }
 .sub-task-item { display: flex; align-items: center; font-size: var(--font-content); color: var(--text-main); justify-content: space-between; margin-bottom: 2px; background: var(--bg-card); padding: 4px 6px; border-radius: 4px; }
@@ -417,7 +418,6 @@ body.dark-mode .btn-sub-count { background: rgba(59,130,246,.15); }
 .sub-more-item:hover { background: var(--hover-bg); }
 
 .add-sub-task-input { margin-left: 24px; margin-top: 8px; font-size: var(--font-hint); padding: 6px 10px; border: 1px solid var(--accent-color); width: calc(100% - 24px); display: none; border-radius: 4px; background: var(--bg-input); color: var(--text-main); outline: none; box-shadow: 0 0 0 2px rgba(35,131,226,.2); transition: border .2s; }
-.btn-add-sub { font-size: var(--font-hint); color: var(--accent-color); cursor: pointer; margin-left: 24px; margin-top: 4px; display: inline-block; font-weight: 500; }
 .sub-fold-btn { margin-left: 24px; margin-top: 4px; font-size: var(--font-hint); color: var(--accent-color); cursor: pointer; font-weight: 600; display: inline-block; user-select: none; padding: 2px 6px; border-radius: 4px; background: var(--hover-bg); }
 .sub-fold-btn:hover { background: var(--border-color); }
 .completed-tasks-section { margin-top: 16px; border-top: 1px dashed var(--border-color); padding-top: 12px; }
@@ -923,11 +923,9 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
-    { version: 'v2.20.0', date: '2026-05-18', changes: [
-        '优化：日计划卡片排版，进度条移到了名字和状态的正下方，更加清晰',
-        '优化：设置的「预计时长」「精力」「目标次数」现在直接以彩色标签显示在名字下方',
-        '优化：添加了截止日期的倒计时，直观显示「剩余 N 天」或「逾期 N 天」，并伴有颜色警示',
-        '优化：简化了卡片上的操作按钮，避免冗余占位'
+    { version: 'v2.20.1', date: '2026-05-18', changes: [
+        '优化：母计划状态（精力、时长、截止日期）显示在标题同一行靠右位置',
+        '优化：将「查看子计划」和「添加步骤」按钮与进度条放在同一行，更加紧凑美观'
     ]}
 ];
 
@@ -2527,7 +2525,6 @@ function generateTaskDOM(task, ds, options = {}) {
     const editT = `<span class="task-text ${taskDone ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;">${task.text}</span>`;
     const loopL = task.recurringType ? `<span class="loop-label">${task.recurringType}</span>` : '';
 
-    // 构建状态标签
     let badgesHtml = '';
     if (task.estimate) badgesHtml += `<span class="task-badge">⏱ ${task.estimate}</span>`;
     const defEC = task.target ? 1 : 10;
@@ -2550,7 +2547,6 @@ function generateTaskDOM(task, ds, options = {}) {
         }
     }
 
-    // 构建操作按钮
     const cbSet = new Set(appData.commonBtns);
     let btnsHtml = '', moreBtnsHtml = '';
     const canSkip = !!(task.deadline || task.recurringType);
@@ -2584,26 +2580,32 @@ function generateTaskDOM(task, ds, options = {}) {
                 ${mainCb}
                 <div class="task-text-wrap">${editT}</div>
                 ${loopL}
+                ${badgesHtml ? `<div class="task-badges-inline">${badgesHtml}</div>` : ''}
             </div>
             <div class="task-meta">${btnsHtml}${moreMenuHtml}</div>
         </div>`;
 
-    if (badgesHtml) {
-        headerHtml += `<div class="task-badges-row">${badgesHtml}</div>`;
-    }
-
-    if (task.target || hasSub) {
+    let progressRowHtml = '';
+    if (task.target || hasSub || true) {
         const pct = Math.min(100, Math.round((mp.done / mp.total) * 100));
         const isCountOnly = task.target && !hasSub;
-        headerHtml += `
+        
+        let leftActionsHtml = '';
+        if (hasSub && !showSubTasks) leftActionsHtml += `<span class="action-pill-btn" onclick="openTaskDetailModal('${task.id}')">📋 子计划 ${task.subTasks.length}</span>`;
+        leftActionsHtml += `<span class="action-pill-btn" onclick="showSubInput('${task.id}', this)">➕ 步骤</span>`;
+
+        progressRowHtml = `
             <div class="progress-row">
-                <div class="progress-task-bar-bg"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div>
-                <span class="progress-text">${mp.done}/${mp.total}</span>
-                ${isCountOnly && !taskDone ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}
+                <div class="progress-actions-left">${leftActionsHtml}</div>
+                <div class="progress-right">
+                    <div class="progress-task-bar-bg"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div>
+                    <span class="progress-text">${mp.done}/${mp.total}</span>
+                    ${isCountOnly && !taskDone ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}
+                </div>
             </div>`;
     }
 
-    let html = `<div class="main-task-header">${headerHtml}</div>`;
+    let html = `<div class="main-task-header">${headerHtml}${progressRowHtml}</div>`;
 
     if (hasSub && showSubTasks) {
         html += `<div class="sub-task-list" data-task-id="${task.id}">`;
@@ -2626,21 +2628,18 @@ function generateTaskDOM(task, ds, options = {}) {
             html += `</div></details>`;
         }
         html += `</div>`;
-    } else if (hasSub && !showSubTasks) {
-        html += `<div class="view-sub-tasks-btn" onclick="openTaskDetailModal('${task.id}')">📋 查看 ${task.subTasks.length} 个子计划</div>`;
     }
 
-    html += `<span class="btn-add-sub" onclick="showSubInput('${task.id}', this)">➕ 添加步骤</span><input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')">`;
+    html += `<input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')">`;
     html += `<div class="task-note-area ${task.note ? 'has-note' : ''}" id="note-area-${task.id}" onclick="editTaskNote('${task.id}', this)">${task.note || '📝 点击添加备注...'}</div>`;
     div.innerHTML = html;
 
     if (hasSub && !showSubTasks) {
         div.classList.add('clickable-for-detail');
         div.addEventListener('click', function(e) {
-            const interactive = e.target.closest('input, button, textarea, select, a, .btn-icon, .more-menu-container, .task-meta, .task-note-area, .btn-add-sub, .add-sub-task-input, .progress-task-container, .sub-task-list, .btn-count-plus, .btn-count-minus, .btn-count-end');
+            const interactive = e.target.closest('input, button, textarea, select, a, .btn-icon, .more-menu-container, .task-meta, .task-note-area, .btn-add-sub, .add-sub-task-input, .progress-task-container, .sub-task-list, .btn-count-plus, .btn-count-minus, .btn-count-end, .action-pill-btn');
             if (interactive) return;
             if (e.target.closest('.task-text')) return;
-            if (e.target.closest('.view-sub-tasks-btn')) return;
             openTaskDetailModal(task.id);
         });
     }
@@ -3448,7 +3447,7 @@ window.toggleSubTask = function(tid, sid) {
     refreshDetailModalIfOpen();
 };
 window.showSubInput = function(id, el) { 
-    const i = el ? el.nextElementSibling : document.getElementById(`input-${id}`); 
+    const i = el ? el.parentElement.nextElementSibling : document.getElementById(`input-${id}`); 
     if (i) { 
         i.style.display = 'block'; 
         i.focus(); 
