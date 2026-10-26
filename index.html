@@ -923,9 +923,9 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
-    { version: 'v2.20.1', date: '2026-05-18', changes: [
-        '优化：母计划状态（精力、时长、截止日期）显示在标题同一行靠右位置',
-        '优化：将「查看子计划」和「添加步骤」按钮与进度条放在同一行，更加紧凑美观'
+    { version: 'v2.21.0', date: '2026-05-18', changes: [
+        '修复：P2P同步时，离线状态下双端各自新增的任务会被互相覆盖丢失的问题',
+        '新增：数据智能合并算法（Smart Merge），现在同步会保留两边的任务、进度、日志和属性'
     ]}
 ];
 
@@ -3820,6 +3820,149 @@ window.connectToPeer = function(targetId = null) {
     };
     doConnect();
 };
+
+function mergeData(local, remote) {
+    const merged = JSON.parse(JSON.stringify(local));
+    
+    // 合并基础设置（以收到的较新配置为准）
+    const configKeys = ['yearlyGoals', 'themeColor', 'themeMode', 'fonts', 'radius', 'energyMax', 'energyWarnThreshold', 'expRatio', 'levelConfig', 'commonBtns', 'maxVisible', 'animationEnabled', 'panelLayout'];
+    configKeys.forEach(k => {
+        if (remote[k] !== undefined) merged[k] = remote[k];
+    });
+
+    // 深度合并 tasks
+    const localTasksMap = new Map(merged.tasks.map(t => [t.id, t]));
+    (remote.tasks || []).forEach(rt => {
+        if (!localTasksMap.has(rt.id)) {
+            merged.tasks.push(rt);
+        } else {
+            const lt = localTasksMap.get(rt.id);
+            lt.text = rt.text || lt.text;
+            if (rt.completed !== undefined) lt.completed = rt.completed;
+            if (rt.note !== undefined) lt.note = rt.note;
+            if (rt.deadline !== undefined) lt.deadline = rt.deadline;
+            if (rt.target !== undefined) lt.target = rt.target;
+            if (rt.recurringType !== undefined) lt.recurringType = rt.recurringType;
+            if (rt.energyCost !== undefined) lt.energyCost = rt.energyCost;
+            if (rt.countTotal !== undefined) lt.countTotal = Math.max(lt.countTotal || 0, rt.countTotal);
+            if (rt.countEnded !== undefined) lt.countEnded = rt.countEnded || lt.countEnded;
+            if (rt.estimate !== undefined) lt.estimate = rt.estimate;
+            
+            // 合并日期记录
+            if (rt.completions) {
+                if (!lt.completions) lt.completions = {};
+                Object.assign(lt.completions, rt.completions);
+            }
+            if (rt.currents) {
+                if (!lt.currents) lt.currents = {};
+                for (let k in rt.currents) {
+                    lt.currents[k] = Math.max(lt.currents[k] || 0, rt.currents[k]);
+                }
+            }
+            if (rt.skipDates) {
+                if (!lt.skipDates) lt.skipDates = {};
+                Object.assign(lt.skipDates, rt.skipDates);
+            }
+            if (rt.recurringEndedDate) lt.recurringEndedDate = rt.recurringEndedDate;
+            
+            // 合并子任务
+            if (rt.subTasks) {
+                if (!lt.subTasks) lt.subTasks = [];
+                const localSubMap = new Map(lt.subTasks.map(s => [s.id, s]));
+                rt.subTasks.forEach(rs => {
+                    if (!localSubMap.has(rs.id)) {
+                        lt.subTasks.push(rs);
+                    } else {
+                        const ls = localSubMap.get(rs.id);
+                        ls.text = rs.text || ls.text;
+                        if (rs.completed !== undefined) ls.completed = rs.completed;
+                        if (rs.target !== undefined) ls.target = rs.target;
+                        if (rs.energyCost !== undefined) ls.energyCost = rs.energyCost;
+                        if (rs.countTotal !== undefined) ls.countTotal = Math.max(ls.countTotal || 0, rs.countTotal);
+                        if (rs.countEnded !== undefined) ls.countEnded = rs.countEnded || ls.countEnded;
+                        if (rs.estimate !== undefined) ls.estimate = rs.estimate;
+                        
+                        if (rs.completions) {
+                            if (!ls.completions) ls.completions = {};
+                            Object.assign(ls.completions, rs.completions);
+                        }
+                        if (rs.currents) {
+                            if (!ls.currents) ls.currents = {};
+                            for (let k in rs.currents) {
+                                ls.currents[k] = Math.max(ls.currents[k] || 0, rs.currents[k]);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    // 合并按日期索引的字典
+    const dictKeys = ['dailyExerciseChecks', 'dailyReflections', 'dailyLogs', 'exerciseSchedule', 'fixedBlockSchedule'];
+    dictKeys.forEach(key => {
+        if (!remote[key]) return;
+        if (!merged[key]) merged[key] = {};
+        Object.keys(remote[key]).forEach(dateStr => {
+            if (!merged[key][dateStr]) {
+                merged[key][dateStr] = remote[key][dateStr];
+            } else {
+                if (typeof merged[key][dateStr] === 'object' && !Array.isArray(merged[key][dateStr])) {
+                    if (key === 'dailyLogs') {
+                        Object.keys(remote[key][dateStr]).forEach(taskId => {
+                            if (!merged[key][dateStr][taskId]) {
+                                merged[key][dateStr][taskId] = remote[key][dateStr][taskId];
+                            } else {
+                                const lLog = merged[key][dateStr][taskId];
+                                const rLog = remote[key][dateStr][taskId];
+                                lLog.name = rLog.name || lLog.name;
+                                lLog.completed = rLog.completed || lLog.completed;
+                                lLog.delta = Math.max(lLog.delta || 0, rLog.delta || 0);
+                            }
+                        });
+                    } else {
+                        Object.assign(merged[key][dateStr], remote[key][dateStr]);
+                    }
+                } else if (Array.isArray(merged[key][dateStr])) {
+                    merged[key][dateStr] = [...new Set([...merged[key][dateStr], ...remote[key][dateStr]])];
+                } else {
+                    merged[key][dateStr] = remote[key][dateStr];
+                }
+            }
+        });
+    });
+
+    // 合并精力消耗：取两边较大的消耗量
+    if (remote.dailyEnergy) {
+        if (!merged.dailyEnergy) merged.dailyEnergy = {};
+        Object.keys(remote.dailyEnergy).forEach(dateStr => {
+            merged.dailyEnergy[dateStr] = Math.max(merged.dailyEnergy[dateStr] || 0, remote.dailyEnergy[dateStr]);
+        });
+    }
+
+    // 合并 RPG 属性（取较大的值，避免进度倒退）
+    if (remote.rpg) {
+        ['exp', 'int', 'vit', 'cre', 'foc', 'wil', 'streak'].forEach(k => {
+            merged.rpg[k] = Math.max(merged.rpg[k] || 0, remote.rpg[k] || 0);
+        });
+        if (remote.rpg.lastDate && (!merged.rpg.lastDate || remote.rpg.lastDate > merged.rpg.lastDate)) {
+            merged.rpg.lastDate = remote.rpg.lastDate;
+        }
+    }
+
+    // 合并数组型数据（保留并集）
+    ['exercises', 'fixedBlocks', 'timeSlots'].forEach(key => {
+        if (!remote[key]) return;
+        if (!merged[key]) merged[key] = [];
+        const localIds = new Set(merged[key].map(x => x.id));
+        remote[key].forEach(x => {
+            if (!localIds.has(x.id)) merged[key].push(x);
+        });
+    });
+
+    return merged;
+}
+
 function applyRemoteData(payload) {
     isSyncing = true;
     appData = payload;
@@ -3862,10 +4005,18 @@ function setupConnection(connection, isHost, targetId) {
         } else if (data.type === 'SYNC_NEED_DATA') {
             try { connection.send({ type: 'SYNC_DATA', payload: appData, lastModified: appData._lastModified || 1 }); } catch(e){}
         } else if (data.type === 'SYNC_DATA') {
-            if (data.lastModified && data.lastModified < (appData._lastModified || 1)) return;
-            applyRemoteData(data.payload);
+            const merged = mergeData(appData, data.payload);
+            const remoteSig = getDataSignature(data.payload);
+            const mergedSig = getDataSignature(merged);
+            if (remoteSig !== mergedSig) {
+                merged._lastModified = Date.now();
+                try { connection.send({ type: 'SYNC_DATA', payload: merged, lastModified: merged._lastModified }); } catch(e){}
+            } else {
+                merged._lastModified = Math.max(merged._lastModified, data.lastModified || 1);
+            }
+            applyRemoteData(merged);
             handshakeDone = true;
-            document.getElementById('p2p-status').innerText = "✅ 已同步";
+            document.getElementById('p2p-status').innerText = "✅ 已合并同步";
             document.getElementById('p2p-status').style.color = "#27ae60";
         }
     });
