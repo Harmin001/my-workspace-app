@@ -60,12 +60,11 @@ body.dark-mode .rpg-card { background: linear-gradient(135deg, #2a2a2a 0%, #1f1f
 body.dark-mode .rpg-energy-section { border-bottom-color: #444; }
 .energy-left { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
 .energy-right { display: flex; flex-direction: column; gap: 4px; justify-content: center; flex-shrink: 0; }
-.energy-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: var(--font-hint); font-weight: 700; color: #78350f; margin-bottom: 4px; }
-.energy-header > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.energy-header > span:last-child { flex-shrink: 0; white-space: nowrap; }
+.energy-header { font-size: var(--font-hint); font-weight: 700; color: #78350f; margin-bottom: 4px; }
 body.dark-mode .energy-header { color: var(--text-muted); }
-.energy-header #energy-text { color: #b45309; }
-body.dark-mode .energy-header #energy-text { color: #fbbf24; }
+.energy-footer { text-align: right; font-size: var(--font-small); font-weight: 700; margin-top: 3px; line-height: 1.3; min-height: 12px; }
+.energy-footer #energy-text, .energy-footer #modal-energy-text { color: #b45309; }
+body.dark-mode .energy-footer #energy-text, body.dark-mode .energy-footer #modal-energy-text { color: #fbbf24; }
 .energy-bar-bg { width: 100%; height: 8px; background: rgba(146,64,14,.15); border-radius: 4px; overflow: hidden; }
 body.dark-mode .energy-bar-bg { background: #333; }
 .energy-bar-fill { height: 100%; border-radius: 4px; transition: width .3s, background .3s; background: #27ae60; }
@@ -341,9 +340,9 @@ body.dark-mode .main-task-item.pinned-task { background: #2a1e11; border-left-co
 body.dark-mode .main-task-item.count-only-task { background: linear-gradient(135deg, #1a2a3a 0%, #1f2937 100%); border-left-color: #3b82f6; }
 .main-task-item.clickable-for-detail { cursor: pointer; }
 .main-task-item.clickable-for-detail::after { content: '👆 点击空白处查看详情'; position: absolute; bottom: 4px; right: 8px; font-size: 9px; color: var(--text-muted); opacity: .5; pointer-events: none; }
-.count-display { display: inline-flex; align-items: baseline; gap: 3px; font-size: var(--font-content); color: #1976d2; font-weight: 600; margin-left: 4px; }
+.count-display { display: inline-flex; align-items: baseline; gap: 3px; font-size: var(--font-hint); color: #1976d2; font-weight: 600; white-space: nowrap; }
 body.dark-mode .count-display { color: #90caf9; }
-.count-display b { font-size: 1.3em; font-weight: 800; color: #0d47a1; }
+.count-display b { font-size: 1.1em; font-weight: 800; color: #0d47a1; }
 body.dark-mode .count-display b { color: #60a5fa; }
 .btn-count-plus { background: var(--accent-color); color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: var(--font-hint); font-weight: 800; cursor: pointer; transition: transform .1s; }
 .btn-count-plus:active { transform: scale(.9); }
@@ -355,9 +354,10 @@ body.dark-mode .count-display b { color: #60a5fa; }
 .main-task-header { display: flex; flex-direction: column; gap: 6px; }
 .main-task-top-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; width: 100%; }
 .main-task-title-area { display: flex; align-items: center; flex-wrap: wrap; flex: 1; min-width: 0; gap: 6px; }
+.task-right-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
-.task-badges-inline { display: flex; flex-wrap: wrap; gap: 4px; font-size: var(--font-small); margin-left: 4px; }
-.task-badge { padding: 1px 6px; border-radius: 4px; background: var(--bg-sidebar); color: var(--text-muted); border: 1px solid var(--border-color); display: inline-flex; align-items: center; font-weight: 600; }
+.task-badges-inline { display: flex; flex-wrap: wrap; gap: 4px; font-size: var(--font-small); justify-content: flex-end; }
+.task-badge { padding: 1px 6px; border-radius: 4px; background: var(--bg-sidebar); color: var(--text-muted); border: 1px solid var(--border-color); display: inline-flex; align-items: center; font-weight: 600; white-space: nowrap; }
 .task-badge.urgent { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
 body.dark-mode .task-badge.urgent { background: #3a1c1c; color: #fca5a5; border-color: #7f1d1d; }
 .task-badge.warning { background: #fef3c7; color: #b45309; border-color: #fcd34d; }
@@ -377,7 +377,7 @@ body.dark-mode .task-badge.warning { background: #3a2e12; color: #fbbf24; border
 .task-text { font-weight: 500; word-break: break-all; font-size: var(--font-content); }
 .task-completed { text-decoration: line-through; color: var(--text-muted); }
 
-.task-meta { display: flex; align-items: center; gap: 6px; font-size: var(--font-hint); flex-wrap: wrap; margin-left: auto; }
+.task-meta { display: flex; align-items: center; gap: 6px; font-size: var(--font-hint); flex-wrap: wrap; }
 .btn-icon { cursor: pointer; color: var(--text-muted); font-size: var(--font-hint); padding: 2px 4px; border-radius: 4px; transition: background 0.2s; }
 .btn-icon:hover { background: var(--hover-bg); }
 .btn-icon.active { color: var(--accent-color); }
@@ -398,20 +398,20 @@ body.dark-mode .task-badge.warning { background: #3a2e12; color: #fbbf24; border
 body.dark-mode .task-note-area.has-note { background: #1a2a3a; border-color: #3b82f6; }
 
 .sub-task-list { margin-left: 24px; margin-top: 8px; padding-left: 12px; border-left: 2px solid var(--border-color); display: flex; flex-direction: column; gap: 6px; min-height: 20px; }
-.sub-task-item { display: flex; align-items: center; font-size: var(--font-content); color: var(--text-main); justify-content: space-between; margin-bottom: 2px; background: var(--bg-card); padding: 4px 6px; border-radius: 4px; }
+.sub-task-item { display: flex; align-items: center; font-size: var(--font-content); color: var(--text-main); justify-content: space-between; margin-bottom: 2px; background: var(--bg-card); padding: 4px 6px; border-radius: 4px; gap: 6px; }
 .sub-task-item.sortable-ghost { opacity: 0.5; background: var(--hover-bg); }
-.sub-task-left { display: flex; align-items: center; flex: 1; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.sub-task-left { display: flex; align-items: center; flex: 1; min-width: 0; gap: 4px; }
 .sub-task-item .task-checkbox { width: 14px; height: 14px; margin-right: 4px; }
 .sub-badge { font-size: var(--font-small); padding: 1px 5px; border-radius: 4px; background: var(--bg-sidebar); color: var(--text-muted); border: 1px solid var(--border-color); font-weight: 600; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; line-height: 1.4; }
 .sub-badge.sub-badge-energy { color: #b45309; background: #fffbeb; border-color: #fcd34d; }
 body.dark-mode .sub-badge.sub-badge-energy { color: #fbbf24; background: #2a2412; border-color: #6b5a20; }
 .sub-badge.sub-badge-estimate { color: #1e40af; background: #eff6ff; border-color: #bfdbfe; }
 body.dark-mode .sub-badge.sub-badge-estimate { color: #93c5fd; background: #1e293b; border-color: #334155; }
-.sub-prog-container { display: flex; align-items: center; gap: 4px; margin-left: 8px; flex-shrink: 0; }
+.sub-prog-container { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .sub-prog-bar-bg { flex: 1; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; width: 60px; min-width: 20px; }
 .sub-prog-bar-fill { height: 100%; background: var(--accent-color); border-radius: 3px; }
 .sub-prog-text { font-size: var(--font-small); color: var(--text-muted); width: 32px; text-align: right; }
-.sub-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.sub-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 .btn-sub-plus { background: var(--hover-bg); color: var(--text-main); border: none; border-radius: 4px; padding: 0px 6px; font-size: var(--font-hint); cursor: pointer; font-weight: bold; }
 .btn-sub-count { cursor: pointer; color: var(--accent-color); font-size: var(--font-small); padding: 2px 6px; border: 1px solid var(--accent-color); border-radius: 4px; font-weight: 700; background: rgba(35,131,226,.08); white-space: nowrap; transition: all .15s; }
 .btn-sub-count:hover { background: var(--accent-color); color: #fff; }
@@ -596,8 +596,9 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 <div class="rpg-card" id="rpg-card">
 <div class="rpg-energy-section">
 <div class="energy-left">
-    <div class="energy-header"><span>⚡ 今日精力</span><span id="energy-text">100 / 100</span></div>
+    <div class="energy-header"><span>⚡ 今日精力</span></div>
     <div class="energy-bar-bg"><div class="energy-bar-fill" id="energy-fill" style="width:100%;"></div></div>
+    <div class="energy-footer"><span id="energy-text">100 / 100</span></div>
     <div class="energy-warn" id="energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
 </div>
 <div class="energy-right">
@@ -885,8 +886,9 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 </div>
 <div class="rpg-modal-energy" id="rpg-modal-energy-panel">
     <div class="energy-left">
-        <div class="energy-header"><span>⚡ 今日精力</span><span id="modal-energy-text">100 / 100</span></div>
+        <div class="energy-header"><span>⚡ 今日精力</span></div>
         <div class="energy-bar-bg"><div class="energy-bar-fill" id="modal-energy-fill" style="width:100%;"></div></div>
+        <div class="energy-footer"><span id="modal-energy-text">100 / 100</span></div>
         <div class="energy-warn" id="modal-energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
     </div>
     <div class="energy-right">
@@ -930,6 +932,10 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.21.4', date: '2026-05-21', changes: [
+        '优化：父任务、子任务的循环/预计时长/精力消耗/次数/截止日期等状态徽章统一靠右对齐',
+        '优化：RPG 面板「今日精力」的数字挪到进度条右下角，不再挤占标题行'
+    ]},
     { version: 'v2.21.3', date: '2026-05-20', changes: [
         '修复：日计划中添加步骤的文本输入框超出母任务卡片的问题',
         '修复：子任务名称靠右显示精力消耗 ⚡、预计时长 ⏱ 徽章',
@@ -2464,7 +2470,6 @@ window.editTaskNote = function(taskId, el) {
 
 const SUB_FOLD_THRESHOLD = 3;
 function renderSubTaskHtml(task, sub, ds) {
-    // 精力 / 预计时长徽章（若有）
     const ecBadge = (sub.energyCost !== undefined && sub.energyCost !== null)
         ? `<span class="sub-badge sub-badge-energy" title="精力消耗">⚡${sub.energyCost}</span>`
         : '';
@@ -2478,11 +2483,11 @@ function renderSubTaskHtml(task, sub, ds) {
                 <div class="sub-task-left">
                     <span style="font-size:1em;">🔄</span>
                     <span class="${sub.countEnded ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span>
-                    ${ecBadge}
-                    ${estBadge}
-                    <span class="count-display" style="font-size:var(--font-hint);margin-left:4px;">累计 <b style="font-size:1.1em;">${sub.countTotal || 0}</b> 次</span>
                 </div>
                 <div class="sub-actions">
+                    ${ecBadge}
+                    ${estBadge}
+                    <span class="count-display">累计 <b>${sub.countTotal || 0}</b> 次</span>
                     <button class="btn-count-plus" style="padding:2px 8px;font-size:var(--font-small);" onclick="incrementSubCount('${task.id}', '${sub.id}')">+1</button>
                     <span class="btn-icon btn-count-end" title="结束此子任务" onclick="endSubCount('${task.id}', '${sub.id}')" style="font-weight:bold;">🏁</span>
                     <span class="btn-sub-count" title="转回普通子任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">↩️ 普通</span>
@@ -2497,7 +2502,6 @@ function renderSubTaskHtml(task, sub, ds) {
     const defEC = sub.target ? 1 : 5;
     const ec = sub.energyCost !== undefined ? sub.energyCost : defEC;
     const estLabel = sub.estimate ? `⏱ ${sub.estimate}` : '⏱';
-    // 进度徽章（针对带次数的子任务，紧靠名称右侧）
     const progBadge = isCount
         ? `<span class="sub-badge" title="进度" style="background:#e3f2fd;color:#1976d2;border-color:#90caf9;">🎯 ${sp.done}/${sp.total}</span>`
         : '';
@@ -2506,11 +2510,11 @@ function renderSubTaskHtml(task, sub, ds) {
             <div class="sub-task-left">
                 <input type="checkbox" class="task-checkbox" ${done ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')">
                 <span class="${done ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span>
+            </div>
+            <div class="sub-actions">
                 ${ecBadge}
                 ${estBadge}
                 ${progBadge}
-            </div>
-            <div class="sub-actions">
                 ${isCount ? `<div class="sub-prog-container">
                     <div class="sub-prog-bar-bg"><div class="sub-prog-bar-fill" style="width:${pct}%;"></div></div>
                     ${!done ? `<button class="btn-sub-plus" onclick="decrementSubTaskProgress('${task.id}', '${sub.id}')" title="减少一次">-1</button><button class="btn-sub-plus" onclick="incrementSubTaskProgress('${task.id}', '${sub.id}')" title="增加一次">+1</button>` : ''}
@@ -2542,19 +2546,23 @@ function generateTaskDOM(task, ds, options = {}) {
                     <div class="main-task-title-area">
                         <span style="font-size:1.2em;">🔄</span>
                         <span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${escapeHtml(task.text)}</span>
-                        <span class="count-display">累计 <b>${task.countTotal || 0}</b> 次</span>
                     </div>
-                    <div class="task-meta">
-                        <button class="btn-count-minus" onclick="decrementCountTask('${task.id}')" title="撤销一次">-1</button>
-                        <button class="btn-count-plus" onclick="incrementCountTask('${task.id}')" title="累计一次">+1</button>
-                        <span class="btn-icon btn-count-end" title="结束此任务" onclick="endCountTask('${task.id}')" style="font-weight:bold;font-size:1em;">🏁</span>
-                        <span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span>
-                        <div class="more-menu-container">
-                            <span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span>
-                            <div class="more-menu">
-                                <div class="more-menu-item" onclick="toggleCountOnly('${task.id}')">↩️ 转为普通任务</div>
-                                <div class="more-menu-item" onclick="setTaskEnergyCost('${task.id}')">⚡ 精力消耗</div>
-                                <div class="more-menu-item" onclick="deleteTask('${task.id}')">🗑️ 删除</div>
+                    <div class="task-right-group">
+                        <div class="task-badges-inline">
+                            <span class="task-badge" style="color:#1976d2;background:#e3f2fd;border-color:#90caf9;">累计 ${task.countTotal || 0} 次</span>
+                        </div>
+                        <div class="task-meta">
+                            <button class="btn-count-minus" onclick="decrementCountTask('${task.id}')" title="撤销一次">-1</button>
+                            <button class="btn-count-plus" onclick="incrementCountTask('${task.id}')" title="累计一次">+1</button>
+                            <span class="btn-icon btn-count-end" title="结束此任务" onclick="endCountTask('${task.id}')" style="font-weight:bold;font-size:1em;">🏁</span>
+                            <span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span>
+                            <div class="more-menu-container">
+                                <span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span>
+                                <div class="more-menu">
+                                    <div class="more-menu-item" onclick="toggleCountOnly('${task.id}')">↩️ 转为普通任务</div>
+                                    <div class="more-menu-item" onclick="setTaskEnergyCost('${task.id}')">⚡ 精力消耗</div>
+                                    <div class="more-menu-item" onclick="deleteTask('${task.id}')">🗑️ 删除</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2628,9 +2636,11 @@ function generateTaskDOM(task, ds, options = {}) {
                 ${mainCb}
                 <div class="task-text-wrap">${editT}</div>
                 ${loopL}
-                ${badgesHtml ? `<div class="task-badges-inline">${badgesHtml}</div>` : ''}
             </div>
-            <div class="task-meta">${btnsHtml}${moreMenuHtml}</div>
+            <div class="task-right-group">
+                ${badgesHtml ? `<div class="task-badges-inline">${badgesHtml}</div>` : ''}
+                <div class="task-meta">${btnsHtml}${moreMenuHtml}</div>
+            </div>
         </div>`;
 
     let progressRowHtml = '';
