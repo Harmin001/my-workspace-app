@@ -923,9 +923,10 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 
 <script>
 const APP_CHANGELOG = [
-    { version: 'v2.21.0', date: '2026-05-18', changes: [
-        '修复：P2P同步时，离线状态下双端各自新增的任务会被互相覆盖丢失的问题',
-        '新增：数据智能合并算法（Smart Merge），现在同步会保留两边的任务、进度、日志和属性'
+    { version: 'v2.21.1', date: '2026-05-18', changes: [
+        '优化：任务卡片的循环、计数、截止时间、精力等状态全部以胶囊标签外显',
+        '修复：点击任务卡片无法打开详情窗口的问题',
+        '修复：P2P 同步时因数组排序差异导致无限互相覆盖闪烁的问题'
     ]}
 ];
 
@@ -2526,6 +2527,7 @@ function generateTaskDOM(task, ds, options = {}) {
     const loopL = task.recurringType ? `<span class="loop-label">${task.recurringType}</span>` : '';
 
     let badgesHtml = '';
+    if (task.recurringType) badgesHtml += `<span class="task-badge">🔁 ${task.recurringType}</span>`;
     if (task.estimate) badgesHtml += `<span class="task-badge">⏱ ${task.estimate}</span>`;
     const defEC = task.target ? 1 : 10;
     if (task.energyCost !== undefined && task.energyCost !== defEC) {
@@ -2634,12 +2636,11 @@ function generateTaskDOM(task, ds, options = {}) {
     html += `<div class="task-note-area ${task.note ? 'has-note' : ''}" id="note-area-${task.id}" onclick="editTaskNote('${task.id}', this)">${task.note || '📝 点击添加备注...'}</div>`;
     div.innerHTML = html;
 
-    if (hasSub && !showSubTasks) {
+    if (!showSubTasks) {
         div.classList.add('clickable-for-detail');
         div.addEventListener('click', function(e) {
             const interactive = e.target.closest('input, button, textarea, select, a, .btn-icon, .more-menu-container, .task-meta, .task-note-area, .btn-add-sub, .add-sub-task-input, .progress-task-container, .sub-task-list, .btn-count-plus, .btn-count-minus, .btn-count-end, .action-pill-btn');
             if (interactive) return;
-            if (e.target.closest('.task-text')) return;
             openTaskDetailModal(task.id);
         });
     }
@@ -3960,6 +3961,12 @@ function mergeData(local, remote) {
         });
     });
 
+    // ★ 强制稳定排序，消除因为合并遍历顺序不同导致 JSON 字符串计算不同，引发的无限同步死循环
+    merged.tasks.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    merged.exercises.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    merged.fixedBlocks.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    merged.timeSlots.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+
     return merged;
 }
 
@@ -3977,7 +3984,7 @@ function applyRemoteData(payload) {
     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
     renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
     saveLocalStorage();
-    isSyncing = false;
+    setTimeout(() => { isSyncing = false; }, 100); // 延迟解除同步状态，防止合并后立即触发本地的保存发送逻辑
 }
 function setupConnection(connection, isHost, targetId) {
     connection.on('open', () => {
@@ -4008,11 +4015,12 @@ function setupConnection(connection, isHost, targetId) {
             const merged = mergeData(appData, data.payload);
             const remoteSig = getDataSignature(data.payload);
             const mergedSig = getDataSignature(merged);
+            
             if (remoteSig !== mergedSig) {
-                merged._lastModified = Date.now();
+                merged._lastModified = Math.max(appData._lastModified || 1, data.lastModified || 1) + 1;
                 try { connection.send({ type: 'SYNC_DATA', payload: merged, lastModified: merged._lastModified }); } catch(e){}
             } else {
-                merged._lastModified = Math.max(merged._lastModified, data.lastModified || 1);
+                merged._lastModified = Math.max(appData._lastModified || 1, data.lastModified || 1);
             }
             applyRemoteData(merged);
             handshakeDone = true;
