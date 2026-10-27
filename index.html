@@ -264,12 +264,16 @@ body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
 .task-item:not(.in-slot) { padding: 6px 28px 6px 12px; }
 .task-item input[type="checkbox"] { margin-right: 2px; cursor: pointer; accent-color: var(--accent-color); width: 14px; height: 14px; }
 .task-item .task-text { flex: 1; word-break: break-all; }
+.task-item.todo-pool-item { background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-color: #d8b4fe; }
+body.dark-mode .task-item.todo-pool-item { background: linear-gradient(135deg, #2a1e33 0%, #201528 100%); border-color: #7e22ce; }
 .week-column .task-item { width: 100%; margin-bottom: 6px; }
 .task-tag { font-size: var(--font-small); padding: 2px 6px; border-radius: 4px; background: var(--border-color); font-weight: bold; color: var(--text-main); }
 .task-tag.today { background: #e3f2fd; color: #1976d2; }
 body.dark-mode .task-tag.today { background: #1e3a5f; color: #90caf9; }
 .task-tag.overdue { background: #ffebee; color: var(--danger-color); }
 body.dark-mode .task-tag.overdue { background: #3a1c1c; }
+.task-tag.todo-kind { background: #f3e8ff; color: #7e22ce; }
+body.dark-mode .task-tag.todo-kind { background: #3a1c4a; color: #d8b4fe; }
 .overdue-wrapper { margin-top: 16px; border-top: 1px dashed var(--border-color); padding-top: 16px; display: none; }
 .overdue-wrapper h3 { font-size: var(--font-content); color: var(--danger-color); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; font-weight: 600; }
 #task-pool-overdue { border-color: #ffcdd2; background: #fff8f8; }
@@ -913,8 +917,8 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 <div class="week-drawer-header"><span>📋 待办与排期</span><span class="week-drawer-close" onclick="toggleWeekDrawer(false)" title="收起">✕</span></div>
 <div class="week-drawer-body">
 <div class="todo-lists-container">
-<div class="todo-column"><h3>📚 学习待办</h3><input type="text" class="todo-input" id="pool-input-learning" placeholder="📝 添加待办 (支持：任务名 * 100)..."><div class="task-pool-list" id="task-pool-learning" ondrop="handleDrop(event, 'pool')" ondragover="allowDrop(event)"></div></div>
-<div class="todo-column"><h3>🧺 其他待办</h3><input type="text" class="todo-input" id="pool-input-other" placeholder="📝 添加待办 (支持：任务名 * 100)..."><div class="task-pool-list" id="task-pool-other" ondrop="handleDrop(event, 'pool')" ondragover="allowDrop(event)"></div></div>
+<div class="todo-column"><h3>📚 学习待办</h3><input type="text" class="todo-input" id="pool-input-learning" placeholder="📝 添加待办 (支持：任务名 * 100)..."><div class="task-pool-list" id="task-pool-learning" ondrop="handleDrop(event, 'pool', undefined, 'learning')" ondragover="allowDrop(event)"></div></div>
+<div class="todo-column"><h3>🧺 其他待办</h3><input type="text" class="todo-input" id="pool-input-other" placeholder="📝 添加待办 (支持：任务名 * 100)..."><div class="task-pool-list" id="task-pool-other" ondrop="handleDrop(event, 'pool', undefined, 'other')" ondragover="allowDrop(event)"></div></div>
 </div>
 <div class="overdue-wrapper" id="overdue-wrapper">
 <h3>⚠️ 逾期任务</h3>
@@ -1295,30 +1299,18 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.24.1', date: '2026-05-27', changes: [
+        '修复：周计划待办与日计划待办清单不一致的问题',
+        '统一：周计划两个待办池现在显示的就是日计划「📋 待办清单」里的内容（按学习/其他倾向分类）',
+        '修复：周计划里添加待办现在会进入日计划待办清单，可在日计划里看到',
+        '修复：从周计划池拖到具体格子时，自动把待办任务转为学习/其他正式任务',
+        '修复：从周计划格子拖回池子时，任务自动变回待办任务（带学习/其他倾向）',
+        '迁移：历史遗留的 date=pool 学习/其他任务自动转为待办任务'
+    ]},
     { version: 'v2.24.0', date: '2026-05-26', changes: [
         '修复：日计划里把任务拖到空白区域消失的问题（现在会回滚并提示）',
         '修复：周计划里循环/次数任务拖到时间池时行为不统一的问题',
-        '修复：从格子拖回时间池后 timeSlots 未清理的残留问题',
-        '优化：拖入课表格子内的任务改为固定高度，多个任务不再互相挤压',
-        '重大优化：P2P 同步改为「差异驱动 + 局部刷新」，不再全页刷新',
-        '新增：同步时只刷新当前正在查看的视图（切走后下次打开会自动是最新的）',
-        '新增：正在编辑学习方法时，即使收到远端更新也不会覆盖正在输入的编辑器内容'
-    ]},
-    { version: 'v2.23.1', date: '2026-05-25', changes: [
-        '修复：学习方法跨设备同步可能丢失的问题（改为按文件独立 updatedAt 合并，只选更新的）',
-        '新增：学习方法支持多文件（左侧文件列表，可新建/重命名/删除/切换）',
-        '迁移：旧的学习方法内容自动转为「我的学习方法」文件'
-    ]},
-    { version: 'v2.23.0', date: '2026-05-24', changes: [
-        '新增：日计划「📋 待办清单」大类，独立于学习/其他，长期显示',
-        '待办清单里的任务不能完成、不能设置属性，只作为「想法池」保留',
-        '把待办任务拖入学习/其他后，才正式成为可执行任务'
-    ]},
-    { version: 'v2.22.0', date: '2026-05-23', changes: [
-        '新增：左侧栏「📚 学习方法」导航页，右侧打开类似 Word 的富文本编辑器'
-    ]},
-    { version: 'v2.21.1', date: '2026-05-18', changes: [
-        '优化：任务卡片的循环、计数、截止时间、精力等状态全部以胶囊标签外显'
+        '重大优化：P2P 同步改为「差异驱动 + 局部刷新」，不再全页刷新'
     ]}
 ];
 
@@ -1377,7 +1369,6 @@ let currentDetailTaskId = null;
 let lastRpgState = null;
 let userPickedDate = false;
 const expandedSubTasks = new Set();
-// ★ 拖拽中状态，避免同步中断拖拽
 let isDraggingActive = false;
 
 function getTodayString() {
@@ -1607,7 +1598,6 @@ function ensureEnergyData() {
     if (appData.learningMethodsHtml === undefined) appData.learningMethodsHtml = "";
     if (appData.methodsCollapsed === undefined) appData.methodsCollapsed = false;
 
-    // 迁移学习方法文件（旧 learningMethodsHtml → methodsFiles）
     if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) {
         const oldHtml = appData.learningMethodsHtml || '';
         const oldText = appData.learningMethods || '';
@@ -1629,6 +1619,27 @@ function ensureEnergyData() {
     if (!appData.activeMethodsFileId || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId)) {
         appData.activeMethodsFileId = appData.methodsFiles[0].id;
     }
+
+    // ★ 迁移：date='pool' 的 learning/other 非 countOnly 任务 → todo（保留 todoKind 作为倾向）
+    appData.tasks.forEach(t => {
+        if (!t.countOnly && (t.type === 'learning' || t.type === 'other') && t.date === 'pool') {
+            t.todoKind = t.type;
+            t.type = 'todo';
+            delete t.timeSlot;
+            if (t.timeSlots) t.timeSlots = [];
+            t.completed = false;
+            if (t.completions) delete t.completions;
+            if (t.recurringEndedDate) delete t.recurringEndedDate;
+            if (t.subTasks) t.subTasks.forEach(s => {
+                s.completed = false;
+                if (s.completions) delete s.completions;
+            });
+        }
+        // 确保所有 todo 任务都有 todoKind
+        if (t.type === 'todo' && !t.todoKind) {
+            t.todoKind = 'learning';
+        }
+    });
 }
 
 function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
@@ -2704,6 +2715,27 @@ function createWeekTaskDOM(t, ds, options = {}) {
     item.draggable = true;
     item.ondragstart = (e) => { isDraggingActive = true; drag(e, t.id); };
 
+    // ★ todo 任务在池子里显示：无复选框，只有标题 + 倾向标签
+    if (t.type === 'todo') {
+        item.classList.add('todo-pool-item');
+        const text = document.createElement('span');
+        text.className = 'task-text';
+        text.innerText = t.text;
+        item.appendChild(text);
+        const kindTag = document.createElement('span');
+        kindTag.className = 'task-tag todo-kind';
+        kindTag.innerText = t.todoKind === 'other' ? '🧺 其他' : '📚 学习';
+        item.appendChild(kindTag);
+        const del = document.createElement('span');
+        del.className = 'task-delete-btn';
+        del.innerText = '🗑️';
+        del.title = '删除此任务';
+        del.onclick = (e) => { e.stopPropagation(); e.preventDefault(); deleteTaskFromWeek(t.id); };
+        del.ondragstart = (e) => e.stopPropagation();
+        item.appendChild(del);
+        return item;
+    }
+
     if (t.countOnly) {
         item.classList.add('count-task');
         const text = document.createElement('span');
@@ -3007,20 +3039,28 @@ function renderTaskPool() {
     ['learning', 'other'].forEach(type => {
         const pool = type === 'learning' ? pl : po;
         appData.tasks.filter(t => {
+            // ★ todo 任务：按 todoKind 分配到对应池
+            if (t.type === 'todo') {
+                const kind = t.todoKind === 'other' ? 'other' : 'learning';
+                return kind === type;
+            }
+            // 原有逻辑：学习/其他任务中未排期的
             if (t.type !== type) return false;
             if (t.countOnly) return true;
             if (t.date === 'pool') return true;
             if (!t.timeSlot) return true;
             return false;
         }).forEach(t => {
-            const ds = t.date === 'pool' ? appData.selectedDate : t.date;
+            const ds = t.date === 'pool' || t.type === 'todo' ? appData.selectedDate : t.date;
             const item = createWeekTaskDOM(t, ds);
-            if (t.date === 'pool') {
-                const tag = document.createElement('span'); tag.className = 'task-tag'; tag.innerText = '待安排'; item.appendChild(tag);
-            } else if (t.date && t.date !== 'pool') {
-                const d = new Date(t.date + 'T00:00:00');
-                const tagText = t.date === td ? '今日' : `${d.getMonth()+1}/${d.getDate()}`;
-                const tag = document.createElement('span'); tag.className = 'task-tag'; tag.innerText = tagText; item.appendChild(tag);
+            if (t.type !== 'todo') {
+                if (t.date === 'pool') {
+                    const tag = document.createElement('span'); tag.className = 'task-tag'; tag.innerText = '待安排'; item.appendChild(tag);
+                } else if (t.date && t.date !== 'pool') {
+                    const d = new Date(t.date + 'T00:00:00');
+                    const tagText = t.date === td ? '今日' : `${d.getMonth()+1}/${d.getDate()}`;
+                    const tag = document.createElement('span'); tag.className = 'task-tag'; tag.innerText = tagText; item.appendChild(tag);
+                }
             }
             pool.appendChild(item);
         });
@@ -3700,7 +3740,6 @@ function renderTaskListModalContent(type) {
     setTimeout(initTaskAndSubTaskDrag, 0);
 }
 
-// ★ 修复拖到空白回滚
 function initTaskAndSubTaskDrag() {
     document.querySelectorAll('.task-drop-zone').forEach(zone => {
         if (zone._sortable) zone._sortable.destroy();
@@ -3718,7 +3757,6 @@ function initTaskAndSubTaskDrag() {
                 const toType = evt.to && evt.to.dataset ? evt.to.dataset.type : null;
                 const toCompleted = evt.to && evt.to.dataset ? evt.to.dataset.completed === 'true' : false;
 
-                // ★ 防御：拖到无效区域（空白），回滚
                 const validTypes = ['todo', 'learning', 'other'];
                 if (!toType || !validTypes.includes(toType)) {
                     renderDayPlan();
@@ -3727,6 +3765,8 @@ function initTaskAndSubTaskDrag() {
                 }
 
                 if (toType === 'todo') {
+                    // ★ 拖入待办清单：保留原类型的倾向
+                    task.todoKind = (fromType === 'other') ? 'other' : 'learning';
                     task.type = 'todo';
                     task.date = 'pool';
                     delete task.timeSlot;
@@ -3740,8 +3780,10 @@ function initTaskAndSubTaskDrag() {
                         if (s.completions) delete s.completions;
                     });
                 } else if (fromType === 'todo') {
+                    // ★ 从待办清单拖入学习/其他：正式成为任务
                     task.type = toType;
                     task.date = appData.selectedDate;
+                    delete task.todoKind;
                     delete task.completed;
                     if (task.completions) delete task.completions;
                     if (task.subTasks) task.subTasks.forEach(s => {
@@ -3865,14 +3907,14 @@ window.unscheduleTask = function(taskId) {
     if (t._poolOrigin) { t.date = 'pool'; delete t._poolOrigin; }
     else if (t._prevDate) { t.date = t._prevDate; delete t._prevDate; }
     delete t.timeSlot;
-    if (t.timeSlots) t.timeSlots = []; // ★ 清理 timeSlots
+    if (t.timeSlots) t.timeSlots = [];
     saveDataToFile(appData);
     renderWeekBoard(); renderTaskPool(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
     renderDayPlan();
 };
 
-// ★ 修复拖拽行为：统一 countOnly 与普通任务的时间池处理
-function handleDrop(ev, td, timeslot) {
+// ★ 拖拽处理：支持 poolKind
+function handleDrop(ev, td, timeslot, poolKind) {
     ev.preventDefault();
     document.querySelectorAll('.week-column, .task-pool-list, #exercise-pool, .week-grid-cell').forEach(c => c.classList.remove('drag-over'));
 
@@ -3900,10 +3942,23 @@ function handleDrop(ev, td, timeslot) {
     if (draggedTaskId) {
         const t = appData.tasks.find(t => t.id === draggedTaskId);
         if (t) {
-            if (t.type === 'todo') { draggedTaskId = null; isDraggingActive = false; return; }
-
             if (td === 'pool') {
-                // ★ 拖到时间池：countOnly 与普通任务统一处理
+                // ★ 拖到池子
+                if (t.type !== 'todo') {
+                    // 普通学习/其他任务 → 变 todo（保留原类型作为倾向）
+                    t.todoKind = (t.type === 'other') ? 'other' : 'learning';
+                    t.type = 'todo';
+                    t.completed = false;
+                    if (t.completions) delete t.completions;
+                    if (t.recurringEndedDate) delete t.recurringEndedDate;
+                    if (t.subTasks) t.subTasks.forEach(s => {
+                        s.completed = false;
+                        if (s.completions) delete s.completions;
+                    });
+                } else if (poolKind) {
+                    // 已经是 todo，可以换池子
+                    t.todoKind = poolKind;
+                }
                 t.date = 'pool';
                 delete t.timeSlot;
                 if (t.timeSlots) t.timeSlots = [];
@@ -3911,8 +3966,22 @@ function handleDrop(ev, td, timeslot) {
                 delete t._prevDate;
             } else if (timeslot) {
                 // ★ 拖到具体格子
-                if (t.countOnly) {
-                    // countOnly 支持多个格子（timeSlots 数组）
+                if (t.type === 'todo') {
+                    // todo → 变学习/其他正式任务
+                    const kind = t.todoKind === 'other' ? 'other' : 'learning';
+                    t.type = kind;
+                    t.date = td;
+                    t.timeSlot = timeslot;
+                    delete t.todoKind;
+                    t.completed = false;
+                    if (t.completions) delete t.completions;
+                    if (t.recurringEndedDate) delete t.recurringEndedDate;
+                    if (t.subTasks) t.subTasks.forEach(s => {
+                        s.completed = false;
+                        if (s.completions) delete s.completions;
+                    });
+                } else if (t.countOnly) {
+                    // countOnly 支持多个格子
                     if (!t.timeSlots) t.timeSlots = [];
                     const key = td + '_' + timeslot;
                     if (!t.timeSlots.includes(key)) t.timeSlots.push(key);
@@ -3922,7 +3991,7 @@ function handleDrop(ev, td, timeslot) {
                     isDraggingActive = false;
                     return;
                 } else {
-                    // 普通任务 / 循环任务 / 有 target 的任务
+                    // 普通任务改日期+时间段
                     if (t.date === 'pool') t._poolOrigin = true;
                     else if (!t._prevDate && t.date !== td) t._prevDate = t.date;
                     t.date = td;
@@ -4172,17 +4241,38 @@ function handleAddInput(e, type, dateStr, isPool) {
     let text = e.target.value.trim(), target = 0;
     const m = text.match(/\*\s*(\d+)$/);
     if (m) { target = parseInt(m[1]); text = text.replace(/\*\s*\d+$/, '').trim(); }
+
+    // ★ 周计划池添加 → 创建 todo 任务（带 todoKind 记录倾向）
+    if (isPool) {
+        const nt = {
+            id: Date.now().toString(),
+            text,
+            type: 'todo',
+            date: 'pool',
+            todoKind: type, // 'learning' 或 'other'
+            completed: false,
+            subTasks: []
+        };
+        if (target > 0) { nt.target = target; nt.current = 0; }
+        appData.tasks.push(nt);
+        e.target.value = '';
+        renderTaskPool();
+        saveDataToFile(appData);
+        return;
+    }
+
+    // 日计划添加 → 保持原逻辑
     const nt = { id: Date.now().toString(), text, type, date: dateStr, completed: false, subTasks: [], deadline: '', pinned: false, energyCost: target > 0 ? 1 : 10 };
     if (target > 0) { nt.target = target; nt.current = 0; }
     appData.tasks.push(nt); e.target.value = '';
-    if (isPool) { renderTaskPool(); saveDataToFile(appData); } else renderDayPlan();
+    renderDayPlan();
 }
 function handleAddTodoInput(e) {
     if (e.key !== 'Enter' || !e.target.value.trim()) return;
     let text = e.target.value.trim(), target = 0;
     const m = text.match(/\*\s*(\d+)$/);
     if (m) { target = parseInt(m[1]); text = text.replace(/\*\s*\d+$/, '').trim(); }
-    const nt = { id: Date.now().toString(), text, type: 'todo', date: 'pool', completed: false, subTasks: [] };
+    const nt = { id: Date.now().toString(), text, type: 'todo', date: 'pool', todoKind: 'learning', completed: false, subTasks: [] };
     if (target > 0) { nt.target = target; nt.current = 0; }
     appData.tasks.push(nt);
     e.target.value = '';
@@ -4779,6 +4869,7 @@ function mergeData(local, remote) {
         } else {
             const lt = localTasksMap.get(rt.id);
             if (rt.type !== undefined && rt.type !== lt.type) lt.type = rt.type;
+            if (rt.todoKind !== undefined) lt.todoKind = rt.todoKind;
             if (rt.date !== undefined && rt.date !== lt.date) lt.date = rt.date;
             lt.text = rt.text || lt.text;
             if (rt.completed !== undefined) lt.completed = rt.completed;
@@ -4908,7 +4999,6 @@ function mergeData(local, remote) {
     return merged;
 }
 
-// ★ 计算两版数据的差异，用于局部刷新
 function computeDiffs(oldData, newData) {
     const diffs = {};
     if (!oldData) { diffs.all = true; return diffs; }
@@ -4935,10 +5025,8 @@ function computeDiffs(oldData, newData) {
     return diffs;
 }
 
-// ★ 局部刷新：只更新变化的部分 + 只刷新当前活跃视图
 function applyRemoteData(payload, oldData) {
     isSyncing = true;
-    // 拖拽中：推迟处理，避免打断
     if (isDraggingActive) {
         setTimeout(() => {
             isSyncing = false;
@@ -4950,13 +5038,11 @@ function applyRemoteData(payload, oldData) {
     appData = payload;
     ensureEnergyData();
 
-    // 主题/字体/圆角
     if (diffs.themeMode) document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
     if (diffs.themeColor && appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
     if (diffs.fonts && appData.fonts) ['title','content','hint','small'].forEach(k => document.documentElement.style.setProperty(`--font-${k}`, appData.fonts[k]));
     if (diffs.radius && appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
 
-    // 年度目标
     if (diffs.yearlyGoals) {
         const g = appData.yearlyGoals || "";
         const yg = document.getElementById('yearly-goals');
@@ -4965,18 +5051,15 @@ function applyRemoteData(payload, oldData) {
         if (ygb && document.activeElement !== ygb) ygb.value = g;
     }
 
-    // 侧边栏进度条
     if (diffs.tasks || diffs.exercises || diffs.exerciseSchedule || diffs.dailyExerciseChecks) {
         updateFixedProgressBars();
     }
 
-    // RPG 和精力
     if (diffs.rpg || diffs.dailyEnergy) {
         lastRpgState = null;
         renderEnergyAndRPG();
     }
 
-    // 学习方法文件列表 + 编辑器（编辑器正在输入时不覆盖）
     if (diffs.methodsFiles) {
         renderMethodsFileList();
         const editor = methodsGetEditor();
@@ -4985,7 +5068,6 @@ function applyRemoteData(payload, oldData) {
         }
     }
 
-    // 设置面板相关
     if (diffs.levelConfig) renderLevelConfig();
     if (diffs.commonBtns && appData.commonBtns) {
         document.querySelectorAll('#common-btns-config input[type="checkbox"]').forEach(cb => { cb.checked = appData.commonBtns.includes(cb.value); });
@@ -4997,14 +5079,12 @@ function applyRemoteData(payload, oldData) {
         if (el) el.innerText = appData.maxVisible;
     }
 
-    // ★ 只刷新当前活跃视图（如果数据有变化且用户不在编辑中）
     const activeViewEl = document.querySelector('.view-container.active');
     const activeView = activeViewEl ? activeViewEl.id : '';
     const viewNeedsUpdate = diffs.tasks || diffs.exercises || diffs.dailyExerciseChecks ||
                             diffs.exerciseSchedule || diffs.fixedBlockSchedule || diffs.dailyReflections ||
                             diffs.timeSlots || diffs.fixedBlocks;
     if (viewNeedsUpdate) {
-        // 用户正在输入时不刷新（下次切换视图会刷新）
         const activeEl = document.activeElement;
         const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
         if (!isEditing) {
@@ -5046,7 +5126,6 @@ function setupConnection(connection, isHost, targetId) {
         } else if (data.type === 'SYNC_NEED_DATA') {
             try { connection.send({ type: 'SYNC_DATA', payload: appData, lastModified: appData._lastModified || 1 }); } catch(e){}
         } else if (data.type === 'SYNC_DATA') {
-            // ★ 保存旧数据用于 diff
             const oldData = JSON.parse(JSON.stringify(appData));
             const merged = mergeData(appData, data.payload);
             const remoteSig = getDataSignature(data.payload);
@@ -5058,7 +5137,6 @@ function setupConnection(connection, isHost, targetId) {
             } else {
                 merged._lastModified = Math.max(appData._lastModified || 1, data.lastModified || 1);
             }
-            // ★ 传 oldData，用于局部刷新判断
             applyRemoteData(merged, oldData);
             handshakeDone = true;
             document.getElementById('p2p-status').innerText = "✅ 已合并同步";
