@@ -1299,18 +1299,21 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.24.2', date: '2026-05-28', changes: [
+        '修复：任务拖到日计划空白区域意外跑进「已完成」的问题',
+        '修复：学习/其他/待办清单之间只能拖一次、后续拖不动的问题',
+        '修复：学习任务拖到待办清单时被误判为已完成的问题',
+        '优化：已完成区域改为「只能拉出、不能拖入」，杜绝误操作',
+        '优化：拖拽结束后延迟重绘，避免 Sortable 内部状态异常'
+    ]},
     { version: 'v2.24.1', date: '2026-05-27', changes: [
         '修复：周计划待办与日计划待办清单不一致的问题',
-        '统一：周计划两个待办池现在显示的就是日计划「📋 待办清单」里的内容（按学习/其他倾向分类）',
-        '修复：周计划里添加待办现在会进入日计划待办清单，可在日计划里看到',
-        '修复：从周计划池拖到具体格子时，自动把待办任务转为学习/其他正式任务',
-        '修复：从周计划格子拖回池子时，任务自动变回待办任务（带学习/其他倾向）',
-        '迁移：历史遗留的 date=pool 学习/其他任务自动转为待办任务'
+        '统一：周计划两个待办池现在显示的就是日计划「📋 待办清单」里的内容'
     ]},
     { version: 'v2.24.0', date: '2026-05-26', changes: [
-        '修复：日计划里把任务拖到空白区域消失的问题（现在会回滚并提示）',
+        '修复：日计划里把任务拖到空白区域消失的问题',
         '修复：周计划里循环/次数任务拖到时间池时行为不统一的问题',
-        '重大优化：P2P 同步改为「差异驱动 + 局部刷新」，不再全页刷新'
+        '重大优化：P2P 同步改为「差异驱动 + 局部刷新」'
     ]}
 ];
 
@@ -1620,7 +1623,7 @@ function ensureEnergyData() {
         appData.activeMethodsFileId = appData.methodsFiles[0].id;
     }
 
-    // ★ 迁移：date='pool' 的 learning/other 非 countOnly 任务 → todo（保留 todoKind 作为倾向）
+    // 迁移：date='pool' 的 learning/other 非 countOnly 任务 → todo
     appData.tasks.forEach(t => {
         if (!t.countOnly && (t.type === 'learning' || t.type === 'other') && t.date === 'pool') {
             t.todoKind = t.type;
@@ -1635,7 +1638,6 @@ function ensureEnergyData() {
                 if (s.completions) delete s.completions;
             });
         }
-        // 确保所有 todo 任务都有 todoKind
         if (t.type === 'todo' && !t.todoKind) {
             t.todoKind = 'learning';
         }
@@ -2715,7 +2717,6 @@ function createWeekTaskDOM(t, ds, options = {}) {
     item.draggable = true;
     item.ondragstart = (e) => { isDraggingActive = true; drag(e, t.id); };
 
-    // ★ todo 任务在池子里显示：无复选框，只有标题 + 倾向标签
     if (t.type === 'todo') {
         item.classList.add('todo-pool-item');
         const text = document.createElement('span');
@@ -3039,12 +3040,10 @@ function renderTaskPool() {
     ['learning', 'other'].forEach(type => {
         const pool = type === 'learning' ? pl : po;
         appData.tasks.filter(t => {
-            // ★ todo 任务：按 todoKind 分配到对应池
             if (t.type === 'todo') {
                 const kind = t.todoKind === 'other' ? 'other' : 'learning';
                 return kind === type;
             }
-            // 原有逻辑：学习/其他任务中未排期的
             if (t.type !== type) return false;
             if (t.countOnly) return true;
             if (t.date === 'pool') return true;
@@ -3740,71 +3739,113 @@ function renderTaskListModalContent(type) {
     setTimeout(initTaskAndSubTaskDrag, 0);
 }
 
+/* ============ 日计划任务拖拽（核心逻辑已修复） ============ */
 function initTaskAndSubTaskDrag() {
     document.querySelectorAll('.task-drop-zone').forEach(zone => {
         if (zone._sortable) zone._sortable.destroy();
+
+        // ★ 关键：已完成区域只允许"拉出"，不接受"拖入"
+        const isCompletedZone = zone.dataset.completed === 'true';
+        const groupConfig = isCompletedZone
+            ? { name: 'shared-tasks', pull: true, put: false }
+            : 'shared-tasks';
+
         zone._sortable = new Sortable(zone, {
-            group: 'shared-tasks', animation: 150, ghostClass: 'sortable-ghost', draggable: '.main-task-item',
+            group: groupConfig,
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            draggable: '.main-task-item',
             onStart: function() { isDraggingActive = true; },
             onEnd: function(evt) {
                 isDraggingActive = false;
                 const item = evt.item, taskId = item.dataset.taskId;
-                if (!taskId) return;
+
+                // 找不到任务 → 直接刷新还原
+                if (!taskId) {
+                    setTimeout(renderDayPlan, 30);
+                    return;
+                }
                 const task = appData.tasks.find(t => t.id === taskId);
-                if (!task) return;
-                
+                if (!task) {
+                    setTimeout(renderDayPlan, 30);
+                    return;
+                }
+
                 const fromType = task.type || '';
                 const toType = evt.to && evt.to.dataset ? evt.to.dataset.type : null;
                 const toCompleted = evt.to && evt.to.dataset ? evt.to.dataset.completed === 'true' : false;
 
                 const validTypes = ['todo', 'learning', 'other'];
+
+                // ★ 拖到了非预期的空白区域 / 无效落点 → 直接回滚（数据不变，重新渲染）
                 if (!toType || !validTypes.includes(toType)) {
-                    renderDayPlan();
-                    showMiniToast('❌ 请拖到「待办 / 学习 / 其他」区域内');
+                    setTimeout(renderDayPlan, 30);
                     return;
                 }
 
+                // ★ 因为 completed 区 put:false，理论上不会拖到 completed 里
+                // 但万一 Sortable 有边界情况，防御性再拦一次
+                if (toCompleted) {
+                    setTimeout(renderDayPlan, 30);
+                    return;
+                }
+
+                // ====== 正常类型转换 ======
                 if (toType === 'todo') {
-                    // ★ 拖入待办清单：保留原类型的倾向
-                    task.todoKind = (fromType === 'other') ? 'other' : 'learning';
-                    task.type = 'todo';
-                    task.date = 'pool';
-                    delete task.timeSlot;
-                    if (task.timeSlots) task.timeSlots = [];
-                    delete task.pinned;
-                    task.completed = false;
+                    // 拖入待办清单
+                    if (fromType !== 'todo') {
+                        // 学习/其他 → 待办：保留原类型作为 todoKind
+                        task.todoKind = (fromType === 'other') ? 'other' : 'learning';
+                        task.type = 'todo';
+                        task.date = 'pool';
+                        delete task.timeSlot;
+                        if (task.timeSlots) task.timeSlots = [];
+                        delete task.pinned;
+                        task.completed = false;
+                        if (task.completions) delete task.completions;
+                        if (task.recurringEndedDate) delete task.recurringEndedDate;
+                        if (task.subTasks) task.subTasks.forEach(s => {
+                            s.completed = false;
+                            if (s.completions) delete s.completions;
+                        });
+                    }
+                    // 已经是 todo → todo 之间的重排，不需要改类型
+                } else if (fromType === 'todo') {
+                    // 待办 → 学习/其他：正式成为可执行任务
+                    task.type = toType;
+                    task.date = appData.selectedDate;
+                    delete task.todoKind;
+                    delete task.completed;
                     if (task.completions) delete task.completions;
                     if (task.recurringEndedDate) delete task.recurringEndedDate;
                     if (task.subTasks) task.subTasks.forEach(s => {
                         s.completed = false;
                         if (s.completions) delete s.completions;
                     });
-                } else if (fromType === 'todo') {
-                    // ★ 从待办清单拖入学习/其他：正式成为任务
-                    task.type = toType;
-                    task.date = appData.selectedDate;
-                    delete task.todoKind;
-                    delete task.completed;
-                    if (task.completions) delete task.completions;
-                    if (task.subTasks) task.subTasks.forEach(s => {
-                        s.completed = false;
-                        if (s.completions) delete s.completions;
-                    });
                 } else {
+                    // 学习 ↔ 其他 互拖，或从已完成区拖到未完成区
                     task.type = toType;
-                    setTaskDone(task, appData.selectedDate, toCompleted);
+                    // toCompleted 永远是 false（因为 completed 区拒绝 drop）
+                    // 如果任务当前是已完成状态，但拖到的目标区是未完成 → 取消完成
+                    if (isTaskDone(task, appData.selectedDate)) {
+                        setTaskDone(task, appData.selectedDate, false);
+                    }
                 }
 
+                // 排序：把任务插入到目标容器对应的数据位置
                 const newOrderIds = Array.from(evt.to.querySelectorAll('.main-task-item')).map(el => el.dataset.taskId).filter(Boolean);
                 appData.tasks = appData.tasks.filter(t => t.id !== taskId);
                 const insertIndex = appData.tasks.findIndex(t => newOrderIds.includes(t.id));
                 if (insertIndex !== -1) appData.tasks.splice(insertIndex, 0, task);
                 else appData.tasks.push(task);
+
                 saveDataToFile(appData);
-                renderDayPlan();
+                // ★ 延迟 renderDayPlan，让 Sortable 完成内部清理，避免"拖一次后拖不了"
+                setTimeout(renderDayPlan, 30);
             }
         });
     });
+
     document.querySelectorAll('.sub-task-list').forEach(list => {
         if (list._sortable) list._sortable.destroy();
         list._sortable = new Sortable(list, {
@@ -3813,15 +3854,21 @@ function initTaskAndSubTaskDrag() {
             onEnd: function(evt) {
                 isDraggingActive = false;
                 const taskId = evt.to.dataset.taskId;
-                if (!taskId) return;
+                if (!taskId) {
+                    setTimeout(renderDayPlan, 30);
+                    return;
+                }
                 const task = appData.tasks.find(t => t.id === taskId);
-                if (!task) return;
+                if (!task) {
+                    setTimeout(renderDayPlan, 30);
+                    return;
+                }
                 const newSubIds = Array.from(evt.to.querySelectorAll('.sub-task-item')).map(el => el.dataset.subId).filter(Boolean);
                 const reordered = newSubIds.map(id => task.subTasks.find(s => s.id === id)).filter(Boolean);
                 const others = task.subTasks.filter(s => !newSubIds.includes(s.id));
                 task.subTasks = [...reordered, ...others];
                 saveDataToFile(appData);
-                renderDayPlan();
+                setTimeout(renderDayPlan, 30);
             }
         });
     });
@@ -3913,7 +3960,6 @@ window.unscheduleTask = function(taskId) {
     renderDayPlan();
 };
 
-// ★ 拖拽处理：支持 poolKind
 function handleDrop(ev, td, timeslot, poolKind) {
     ev.preventDefault();
     document.querySelectorAll('.week-column, .task-pool-list, #exercise-pool, .week-grid-cell').forEach(c => c.classList.remove('drag-over'));
@@ -3943,9 +3989,7 @@ function handleDrop(ev, td, timeslot, poolKind) {
         const t = appData.tasks.find(t => t.id === draggedTaskId);
         if (t) {
             if (td === 'pool') {
-                // ★ 拖到池子
                 if (t.type !== 'todo') {
-                    // 普通学习/其他任务 → 变 todo（保留原类型作为倾向）
                     t.todoKind = (t.type === 'other') ? 'other' : 'learning';
                     t.type = 'todo';
                     t.completed = false;
@@ -3956,7 +4000,6 @@ function handleDrop(ev, td, timeslot, poolKind) {
                         if (s.completions) delete s.completions;
                     });
                 } else if (poolKind) {
-                    // 已经是 todo，可以换池子
                     t.todoKind = poolKind;
                 }
                 t.date = 'pool';
@@ -3965,9 +4008,7 @@ function handleDrop(ev, td, timeslot, poolKind) {
                 delete t._poolOrigin;
                 delete t._prevDate;
             } else if (timeslot) {
-                // ★ 拖到具体格子
                 if (t.type === 'todo') {
-                    // todo → 变学习/其他正式任务
                     const kind = t.todoKind === 'other' ? 'other' : 'learning';
                     t.type = kind;
                     t.date = td;
@@ -3981,7 +4022,6 @@ function handleDrop(ev, td, timeslot, poolKind) {
                         if (s.completions) delete s.completions;
                     });
                 } else if (t.countOnly) {
-                    // countOnly 支持多个格子
                     if (!t.timeSlots) t.timeSlots = [];
                     const key = td + '_' + timeslot;
                     if (!t.timeSlots.includes(key)) t.timeSlots.push(key);
@@ -3991,7 +4031,6 @@ function handleDrop(ev, td, timeslot, poolKind) {
                     isDraggingActive = false;
                     return;
                 } else {
-                    // 普通任务改日期+时间段
                     if (t.date === 'pool') t._poolOrigin = true;
                     else if (!t._prevDate && t.date !== td) t._prevDate = t.date;
                     t.date = td;
@@ -4242,14 +4281,13 @@ function handleAddInput(e, type, dateStr, isPool) {
     const m = text.match(/\*\s*(\d+)$/);
     if (m) { target = parseInt(m[1]); text = text.replace(/\*\s*\d+$/, '').trim(); }
 
-    // ★ 周计划池添加 → 创建 todo 任务（带 todoKind 记录倾向）
     if (isPool) {
         const nt = {
             id: Date.now().toString(),
             text,
             type: 'todo',
             date: 'pool',
-            todoKind: type, // 'learning' 或 'other'
+            todoKind: type,
             completed: false,
             subTasks: []
         };
@@ -4261,7 +4299,6 @@ function handleAddInput(e, type, dateStr, isPool) {
         return;
     }
 
-    // 日计划添加 → 保持原逻辑
     const nt = { id: Date.now().toString(), text, type, date: dateStr, completed: false, subTasks: [], deadline: '', pinned: false, energyCost: target > 0 ? 1 : 10 };
     if (target > 0) { nt.target = target; nt.current = 0; }
     appData.tasks.push(nt); e.target.value = '';
