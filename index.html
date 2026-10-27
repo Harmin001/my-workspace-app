@@ -206,7 +206,7 @@ body.dark-mode .deadline-preview { background: #3a1c1c; }
 
 .year-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-shrink: 0; }
 .year-heatmap { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 6px; margin-bottom: 24px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); flex-shrink: 0; }
-.heatmap-cell { width: 100%; aspect-ratio: 1/1; background-color: var(--bg-sidebar); border-radius: 4px; cursor: pointer; transition: all .1s; display: flex; align-items: center; justify-content: center; font-size: var(--font-small); font-weight: 600; position: relative; }
+.heatmap-cell { width: 100%; aspect-ratio: 1/1; background-color: var(--bg-sidebar); border-radius: 4px; cursor: pointer; transition: all .1s; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; position: relative; }
 .heatmap-cell:hover { transform: scale(1.15); z-index: 10; }
 .heatmap-cell.today-cell { outline: 2px solid var(--accent-color); outline-offset: -2px; }
 
@@ -494,7 +494,6 @@ details.settings-details[open] summary { border-bottom: 1px solid var(--border-c
 details.settings-details[open] summary::before { transform: rotate(90deg); }
 .settings-details .panel-content { padding: 12px 14px; }
 .backup-status { font-size: var(--font-hint); color: var(--text-muted); margin-top: 6px; line-height: 1.5; }
-.log-list { max-height: 200px; overflow-y: auto; margin-top: 8px; }
 .rpg-edit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
 .rpg-edit-grid label { display: flex; flex-direction: column; gap: 4px; font-size: var(--font-hint); color: var(--text-main); }
 .rpg-edit-grid span { font-weight: 600; color: var(--text-muted); }
@@ -764,6 +763,11 @@ body.dark-mode .methods-content h1, body.dark-mode .methods-content h2, body.dar
 body.dark-mode .methods-content blockquote { background: rgba(59,130,246,.12); color: #a0a0a0; }
 body.dark-mode .methods-content hr { border-top-color: #444; }
 
+/* 双屏分栏 */
+.methods-paper.split-screen { gap: 20px; }
+.methods-paper.split-screen .methods-content { max-width: 50%; padding: 32px; }
+.methods-paper.split-screen .methods-content.mirror { display: block !important; }
+
 @media(max-width: 900px) { .settings-grid { grid-template-columns: 1fr; gap: 12px; } .rpg-edit-grid { grid-template-columns: repeat(2, 1fr); } }
 @media(max-width: 768px) {
     body { flex-direction: column; }
@@ -782,6 +786,8 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
     .methods-file-item { flex-shrink: 0; min-width: 100px; max-width: 180px; padding: 6px 10px; }
     .methods-paper { padding: 12px 6px; }
     .methods-content { padding: 24px 18px; font-size: 14px; }
+    .methods-paper.split-screen { flex-direction: column; }
+    .methods-paper.split-screen .methods-content { max-width: 100%; padding: 24px 18px; }
     .methods-toolbar { padding: 6px; gap: 3px; }
     .methods-toolbar .tb-group { padding: 0 3px; }
     .methods-toolbar button { min-width: 26px; height: 26px; padding: 0 5px; font-size: 12px; }
@@ -869,8 +875,8 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
     <div class="energy-warn" id="energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
 </div>
 <div class="energy-right">
-    <button class="btn-energy-restore" onclick="restoreEnergy('nap')" title="恢复 40 点精力">😴+40</button>
-    <button class="btn-energy-restore" onclick="restoreEnergy('break')" title="恢复 15 点精力">☕+15</button>
+    <button class="btn-energy-restore" onclick="restoreEnergy('nap')" id="btn-nap" title="恢复精力">😴+40</button>
+    <button class="btn-energy-restore" onclick="restoreEnergy('break')" id="btn-break" title="恢复精力">☕+15</button>
 </div>
 </div>
 <div class="rpg-card-main" onclick="openRPGModal()">
@@ -906,12 +912,20 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 <div class="time-nav"><button onclick="changeMonth(-1)">← 上月</button><span id="month-display">2025年 10月</span><button onclick="changeMonth(1)">下月 →</button></div>
 <div class="calendar-grid" id="calendar-grid"></div>
 </div>
-<div class="bottom-summary"><h2>📝 本月总结</h2><textarea placeholder="写点什么记录这个月吧..."></textarea></div>
+<details class="bottom-summary" id="month-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:12px;">
+    <summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">📝 本月总结 (点击展开/收起)</summary>
+    <textarea id="month-summary-textarea" placeholder="写点什么记录这个月吧..." style="margin-top:8px;"></textarea>
+</details>
 </div>
 
 <div class="view-container" id="view-week">
 <div class="year-header"><h1>🗓️ 周计划</h1><div class="time-nav" style="margin-bottom:0;"><button onclick="changeWeek(-1)">← 上周</button><span id="week-display" style="font-size:var(--font-content);">本周</span><button onclick="changeWeek(1)">下周 →</button></div></div>
 <div class="week-board" id="week-board"></div>
+
+<details class="bottom-summary" id="week-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;">
+    <summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">📝 本周总结 (点击展开/收起)</summary>
+    <textarea id="week-summary-textarea" placeholder="记录这一周的感受与收获..." style="margin-top:8px;"></textarea>
+</details>
 
 <div class="week-drawer-panel" id="week-drawer-panel">
 <div class="week-drawer-header"><span>📋 待办与排期</span><span class="week-drawer-close" onclick="toggleWeekDrawer(false)" title="收起">✕</span></div>
@@ -973,13 +987,17 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 </div>
 </div>
 </div>
-<div class="bottom-summary"><h2>💭 今日反思</h2><textarea id="daily-reflection-textarea" placeholder="今天过得怎么样？有什么想记录的？" oninput="handleReflectionInput(this.value)"></textarea></div>
+<details class="bottom-summary" id="day-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;">
+    <summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">💭 今日反思 (点击展开/收起)</summary>
+    <textarea id="daily-reflection-textarea" placeholder="今天过得怎么样？有什么想记录的？" oninput="handleReflectionInput(this.value)" style="margin-top:8px;"></textarea>
+</details>
 </div>
 
 <div class="view-container" id="view-methods">
 <div class="year-header">
     <h1>📚 学习方法</h1>
     <div style="font-size:var(--font-hint);color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+        <button class="btn btn-sm" id="btn-toggle-split" onclick="toggleSplitScreen()">🖥️ 双栏模式</button>
         <span id="methods-save-status">💾 自动保存</span>
     </div>
 </div>
@@ -1061,8 +1079,9 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
                 <button type="button" data-cmd="insertHorizontalRule" title="插入分隔线" style="font-weight:900;">—</button>
             </div>
         </div>
-        <div class="methods-paper">
+        <div class="methods-paper" id="methods-paper-container">
             <div class="methods-content" id="methods-content" contenteditable="true" data-placeholder="在这里记录你的学习方法… 可以像 Word 一样调整字体、大小、颜色、加粗、列表等。"></div>
+            <div class="methods-content" id="methods-content-2" contenteditable="true" style="display:none;" data-placeholder="第二篇文档对比区..."></div>
         </div>
     </div>
 </div>
@@ -1115,8 +1134,13 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">50</span><input type="range" id="energy-max-slider" min="50" max="200" step="10" value="100" oninput="changeEnergyMax(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">200</span></div>
 <div style="margin-top:8px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力警告阈值 (<span id="energy-warn-val">30</span>)</div>
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">10</span><input type="range" id="energy-warn-slider" min="10" max="100" step="5" value="30" oninput="changeEnergyWarn(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">100</span></div>
-<div style="margin-top:8px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力转经验折损率 (<span id="exp-ratio-val">80</span>%)</div>
-<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">10%</span><input type="range" id="exp-ratio-slider" min="10" max="100" step="5" value="80" oninput="changeExpRatio(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">100%</span></div>
+<div style="margin-top:8px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力转经验折损率 (<span id="exp-ratio-val">60</span>%)</div>
+<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">10%</span><input type="range" id="exp-ratio-slider" min="10" max="100" step="5" value="60" oninput="changeExpRatio(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">100%</span></div>
+<div style="margin-top:12px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力恢复值设置</div>
+<div style="display:flex;gap:12px;margin-top:4px;">
+    <label style="font-size:var(--font-hint);color:var(--text-main);display:flex;align-items:center;gap:4px;">😴 小憩: <input type="number" id="set-nap-energy" style="width:50px;padding:4px;" onchange="changeRestoreEnergy('nap', this.value)"> 点</label>
+    <label style="font-size:var(--font-hint);color:var(--text-main);display:flex;align-items:center;gap:4px;">☕ 休息: <input type="number" id="set-break-energy" style="width:50px;padding:4px;" onchange="changeRestoreEnergy('break', this.value)"> 点</label>
+</div>
 </div>
 </div>
 <div class="section-box" style="border-color:#c5cae9;">
@@ -1176,7 +1200,7 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 <label class="btn btn-sm" style="cursor:pointer;">📥 导入 JSON<input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)"></label>
 <button class="btn btn-danger btn-sm" onclick="resetAllData()" style="margin-left:auto;">🚨 清空所有数据</button>
 </div>
-<p style="margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px;">📁 <b>自动备份到文件夹</b>：每 N 分钟把数据覆盖写入所选文件夹的 <code>myWorkspace_backup.json</code>。<br><span style="color:#e65100;">需 Chrome / Edge，通过 https 或 localhost 打开。</span></p>
+<p style="margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px;">📁 <b>自动备份到文件夹</b>：每 N 分钟把数据覆盖写入所选文件夹的 <code>myWorkspace_backup.json</code>，同时会自动创建一个 <code>methods</code> 子文件夹单独保存你的学习方法文档。<br><span style="color:#e65100;">需 Chrome / Edge，通过 https 或 localhost 打开。</span></p>
 <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;">
 <button class="btn btn-sm btn-primary" onclick="chooseBackupFolder()">📂 选择文件夹</button>
 <button class="btn btn-sm" id="btn-restore-backup-folder" style="display:none;color:#1565c0;border-color:#90caf9;animation:pulse 2s infinite;" onclick="restoreBackupFolder()">🔄 恢复文件夹权限</button>
@@ -1218,14 +1242,6 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 </div>
 </details>
 </div>
-<div class="section-box" style="border-color:#c5cae9;">
-<div class="panel-content" style="padding:0;">
-<details class="settings-details">
-<summary style="color:#303f9f;">📝 更新日志</summary>
-<div class="panel-content" style="padding-top:0;"><div class="log-list" id="changelog-list"></div></div>
-</details>
-</div>
-</div>
 </div>
 </div>
 </div>
@@ -1259,8 +1275,8 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
         <div class="energy-warn" id="modal-energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
     </div>
     <div class="energy-right">
-        <button class="btn-energy-restore" onclick="restoreEnergy('nap')">😴+40</button>
-        <button class="btn-energy-restore" onclick="restoreEnergy('break')">☕+15</button>
+        <button class="btn-energy-restore" onclick="restoreEnergy('nap')" id="modal-btn-nap">😴+40</button>
+        <button class="btn-energy-restore" onclick="restoreEnergy('break')" id="modal-btn-break">☕+15</button>
     </div>
 </div>
 <div class="rpg-modal-grid" id="rpg-modal-grid"></div>
@@ -1298,34 +1314,16 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 </div>
 
 <script>
-const APP_CHANGELOG = [
-    { version: 'v2.24.2', date: '2026-05-28', changes: [
-        '修复：任务拖到日计划空白区域意外跑进「已完成」的问题',
-        '修复：学习/其他/待办清单之间只能拖一次、后续拖不动的问题',
-        '修复：学习任务拖到待办清单时被误判为已完成的问题',
-        '优化：已完成区域改为「只能拉出、不能拖入」，杜绝误操作',
-        '优化：拖拽结束后延迟重绘，避免 Sortable 内部状态异常'
-    ]},
-    { version: 'v2.24.1', date: '2026-05-27', changes: [
-        '修复：周计划待办与日计划待办清单不一致的问题',
-        '统一：周计划两个待办池现在显示的就是日计划「📋 待办清单」里的内容'
-    ]},
-    { version: 'v2.24.0', date: '2026-05-26', changes: [
-        '修复：日计划里把任务拖到空白区域消失的问题',
-        '修复：周计划里循环/次数任务拖到时间池时行为不统一的问题',
-        '重大优化：P2P 同步改为「差异驱动 + 局部刷新」'
-    ]}
-];
-
 const DEFAULT_LEVELS = [
-    { name: '新手', needExp: 100 }, { name: '学习者', needExp: 200 }, { name: '学霸', needExp: 300 },
-    { name: '博学者', needExp: 400 }, { name: '大师', needExp: 500 }, { name: '宗师', needExp: 600 }, { name: '传说', needExp: 800 }
+    { name: '新手', needExp: 100 }, { name: '学习者', needExp: 1000 }, { name: '学霸', needExp: 10000 },
+    { name: '博学者', needExp: 100000 }, { name: '大师', needExp: 1000000 }, { name: '宗师', needExp: 10000000 }, { name: '传说', needExp: 100000000 }
 ];
 const DEFAULT_TIMESLOTS = [
-    { id: 'ts1', label: '08:00-08:50' }, { id: 'ts2', label: '09:00-09:50' }, { id: 'ts3', label: '10:10-11:00' },
-    { id: 'ts4', label: '11:10-12:00' }, { id: 'ts5', label: '13:30-14:20' }, { id: 'ts6', label: '14:30-15:20' },
-    { id: 'ts7', label: '15:40-16:30' }, { id: 'ts8', label: '16:40-17:30' }, { id: 'ts9', label: '18:30-19:20' },
-    { id: 'ts10', label: '19:30-20:20' }
+    { id: 'ts1', label: '08:30-09:10' }, { id: 'ts2', label: '09:15-09:55' }, { id: 'ts3', label: '10:10-10:50' },
+    { id: 'ts4', label: '10:55-11:35' }, { id: 'ts5', label: '11:35-13:05' }, { id: 'ts6', label: '13:10-13:50' },
+    { id: 'ts7', label: '13:55-14:35' }, { id: 'ts8', label: '14:45-15:25' }, { id: 'ts9', label: '15:30-16:10' },
+    { id: 'ts10', label: '16:15-16:55' }, { id: 'ts11', label: '18:00-18:40' }, { id: 'ts12', label: '18:45-19:25' },
+    { id: 'ts13', label: '19:30-20:10' }
 ];
 const DEFAULT_FIXED_BLOCKS = [
     { id: 'fb_class', name: '上课' }, { id: 'fb_meal', name: '吃饭' }, { id: 'fb_rest', name: '休息' }, { id: 'fb_commute', name: '通勤' }
@@ -1340,14 +1338,16 @@ let appData = {
         { id: 'ex_cardio', name: '有氧', subTasks: [], recurringType: '', energyCost: 15 }
     ],
     exerciseSchedule: {}, dailyExerciseChecks: {}, dailyReflections: {}, dailyLogs: {},
+    weeklyReflections: {},
     selectedDate: getTodayString(), yearlyGoals: "",
     learningMethods: "", learningMethodsHtml: "", methodsCollapsed: false,
-    methodsFiles: [], activeMethodsFileId: null,
+    methodsFiles: [], activeMethodsFileId: null, activeMethodsFileId2: null, splitScreenMode: false,
     themeColor: "#2383e2", themeMode: "light",
     fonts: { title: "18px", content: "14px", hint: "12px", small: "10px" },
     radius: "8px",
     viewYear: new Date().getFullYear(), viewMonth: new Date().getMonth(), viewWeekBaseDate: getTodayString(),
-    _lastModified: 1, energyMax: 100, energyWarnThreshold: 30, expRatio: 0.8, dailyEnergy: {},
+    _lastModified: 1, energyMax: 100, energyWarnThreshold: 30, expRatio: 0.6, dailyEnergy: {},
+    napEnergy: 40, breakEnergy: 15,
     rpg: { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' },
     panelLayout: { order: ['todo', 'learning', 'other', 'exercise'], spans: {}, sizes: {} },
     levelConfig: { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) },
@@ -1569,13 +1569,17 @@ function ensureEnergyData() {
     if (!appData.exerciseSchedule) appData.exerciseSchedule = {};
     if (!appData.dailyExerciseChecks) appData.dailyExerciseChecks = {};
     if (!appData.dailyReflections) appData.dailyReflections = {};
+    if (!appData.weeklyReflections) appData.weeklyReflections = {};
     if (!appData.dailyLogs) appData.dailyLogs = {};
     if (!appData.dailyEnergy) appData.dailyEnergy = {};
     if (!appData.fixedBlockSchedule) appData.fixedBlockSchedule = {};
     
     if (!appData.energyMax) appData.energyMax = 100;
     if (appData.energyWarnThreshold === undefined) appData.energyWarnThreshold = 30;
-    if (appData.expRatio === undefined) appData.expRatio = 0.8;
+    if (appData.expRatio === undefined) appData.expRatio = 0.6;
+    if (appData.napEnergy === undefined) appData.napEnergy = 40;
+    if (appData.breakEnergy === undefined) appData.breakEnergy = 15;
+    
     const def = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
     if (!appData.rpg) appData.rpg = { ...def };
     else Object.keys(def).forEach(k => { if (appData.rpg[k] === undefined) appData.rpg[k] = def[k]; });
@@ -1600,6 +1604,7 @@ function ensureEnergyData() {
     if (appData.learningMethods === undefined) appData.learningMethods = "";
     if (appData.learningMethodsHtml === undefined) appData.learningMethodsHtml = "";
     if (appData.methodsCollapsed === undefined) appData.methodsCollapsed = false;
+    if (appData.splitScreenMode === undefined) appData.splitScreenMode = false;
 
     if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) {
         const oldHtml = appData.learningMethodsHtml || '';
@@ -1622,8 +1627,10 @@ function ensureEnergyData() {
     if (!appData.activeMethodsFileId || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId)) {
         appData.activeMethodsFileId = appData.methodsFiles[0].id;
     }
+    if (!appData.activeMethodsFileId2 || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId2)) {
+        appData.activeMethodsFileId2 = appData.methodsFiles.length > 1 ? appData.methodsFiles[1].id : appData.methodsFiles[0].id;
+    }
 
-    // 迁移：date='pool' 的 learning/other 非 countOnly 任务 → todo
     appData.tasks.forEach(t => {
         if (!t.countOnly && (t.type === 'learning' || t.type === 'other') && t.date === 'pool') {
             t.todoKind = t.type;
@@ -1777,6 +1784,14 @@ function renderEnergyAndRPG() {
     const maxS = document.getElementById('energy-max-slider'); if (maxS) maxS.value = max;
     const warnS = document.getElementById('energy-warn-slider'); if (warnS) warnS.value = appData.energyWarnThreshold;
     const expRS = document.getElementById('exp-ratio-slider'); if (expRS) expRS.value = Math.round(appData.expRatio * 100);
+    
+    const setNapV = document.getElementById('set-nap-energy'); if (setNapV) setNapV.value = appData.napEnergy;
+    const setBreakV = document.getElementById('set-break-energy'); if (setBreakV) setBreakV.value = appData.breakEnergy;
+    const btnNap = document.getElementById('btn-nap'); if (btnNap) btnNap.innerText = `😴+${appData.napEnergy}`;
+    const btnBreak = document.getElementById('btn-break'); if (btnBreak) btnBreak.innerText = `☕+${appData.breakEnergy}`;
+    const mBtnNap = document.getElementById('modal-btn-nap'); if (mBtnNap) mBtnNap.innerText = `😴+${appData.napEnergy}`;
+    const mBtnBreak = document.getElementById('modal-btn-break'); if (mBtnBreak) mBtnBreak.innerText = `☕+${appData.breakEnergy}`;
+
     const editMap = { 'rpg-edit-exp': rpg.exp, 'rpg-edit-int': rpg.int, 'rpg-edit-vit': rpg.vit, 'rpg-edit-cre': rpg.cre, 'rpg-edit-foc': rpg.foc, 'rpg-edit-wil': rpg.wil };
     Object.keys(editMap).forEach(id => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = editMap[id]; });
     if (appData.commonBtns) document.querySelectorAll('#common-btns-config input[type="checkbox"]').forEach(cb => { cb.checked = appData.commonBtns.includes(cb.value); });
@@ -1858,9 +1873,18 @@ window.showLevelUpModal = function(level, title, expInLevel, needed) {
 };
 window.closeLevelUpModal = function() { document.getElementById('levelup-overlay').classList.remove('active'); };
 window.restoreEnergy = function(type) {
-    const amt = { nap: 40, break: 15 }[type] || 15;
+    ensureEnergyData();
+    const amt = type === 'nap' ? appData.napEnergy : appData.breakEnergy;
     const today = getTodayString();
     appData.dailyEnergy[today] = Math.max(0, (appData.dailyEnergy[today] || 0) - amt);
+    renderEnergyAndRPG(); saveDataToFile(appData);
+};
+window.changeRestoreEnergy = function(type, val) {
+    ensureEnergyData();
+    const num = parseInt(val);
+    if (isNaN(num) || num < 0) return;
+    if (type === 'nap') appData.napEnergy = num;
+    else appData.breakEnergy = num;
     renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.changeEnergyMax = function(val) { ensureEnergyData(); appData.energyMax = parseInt(val) || 100; renderEnergyAndRPG(); saveDataToFile(appData); };
@@ -1932,13 +1956,14 @@ window.openRPGModal = function() {
 };
 window.closeRPGModal = function() { document.getElementById('rpg-modal').classList.remove('active'); };
 
-/* ============ 学习方法富文本编辑器 ============ */
+/* ============ 学习方法富文本编辑器 (支持双开) ============ */
 let methodsEditorInitialized = false;
 let methodsSavedRange = null;
 let methodsSaveTimer = null;
 let methodsStatusTimer = null;
+let activeEditorId = 'methods-content';
 
-function methodsGetEditor() { return document.getElementById('methods-content'); }
+function methodsGetEditor() { return document.getElementById(activeEditorId); }
 
 function methodsSaveSelection() {
     const editor = methodsGetEditor();
@@ -1986,24 +2011,44 @@ function methodsSetStatus(txt, color) {
     }, 1600);
 }
 
-function getCurrentMethodsFile() {
+function getCurrentMethodsFile(idStr) {
     if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) return null;
-    return appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId) || appData.methodsFiles[0];
+    const targetId = idStr || appData.activeMethodsFileId;
+    return appData.methodsFiles.find(f => f.id === targetId) || appData.methodsFiles[0];
 }
 
 function commitMethodsEditorToFile() {
-    const editor = methodsGetEditor();
-    const f = getCurrentMethodsFile();
-    if (!editor || !f) return false;
-    const newHtml = editor.innerHTML;
-    const newText = editor.innerText || '';
-    if (f.contentHtml === newHtml && f.contentText === newText) return false;
-    f.contentHtml = newHtml;
-    f.contentText = newText;
-    f.updatedAt = Date.now();
-    appData.learningMethodsHtml = newHtml;
-    appData.learningMethods = newText;
-    return true;
+    let changed = false;
+    // 保存主编辑器
+    const editor1 = document.getElementById('methods-content');
+    const f1 = getCurrentMethodsFile(appData.activeMethodsFileId);
+    if (editor1 && f1) {
+        const newHtml = editor1.innerHTML;
+        const newText = editor1.innerText || '';
+        if (f1.contentHtml !== newHtml || f1.contentText !== newText) {
+            f1.contentHtml = newHtml; f1.contentText = newText; f1.updatedAt = Date.now();
+            changed = true;
+        }
+    }
+    // 保存分屏编辑器
+    if (appData.splitScreenMode) {
+        const editor2 = document.getElementById('methods-content-2');
+        const f2 = getCurrentMethodsFile(appData.activeMethodsFileId2);
+        if (editor2 && f2) {
+            const newHtml = editor2.innerHTML;
+            const newText = editor2.innerText || '';
+            if (f2.contentHtml !== newHtml || f2.contentText !== newText) {
+                f2.contentHtml = newHtml; f2.contentText = newText; f2.updatedAt = Date.now();
+                changed = true;
+            }
+        }
+    }
+    if (changed) {
+        const curFile = getCurrentMethodsFile(appData.activeMethodsFileId);
+        appData.learningMethodsHtml = curFile.contentHtml || '';
+        appData.learningMethods = curFile.contentText || '';
+    }
+    return changed;
 }
 
 function methodsTriggerSave() {
@@ -2138,36 +2183,72 @@ function deleteMethodsFile(id) {
     if (appData.activeMethodsFileId === id) {
         appData.activeMethodsFileId = appData.methodsFiles[0].id;
     }
+    if (appData.activeMethodsFileId2 === id) {
+        appData.activeMethodsFileId2 = appData.methodsFiles[0].id;
+    }
     renderMethodsFileList();
     refreshMethodsEditorContent();
     saveDataToFile(appData);
     showMiniToast('🗑️ 已删除');
 }
 
+window.toggleSplitScreen = function() {
+    commitMethodsEditorToFile();
+    appData.splitScreenMode = !appData.splitScreenMode;
+    const container = document.getElementById('methods-paper-container');
+    const editor2 = document.getElementById('methods-content-2');
+    const btn = document.getElementById('btn-toggle-split');
+    
+    if (appData.splitScreenMode) {
+        container.classList.add('split-screen');
+        editor2.classList.add('mirror');
+        btn.classList.add('btn-primary');
+        btn.innerText = '🖥️ 单栏模式';
+    } else {
+        container.classList.remove('split-screen');
+        editor2.classList.remove('mirror');
+        btn.classList.remove('btn-primary');
+        btn.innerText = '🖥️ 双栏模式';
+    }
+    refreshMethodsEditorContent();
+    saveDataToFile(appData);
+};
+
+window.switchMethodsFile2 = function(id) {
+    if (appData.activeMethodsFileId2 === id) return;
+    commitMethodsEditorToFile();
+    appData.activeMethodsFileId2 = id;
+    refreshMethodsEditorContent();
+    saveDataToFile(appData);
+};
+
 function initMethodsEditor() {
     if (methodsEditorInitialized) return;
     methodsEditorInitialized = true;
-    const editor = methodsGetEditor();
+    const editor1 = document.getElementById('methods-content');
+    const editor2 = document.getElementById('methods-content-2');
     const toolbar = document.getElementById('methods-toolbar');
-    if (!editor || !toolbar) return;
+    if (!editor1 || !toolbar) return;
 
     renderMethodsFileList();
     refreshMethodsEditorContent();
 
     document.addEventListener('selectionchange', () => {
-        if (document.activeElement === editor) {
-            methodsSaveSelection();
-            methodsUpdateToolbarState();
-        }
+        if (document.activeElement === editor1) { activeEditorId = 'methods-content'; methodsSaveSelection(); methodsUpdateToolbarState(); }
+        else if (document.activeElement === editor2) { activeEditorId = 'methods-content-2'; methodsSaveSelection(); methodsUpdateToolbarState(); }
     });
 
-    editor.addEventListener('input', methodsTriggerSave);
-    editor.addEventListener('mouseup', methodsSaveSelection);
-    editor.addEventListener('keyup', methodsSaveSelection);
-    editor.addEventListener('blur', () => {
-        clearTimeout(methodsSaveTimer);
-        const changed = commitMethodsEditorToFile();
-        if (changed) saveDataToFile(appData);
+    [editor1, editor2].forEach(ed => {
+        if (!ed) return;
+        ed.addEventListener('input', methodsTriggerSave);
+        ed.addEventListener('mouseup', methodsSaveSelection);
+        ed.addEventListener('keyup', methodsSaveSelection);
+        ed.addEventListener('focus', () => { activeEditorId = ed.id; });
+        ed.addEventListener('blur', () => {
+            clearTimeout(methodsSaveTimer);
+            const changed = commitMethodsEditorToFile();
+            if (changed) saveDataToFile(appData);
+        });
     });
 
     toolbar.addEventListener('mousedown', (e) => {
@@ -2217,13 +2298,25 @@ function initMethodsEditor() {
 }
 
 function refreshMethodsEditorContent() {
-    const editor = methodsGetEditor();
-    if (!editor) return;
-    const f = getCurrentMethodsFile();
-    const html = f ? (f.contentHtml || '') : '';
-    if (editor.innerHTML !== html) editor.innerHTML = html;
+    const editor1 = document.getElementById('methods-content');
+    const editor2 = document.getElementById('methods-content-2');
+    const f1 = getCurrentMethodsFile(appData.activeMethodsFileId);
+    if (editor1 && f1) {
+        if (editor1.innerHTML !== (f1.contentHtml || '')) editor1.innerHTML = f1.contentHtml || '';
+    }
+    if (editor2 && appData.splitScreenMode) {
+        const f2 = getCurrentMethodsFile(appData.activeMethodsFileId2);
+        if (f2 && editor2.innerHTML !== (f2.contentHtml || '')) editor2.innerHTML = f2.contentHtml || '';
+    }
+    if (appData.splitScreenMode) {
+        const container = document.getElementById('methods-paper-container');
+        container.classList.add('split-screen');
+        editor2.classList.add('mirror');
+        document.getElementById('btn-toggle-split').classList.add('btn-primary');
+        document.getElementById('btn-toggle-split').innerText = '🖥️ 单栏模式';
+    }
 }
-/* ============ 学习方法富文本编辑器 ============ */
+/* ============ 学习方法富文本编辑器结束 ============ */
 
 function renderLevelConfig() {
     ensureEnergyData();
@@ -2249,7 +2342,7 @@ window.deleteLevelConfig = function(idx) {
 window.addLevelConfig = function() {
     ensureEnergyData();
     const last = appData.levelConfig.levels[appData.levelConfig.levels.length - 1];
-    appData.levelConfig.levels.push({ name: '新等级', needExp: (last ? last.needExp : 100) + 100 });
+    appData.levelConfig.levels.push({ name: '新等级', needExp: (last ? last.needExp : 100) * 10 });
     renderLevelConfig(); saveDataToFile(appData);
 };
 window.resetLevelConfig = function() {
@@ -2422,6 +2515,12 @@ window.changeWeek = function(o) {
     b.setDate(b.getDate() + o * 7);
     appData.viewWeekBaseDate = `${b.getFullYear()}-${String(b.getMonth()+1).padStart(2,'0')}-${String(b.getDate()).padStart(2,'0')}`;
     renderWeekBoard(); renderTaskPool();
+    // 更新周总结
+    const wkDetails = document.getElementById('week-summary-details');
+    const wkText = document.getElementById('week-summary-textarea');
+    const wkVal = appData.weeklyReflections[appData.viewWeekBaseDate] || '';
+    if (wkText) wkText.value = wkVal;
+    if (wkDetails) wkDetails.open = !!wkVal;
 };
 window.jumpToDay = function(ds) {
     appData.selectedDate = ds;
@@ -2614,12 +2713,20 @@ function renderYearHeatmap() {
     const y = appData.viewYear;
     const sd = new Date(y, 0, 1), ed = new Date(y, 11, 31);
     const td = getTodayString();
+    const startOfYear = new Date(y, 0, 0);
+    
     for (let d = new Date(sd); d <= ed; d.setDate(d.getDate() + 1)) {
         const ds = formatDate(d.getFullYear(), d.getMonth(), d.getDate());
         const div = document.createElement('div');
         div.className = 'heatmap-cell';
-        div.title = getDateLabel(ds);
-        div.innerText = d.getDate();
+        
+        // 计算是第几天
+        const diff = d - startOfYear;
+        const oneDay = 1000 * 60 * 60 * 24;
+        const dayOfYear = Math.floor(diff / oneDay);
+        
+        div.innerText = dayOfYear;
+        
         const l = calcProgress(ds, 'learning'), o = calcProgress(ds, 'other'), e = calcProgress(ds, '锻炼');
         const tot = l.total + o.total + e.total, done = l.done + o.done + e.done;
         if (tot > 0) {
@@ -2629,6 +2736,37 @@ function renderYearHeatmap() {
         } else { div.style.backgroundColor = 'var(--bg-sidebar)'; div.style.color = 'var(--text-muted)'; }
         if (ds === td) div.classList.add('today-cell');
         div.onclick = () => { jumpToDay(ds); appData.viewYear = d.getFullYear(); appData.viewMonth = d.getMonth(); };
+        
+        // 构建悬浮提示
+        const completedTasks = getTasksForDate(ds).filter(t => !t.countOnly && isTaskDone(t, ds));
+        let tooltipArr = [getDateLabel(ds)];
+        
+        const learning = completedTasks.filter(t => t.type === 'learning').map(t => t.text);
+        const other = completedTasks.filter(t => t.type === 'other').map(t => t.text);
+        const logs = (appData.dailyLogs && appData.dailyLogs[ds]) ? appData.dailyLogs[ds] : {};
+        Object.values(logs).forEach(l => {
+            if (l.completed && !learning.includes(l.name) && !other.includes(l.name)) {
+                // 按名字推断分类，或者直接放“已打卡”
+                other.push(l.name + ' (打卡)');
+            }
+        });
+
+        if (learning.length > 0) tooltipArr.push(`\n📚 学习:\n - ${learning.join('\n - ')}`);
+        if (other.length > 0) tooltipArr.push(`\n🧺 其他:\n - ${other.join('\n - ')}`);
+        
+        // 锻炼完成检查
+        const exCompleted = [];
+        const exChecks = appData.dailyExerciseChecks[ds] || {};
+        const manualEx = appData.exerciseSchedule[ds] || [];
+        [...new Set([...manualEx, ...appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex=>ex.name)])].forEach(n => {
+            const ex = appData.exercises.find(e => e.name === n);
+            if (ex && ex.subTasks && ex.subTasks.every(s => exChecks[`${ex.id}_${s.id}`])) exCompleted.push(n);
+        });
+        if (exCompleted.length > 0) tooltipArr.push(`\n💪 锻炼:\n - ${exCompleted.join('\n - ')}`);
+
+        if (tooltipArr.length === 1) tooltipArr.push('无已完成任务');
+
+        div.title = tooltipArr.join('\n');
         h.appendChild(div);
     }
     const g = appData.yearlyGoals || "";
@@ -2683,31 +2821,50 @@ function renderCalendar() {
         const todayBadge = isToday ? '<span class="today-badge">今天</span>' : '';
         div.innerHTML = `<div class="day-number">${i}${todayBadge}</div>${sHtml}${refl}${dHtml}`;
         
-        const logs = (appData.dailyLogs && appData.dailyLogs[ds]) ? appData.dailyLogs[ds] : {};
         const completedTasks = getTasksForDate(ds).filter(t => !t.countOnly && isTaskDone(t, ds));
-        let doneSet = new Set(completedTasks.map(t => t.text));
-        Object.values(logs).forEach(l => { if (l.completed) doneSet.add(l.name); });
+        const learning = completedTasks.filter(t => t.type === 'learning').map(t => t.text);
+        const other = completedTasks.filter(t => t.type === 'other').map(t => t.text);
+        
+        const logs = (appData.dailyLogs && appData.dailyLogs[ds]) ? appData.dailyLogs[ds] : {};
+        const countLogs = [];
+        Object.values(logs).forEach(l => {
+            if (l.delta !== 0) {
+                countLogs.push(`${l.name}: ${l.delta > 0 ? '+' : ''}${l.delta}`);
+            }
+        });
 
         let tooltipArr = [];
-        if (doneSet.size > 0) {
-            tooltipArr.push('已完成：');
-            tooltipArr.push([...doneSet].map(n => '✓ ' + (n.length > 8 ? n.substring(0,8)+'...' : n)).join('  '));
-        } else {
-            tooltipArr.push('当日暂无已完成任务');
-        }
+        if (learning.length > 0) tooltipArr.push(`📚 学习:\n - ${learning.join('\n - ')}`);
+        if (other.length > 0) tooltipArr.push(`🧺 其他:\n - ${other.join('\n - ')}`);
+        
+        const exCompleted = [];
+        const exChecks = appData.dailyExerciseChecks[ds] || {};
+        const manualEx = appData.exerciseSchedule[ds] || [];
+        [...new Set([...manualEx, ...appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex=>ex.name)])].forEach(n => {
+            const ex = appData.exercises.find(e => e.name === n);
+            if (ex && ex.subTasks && ex.subTasks.every(s => exChecks[`${ex.id}_${s.id}`])) exCompleted.push(n);
+        });
+        if (exCompleted.length > 0) tooltipArr.push(`💪 锻炼:\n - ${exCompleted.join('\n - ')}`);
 
-        const countLogs = Object.values(logs).filter(l => l.delta !== 0);
         if (countLogs.length > 0) {
-            tooltipArr.push('\n操作记录：');
-            tooltipArr.push(countLogs.map(l => {
-                const sName = l.name.length > 8 ? l.name.substring(0,8)+'...' : l.name;
-                return `${sName}: ${l.delta > 0 ? '+' : ''}${l.delta}`;
-            }).join('  '));
+            tooltipArr.push(`\n🔄 计数记录:\n - ${countLogs.join('\n - ')}`);
         }
+        
+        if (tooltipArr.length === 0) tooltipArr.push('当日暂无已完成任务');
 
         div.title = tooltipArr.join('\n');
         div.onclick = () => { jumpToDay(ds); };
         grid.appendChild(div);
+    }
+    
+    // 更新月总结
+    const mDetails = document.getElementById('month-summary-details');
+    const mText = document.getElementById('month-summary-textarea');
+    if (mText && mDetails) {
+        const mKey = `${y}-${m}`;
+        const mVal = appData.monthlyReflections?.[mKey] || '';
+        mText.value = mVal;
+        mDetails.open = !!mVal;
     }
 }
 
@@ -2823,6 +2980,22 @@ function renderWeekBoard() {
         const cd = new Date(mon); cd.setDate(mon.getDate() + i);
         dates.push(formatDate(cd.getFullYear(), cd.getMonth(), cd.getDate()));
     }
+    
+    // 更新周总结展示
+    const wkDetails = document.getElementById('week-summary-details');
+    const wkText = document.getElementById('week-summary-textarea');
+    if (!appData.weeklyReflections) appData.weeklyReflections = {};
+    const wkKey = appData.viewWeekBaseDate;
+    const wkVal = appData.weeklyReflections[wkKey] || '';
+    if (wkText) wkText.value = wkVal;
+    if (wkDetails) wkDetails.open = !!wkVal;
+    if (wkText) {
+        wkText.oninput = (e) => {
+            appData.weeklyReflections[wkKey] = e.target.value;
+            saveDataToFile(appData);
+        };
+    }
+
     if (window.innerWidth <= 768) {
         board.style.gridTemplateColumns = '';
         wd.forEach((dn, i) => {
@@ -3505,9 +3678,11 @@ window.toggleCountOnly = function(taskId) {
         delete t.countOnly; delete t.countTotal; delete t.countEnded;
         showMiniToast('已转为普通任务');
     } else {
-        if (!confirm('转为纯计数任务？会从 0 开始累计次数，通过 +1 持续累加，点 🏁 结束。')) return;
+        const initVal = prompt('转为纯计数任务？会从输入的初始值开始累计。\n请输入初始累计次数 (取消则不转换)：', '0');
+        if (initVal === null) return;
+        const initNum = parseInt(initVal);
         t.countOnly = true;
-        t.countTotal = 0;
+        t.countTotal = isNaN(initNum) ? 0 : initNum;
         t.countEnded = false;
         delete t.completed; delete t.completions;
         delete t.target; delete t.current; delete t.currents;
@@ -3590,8 +3765,11 @@ window.toggleSubCountOnly = function(tid, sid) {
         delete s.countOnly; delete s.countTotal; delete s.countEnded;
         showMiniToast('子任务已转为普通任务');
     } else {
+        const initVal = prompt('转为纯计数子任务？\n请输入初始累计次数 (取消则不转换)：', '0');
+        if (initVal === null) return;
+        const initNum = parseInt(initVal);
         s.countOnly = true;
-        s.countTotal = 0;
+        s.countTotal = isNaN(initNum) ? 0 : initNum;
         s.countEnded = false;
         delete s.completed; delete s.completions;
         delete s.target; delete s.current; delete s.currents;
@@ -3696,7 +3874,12 @@ function renderDayPlan() {
         }
     });
     const rt = document.getElementById('daily-reflection-textarea');
-    if (rt) rt.value = appData.dailyReflections[ds] || '';
+    const rDetails = document.getElementById('day-summary-details');
+    if (rt) {
+        const val = appData.dailyReflections[ds] || '';
+        rt.value = val;
+        if (rDetails) rDetails.open = !!val;
+    }
     renderTodoList();
     renderDayExercises();
     updateFixedProgressBars();
@@ -3739,62 +3922,28 @@ function renderTaskListModalContent(type) {
     setTimeout(initTaskAndSubTaskDrag, 0);
 }
 
-/* ============ 日计划任务拖拽（核心逻辑已修复） ============ */
+/* ============ 日计划任务拖拽 ============ */
 function initTaskAndSubTaskDrag() {
     document.querySelectorAll('.task-drop-zone').forEach(zone => {
         if (zone._sortable) zone._sortable.destroy();
-
-        // ★ 关键：已完成区域只允许"拉出"，不接受"拖入"
         const isCompletedZone = zone.dataset.completed === 'true';
-        const groupConfig = isCompletedZone
-            ? { name: 'shared-tasks', pull: true, put: false }
-            : 'shared-tasks';
-
+        const groupConfig = isCompletedZone ? { name: 'shared-tasks', pull: true, put: false } : 'shared-tasks';
         zone._sortable = new Sortable(zone, {
-            group: groupConfig,
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            draggable: '.main-task-item',
+            group: groupConfig, animation: 150, ghostClass: 'sortable-ghost', draggable: '.main-task-item',
             onStart: function() { isDraggingActive = true; },
             onEnd: function(evt) {
                 isDraggingActive = false;
                 const item = evt.item, taskId = item.dataset.taskId;
-
-                // 找不到任务 → 直接刷新还原
-                if (!taskId) {
-                    setTimeout(renderDayPlan, 30);
-                    return;
-                }
+                if (!taskId) { setTimeout(renderDayPlan, 30); return; }
                 const task = appData.tasks.find(t => t.id === taskId);
-                if (!task) {
-                    setTimeout(renderDayPlan, 30);
-                    return;
-                }
-
+                if (!task) { setTimeout(renderDayPlan, 30); return; }
                 const fromType = task.type || '';
                 const toType = evt.to && evt.to.dataset ? evt.to.dataset.type : null;
                 const toCompleted = evt.to && evt.to.dataset ? evt.to.dataset.completed === 'true' : false;
-
                 const validTypes = ['todo', 'learning', 'other'];
-
-                // ★ 拖到了非预期的空白区域 / 无效落点 → 直接回滚（数据不变，重新渲染）
-                if (!toType || !validTypes.includes(toType)) {
-                    setTimeout(renderDayPlan, 30);
-                    return;
-                }
-
-                // ★ 因为 completed 区 put:false，理论上不会拖到 completed 里
-                // 但万一 Sortable 有边界情况，防御性再拦一次
-                if (toCompleted) {
-                    setTimeout(renderDayPlan, 30);
-                    return;
-                }
-
-                // ====== 正常类型转换 ======
+                if (!toType || !validTypes.includes(toType) || toCompleted) { setTimeout(renderDayPlan, 30); return; }
                 if (toType === 'todo') {
-                    // 拖入待办清单
                     if (fromType !== 'todo') {
-                        // 学习/其他 → 待办：保留原类型作为 todoKind
                         task.todoKind = (fromType === 'other') ? 'other' : 'learning';
                         task.type = 'todo';
                         task.date = 'pool';
@@ -3809,9 +3958,7 @@ function initTaskAndSubTaskDrag() {
                             if (s.completions) delete s.completions;
                         });
                     }
-                    // 已经是 todo → todo 之间的重排，不需要改类型
                 } else if (fromType === 'todo') {
-                    // 待办 → 学习/其他：正式成为可执行任务
                     task.type = toType;
                     task.date = appData.selectedDate;
                     delete task.todoKind;
@@ -3823,24 +3970,17 @@ function initTaskAndSubTaskDrag() {
                         if (s.completions) delete s.completions;
                     });
                 } else {
-                    // 学习 ↔ 其他 互拖，或从已完成区拖到未完成区
                     task.type = toType;
-                    // toCompleted 永远是 false（因为 completed 区拒绝 drop）
-                    // 如果任务当前是已完成状态，但拖到的目标区是未完成 → 取消完成
                     if (isTaskDone(task, appData.selectedDate)) {
                         setTaskDone(task, appData.selectedDate, false);
                     }
                 }
-
-                // 排序：把任务插入到目标容器对应的数据位置
                 const newOrderIds = Array.from(evt.to.querySelectorAll('.main-task-item')).map(el => el.dataset.taskId).filter(Boolean);
                 appData.tasks = appData.tasks.filter(t => t.id !== taskId);
                 const insertIndex = appData.tasks.findIndex(t => newOrderIds.includes(t.id));
                 if (insertIndex !== -1) appData.tasks.splice(insertIndex, 0, task);
                 else appData.tasks.push(task);
-
                 saveDataToFile(appData);
-                // ★ 延迟 renderDayPlan，让 Sortable 完成内部清理，避免"拖一次后拖不了"
                 setTimeout(renderDayPlan, 30);
             }
         });
@@ -3854,15 +3994,9 @@ function initTaskAndSubTaskDrag() {
             onEnd: function(evt) {
                 isDraggingActive = false;
                 const taskId = evt.to.dataset.taskId;
-                if (!taskId) {
-                    setTimeout(renderDayPlan, 30);
-                    return;
-                }
+                if (!taskId) { setTimeout(renderDayPlan, 30); return; }
                 const task = appData.tasks.find(t => t.id === taskId);
-                if (!task) {
-                    setTimeout(renderDayPlan, 30);
-                    return;
-                }
+                if (!task) { setTimeout(renderDayPlan, 30); return; }
                 const newSubIds = Array.from(evt.to.querySelectorAll('.sub-task-item')).map(el => el.dataset.subId).filter(Boolean);
                 const reordered = newSubIds.map(id => task.subTasks.find(s => s.id === id)).filter(Boolean);
                 const others = task.subTasks.filter(s => !newSubIds.includes(s.id));
@@ -3925,7 +4059,7 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
         else if (t === 'day') { renderDayPlan(); applyPanelLayout(); }
         else if (t === 'methods') { initMethodsEditor(); renderMethodsFileList(); refreshMethodsEditorContent(); }
         else if (t === 'settings') {
-            renderP2PHistory(); updateBackupUI(); renderChangelog(); renderLevelConfig(); renderEnergyAndRPG(); renderTimeSlotConfig();
+            renderP2PHistory(); updateBackupUI(); renderLevelConfig(); renderEnergyAndRPG(); renderTimeSlotConfig();
             const sh = localStorage.getItem('my_p2p_host_id');
             if (sh) document.getElementById('my-peer-id').innerText = sh;
         }
@@ -3941,6 +4075,15 @@ window.handleReflectionInput = function(val) {
     saveDataToFile(appData);
     if (document.getElementById('view-month').classList.contains('active')) renderCalendar();
 };
+
+// 月总结和年总结输入监听（已替换原有逻辑）
+document.getElementById('month-summary-textarea').addEventListener('input', (e) => {
+    const mKey = `${appData.viewYear}-${appData.viewMonth}`;
+    if (!appData.monthlyReflections) appData.monthlyReflections = {};
+    appData.monthlyReflections[mKey] = e.target.value;
+    saveDataToFile(appData);
+});
+
 let draggedTaskId = null, draggedExerciseName = null, draggedExerciseSource = null, draggedFixedBlockId = null;
 function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
 function drag(ev, id) { draggedTaskId = id; draggedExerciseName = null; draggedExerciseSource = null; draggedFixedBlockId = null; isDraggingActive = true; }
@@ -4661,10 +4804,27 @@ window.performBackup = async function(silent) {
     try {
         let p = await backupDirHandle.queryPermission({ mode: 'readwrite' });
         if (p !== 'granted') { p = await backupDirHandle.requestPermission({ mode: 'readwrite' }); if (p !== 'granted') throw new Error('无写入权限'); }
+        
+        // 主数据备份
         const fh = await backupDirHandle.getFileHandle('myWorkspace_backup.json', { create: true });
         const w = await fh.createWritable();
         await w.write(getCleanedDataForBackup(appData));
         await w.close();
+        
+        // 学习方法单独备份到 methods 文件夹
+        try {
+            const methodsDir = await backupDirHandle.getDirectoryHandle('methods', { create: true });
+            for (const file of appData.methodsFiles) {
+                const safeName = file.name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim() || file.id;
+                const mfh = await methodsDir.getFileHandle(safeName + '.html', { create: true });
+                const mw = await mfh.createWritable();
+                await mw.write(`<meta charset="utf-8">\n` + (file.contentHtml || ''));
+                await mw.close();
+            }
+        } catch (e) {
+            console.warn('备份学习方法失败', e);
+        }
+
         lastBackupTime = Date.now();
         lastBackupModified = appData._lastModified || 0;
         localStorage.setItem('myWorkspaceLastBackupTime', String(lastBackupTime));
@@ -4858,7 +5018,7 @@ window.connectToPeer = function(targetId = null) {
 function mergeData(local, remote) {
     const merged = JSON.parse(JSON.stringify(local));
     
-    const configKeys = ['yearlyGoals', 'themeColor', 'themeMode', 'fonts', 'radius', 'energyMax', 'energyWarnThreshold', 'expRatio', 'levelConfig', 'commonBtns', 'maxVisible', 'animationEnabled', 'panelLayout'];
+    const configKeys = ['yearlyGoals', 'themeColor', 'themeMode', 'fonts', 'radius', 'energyMax', 'energyWarnThreshold', 'expRatio', 'napEnergy', 'breakEnergy', 'levelConfig', 'commonBtns', 'maxVisible', 'animationEnabled', 'panelLayout'];
     configKeys.forEach(k => {
         if (remote[k] !== undefined) merged[k] = remote[k];
     });
@@ -4970,7 +5130,7 @@ function mergeData(local, remote) {
         }
     });
 
-    const dictKeys = ['dailyExerciseChecks', 'dailyReflections', 'dailyLogs', 'exerciseSchedule', 'fixedBlockSchedule'];
+    const dictKeys = ['dailyExerciseChecks', 'dailyReflections', 'weeklyReflections', 'dailyLogs', 'exerciseSchedule', 'fixedBlockSchedule', 'monthlyReflections'];
     dictKeys.forEach(key => {
         if (!remote[key]) return;
         if (!merged[key]) merged[key] = {};
@@ -5051,6 +5211,8 @@ function computeDiffs(oldData, newData) {
     diffs.rpg = jstr(oldData.rpg) !== jstr(newData.rpg);
     diffs.dailyEnergy = jstr(oldData.dailyEnergy) !== jstr(newData.dailyEnergy);
     diffs.dailyReflections = jstr(oldData.dailyReflections) !== jstr(newData.dailyReflections);
+    diffs.weeklyReflections = jstr(oldData.weeklyReflections) !== jstr(newData.weeklyReflections);
+    diffs.monthlyReflections = jstr(oldData.monthlyReflections) !== jstr(newData.monthlyReflections);
     diffs.levelConfig = jstr(oldData.levelConfig) !== jstr(newData.levelConfig);
     diffs.commonBtns = jstr(oldData.commonBtns) !== jstr(newData.commonBtns);
     diffs.maxVisible = oldData.maxVisible !== newData.maxVisible;
@@ -5059,6 +5221,8 @@ function computeDiffs(oldData, newData) {
     diffs.fonts = jstr(oldData.fonts) !== jstr(newData.fonts);
     diffs.radius = oldData.radius !== newData.radius;
     diffs.yearlyGoals = oldData.yearlyGoals !== newData.yearlyGoals;
+    diffs.napEnergy = oldData.napEnergy !== newData.napEnergy;
+    diffs.breakEnergy = oldData.breakEnergy !== newData.breakEnergy;
     return diffs;
 }
 
@@ -5092,7 +5256,7 @@ function applyRemoteData(payload, oldData) {
         updateFixedProgressBars();
     }
 
-    if (diffs.rpg || diffs.dailyEnergy) {
+    if (diffs.rpg || diffs.dailyEnergy || diffs.napEnergy || diffs.breakEnergy) {
         lastRpgState = null;
         renderEnergyAndRPG();
     }
@@ -5120,6 +5284,7 @@ function applyRemoteData(payload, oldData) {
     const activeView = activeViewEl ? activeViewEl.id : '';
     const viewNeedsUpdate = diffs.tasks || diffs.exercises || diffs.dailyExerciseChecks ||
                             diffs.exerciseSchedule || diffs.fixedBlockSchedule || diffs.dailyReflections ||
+                            diffs.weeklyReflections || diffs.monthlyReflections ||
                             diffs.timeSlots || diffs.fixedBlocks;
     if (viewNeedsUpdate) {
         const activeEl = document.activeElement;
@@ -5189,18 +5354,6 @@ function setupConnection(connection, isHost, targetId) {
         else setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 1000);
     });
     connection.on('error', (err) => { if (conn !== connection) return; console.log("Err:", err); });
-}
-function renderChangelog() {
-    const list = document.getElementById('changelog-list');
-    if (!list) return;
-    list.innerHTML = APP_CHANGELOG.map(v => `
-        <div style="padding:6px 0;border-bottom:1px dashed var(--border-color);">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
-                <span style="font-weight:700;color:var(--accent-color);font-size:var(--font-hint);">${v.version}</span>
-                <span style="color:var(--text-muted);font-size:var(--font-small);">${v.date}</span>
-            </div>
-            <ul style="margin:0;padding-left:14px;color:var(--text-main);font-size:var(--font-small);line-height:1.6;">${v.changes.map(c => `<li>${c}</li>`).join('')}</ul>
-        </div>`).join('');
 }
 
 window.toggleWeekDrawer = function(force) {
@@ -5287,7 +5440,8 @@ document.addEventListener('drop', () => { stopAutoScroll(); }, true);
     }
     applyPanelLayout();
     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
-    initDragAndDrop(); renderTimeSlotConfig(); updateBackupUI(); renderEnergyAndRPG(); renderChangelog(); renderLevelConfig();
+    initDragAndDrop(); renderTimeSlotConfig(); updateBackupUI(); renderEnergyAndRPG();
+    renderLevelConfig();
     renderP2PHistory(); renderFixedBlockPool();
     initMethodsEditor();
     const sh = localStorage.getItem('my_p2p_host_id');
