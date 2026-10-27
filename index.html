@@ -220,23 +220,7 @@ body.dark-mode .deadline-preview { background: #3a1c1c; }
 body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
 
 .week-grid-cell > .task-item.lecture-task { 
-    flex: 1 1 0; 
-    min-height: 36px; 
-    background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); 
-    color: #fff; 
-    border: none; 
-    border-radius: 8px; 
-    padding: 8px 20px; 
-    box-shadow: 0 2px 6px rgba(0,0,0,0.12); 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    font-size: 13px; 
-    position: relative; 
-    overflow: hidden; 
-    text-align: center;
-    line-height: 1.4;
+    flex: 1 1 0; min-height: 36px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: #fff; border: none; border-radius: 8px; padding: 8px 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.12); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; position: relative; overflow: hidden; text-align: center; line-height: 1.4;
 }
 .week-grid-cell > .task-item.lecture-task .task-text { font-weight: 600; color: #fff; font-size: 13px; word-break: break-all; }
 .week-grid-cell > .task-item.lecture-task input[type="checkbox"] { margin: 0 0 4px 0; width: 14px; height: 14px; }
@@ -338,17 +322,10 @@ body.dark-mode .main-task-item:hover { background: #252b33; border-left-color: v
 body.dark-mode .main-task-item.pinned-task { background: #2a1e11; border-left-color: #f2994a; }
 .main-task-item.count-only-task { background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%); border-left-color: #2383e2; }
 body.dark-mode .main-task-item.count-only-task { background: linear-gradient(135deg, #1a2a3a 0%, #1f2937 100%); border-left-color: #3b82f6; }
-
-/* 待办清单里的任务卡片特殊样式 */
-.main-task-item.todo-task-item {
-    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-    border-left-color: #9b51e0;
-    cursor: grab;
-}
+.main-task-item.todo-task-item { background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-left-color: #9b51e0; cursor: grab; }
 .main-task-item.todo-task-item:hover { background: linear-gradient(135deg, #f3e8ff 0%, #ead8ff 100%); border-left-color: #7e22ce; }
 body.dark-mode .main-task-item.todo-task-item { background: linear-gradient(135deg, #2a1e33 0%, #201528 100%); border-left-color: #9b51e0; }
 body.dark-mode .main-task-item.todo-task-item:hover { background: linear-gradient(135deg, #33234a 0%, #281840 100%); border-left-color: #b678ff; }
-
 .main-task-item.clickable-for-detail { cursor: pointer; }
 .main-task-item.clickable-for-detail::after { content: '👆 点击空白处查看详情'; position: absolute; bottom: 4px; right: 8px; font-size: 9px; color: var(--text-muted); opacity: .5; pointer-events: none; }
 .count-display { display: inline-flex; align-items: baseline; gap: 3px; font-size: var(--font-hint); color: #1976d2; font-weight: 600; white-space: nowrap; }
@@ -524,7 +501,98 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 /* ============ 学习方法编辑器 ============ */
 #view-methods { padding: 16px 24px; }
 #view-methods .year-header { margin-bottom: 12px; }
-.methods-editor-wrap { flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: hidden; }
+.methods-layout { display: flex; gap: 12px; flex: 1; min-height: 0; overflow: hidden; }
+.methods-sidebar {
+    width: 240px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.methods-sidebar-header {
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 700;
+    font-size: var(--font-content);
+    flex-shrink: 0;
+    color: var(--text-main);
+}
+.methods-new-file-btn {
+    background: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 8px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    transition: filter .15s;
+    flex-shrink: 0;
+}
+.methods-new-file-btn:hover { filter: brightness(1.1); }
+.methods-file-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.methods-file-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: var(--font-hint);
+    padding: 20px 8px;
+    line-height: 1.6;
+}
+.methods-file-item {
+    padding: 8px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    font-size: var(--font-hint);
+    transition: background .15s, color .15s;
+    color: var(--text-main);
+}
+.methods-file-item:hover { background: var(--hover-bg); }
+.methods-file-item.active { background: var(--accent-color); color: #fff; }
+.methods-file-item.active .methods-file-del { color: #fff; }
+.methods-file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+.methods-file-del {
+    color: var(--text-muted);
+    padding: 0 4px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .15s, color .15s;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.methods-file-item:hover .methods-file-del { opacity: .7; }
+.methods-file-del:hover { opacity: 1 !important; color: var(--danger-color) !important; }
+.methods-file-item.active .methods-file-del:hover { color: #ffcece !important; }
+.methods-editor-area { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; min-height: 0; }
+
 .methods-toolbar {
     flex-shrink: 0;
     display: flex;
@@ -688,6 +756,10 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
     .main-content { order: 1; height: calc(100vh - 65px); }
     .view-container { padding: 12px; }
     #view-methods { padding: 8px 10px; }
+    .methods-layout { flex-direction: column; }
+    .methods-sidebar { width: 100%; max-height: 120px; flex-shrink: 0; }
+    .methods-file-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 6px; }
+    .methods-file-item { flex-shrink: 0; min-width: 100px; max-width: 180px; padding: 6px 10px; }
     .methods-paper { padding: 12px 6px; }
     .methods-content { padding: 24px 18px; font-size: 14px; }
     .methods-toolbar { padding: 6px; gap: 3px; }
@@ -891,78 +963,87 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
         <span id="methods-save-status">💾 自动保存</span>
     </div>
 </div>
-<div class="methods-editor-wrap">
-    <div class="methods-toolbar" id="methods-toolbar">
-        <div class="tb-group">
-            <select id="methods-format-select" data-cmd="formatBlock" title="段落样式">
-                <option value="p">正文</option>
-                <option value="h1">标题 1</option>
-                <option value="h2">标题 2</option>
-                <option value="h3">标题 3</option>
-                <option value="blockquote">引用</option>
-            </select>
-            <select id="methods-font-select" data-cmd="fontName" title="字体">
-                <option value="">系统默认</option>
-                <option value="'Microsoft YaHei', '微软雅黑', sans-serif">微软雅黑</option>
-                <option value="SimSun, '宋体', serif">宋体</option>
-                <option value="SimHei, '黑体', sans-serif">黑体</option>
-                <option value="KaiTi, '楷体', serif">楷体</option>
-                <option value="FangSong, '仿宋', serif">仿宋</option>
-                <option value="Arial, Helvetica, sans-serif">Arial</option>
-                <option value="Georgia, serif">Georgia</option>
-                <option value="'Times New Roman', serif">Times New Roman</option>
-                <option value="Consolas, Monaco, monospace">等宽 Consolas</option>
-            </select>
-            <select id="methods-size-select" data-cmd="fontSize" title="字号">
-                <option value="12">12</option>
-                <option value="14" selected>14</option>
-                <option value="16">16</option>
-                <option value="18">18</option>
-                <option value="20">20</option>
-                <option value="24">24</option>
-                <option value="28">28</option>
-                <option value="32">32</option>
-                <option value="36">36</option>
-                <option value="48">48</option>
-            </select>
+<div class="methods-layout">
+    <div class="methods-sidebar">
+        <div class="methods-sidebar-header">
+            <span>📁 文件</span>
+            <button class="methods-new-file-btn" onclick="createMethodsFile()" title="新建文件">➕</button>
         </div>
-        <div class="tb-group">
-            <button type="button" data-cmd="bold" title="加粗 (Ctrl+B)" style="font-weight:900;">B</button>
-            <button type="button" data-cmd="italic" title="斜体 (Ctrl+I)" style="font-style:italic;font-family:Georgia,serif;">I</button>
-            <button type="button" data-cmd="underline" title="下划线 (Ctrl+U)" style="text-decoration:underline;">U</button>
-            <button type="button" data-cmd="strikeThrough" title="删除线" style="text-decoration:line-through;">S</button>
-        </div>
-        <div class="tb-group">
-            <label class="tb-color-wrap" title="文字颜色">
-                <span class="tb-color-swatch" id="forecolor-swatch" style="background:#333333;"></span>
-                <input type="color" id="methods-forecolor" data-cmd="foreColor" value="#333333">
-            </label>
-            <label class="tb-color-wrap" title="高亮颜色">
-                <span class="tb-color-swatch" id="hilitecolor-swatch" style="background:#ffe066;"></span>
-                <input type="color" id="methods-hilitecolor" data-cmd="hiliteColor" value="#ffe066">
-            </label>
-        </div>
-        <div class="tb-group">
-            <button type="button" data-cmd="insertUnorderedList" title="无序列表">☰</button>
-            <button type="button" data-cmd="insertOrderedList" title="有序列表" style="font-family:monospace;">1.</button>
-        </div>
-        <div class="tb-group">
-            <button type="button" data-cmd="justifyLeft" title="左对齐" style="text-align:left;justify-content:flex-start;">左</button>
-            <button type="button" data-cmd="justifyCenter" title="居中">中</button>
-            <button type="button" data-cmd="justifyRight" title="右对齐" style="justify-content:flex-end;">右</button>
-            <button type="button" data-cmd="justifyFull" title="两端对齐">均</button>
-        </div>
-        <div class="tb-group">
-            <button type="button" data-cmd="undo" title="撤销 (Ctrl+Z)">↶</button>
-            <button type="button" data-cmd="redo" title="重做 (Ctrl+Y)">↷</button>
-        </div>
-        <div class="tb-group">
-            <button type="button" data-cmd="removeFormat" title="清除格式" style="font-style:italic;">T<sub style="font-size:9px;">x</sub></button>
-            <button type="button" data-cmd="insertHorizontalRule" title="插入分隔线" style="font-weight:900;">—</button>
-        </div>
+        <div class="methods-file-list" id="methods-file-list"></div>
     </div>
-    <div class="methods-paper">
-        <div class="methods-content" id="methods-content" contenteditable="true" data-placeholder="在这里记录你的学习方法… 可以像 Word 一样调整字体、大小、颜色、加粗、列表等。"></div>
+    <div class="methods-editor-area">
+        <div class="methods-toolbar" id="methods-toolbar">
+            <div class="tb-group">
+                <select id="methods-format-select" data-cmd="formatBlock" title="段落样式">
+                    <option value="p">正文</option>
+                    <option value="h1">标题 1</option>
+                    <option value="h2">标题 2</option>
+                    <option value="h3">标题 3</option>
+                    <option value="blockquote">引用</option>
+                </select>
+                <select id="methods-font-select" data-cmd="fontName" title="字体">
+                    <option value="">系统默认</option>
+                    <option value="'Microsoft YaHei', '微软雅黑', sans-serif">微软雅黑</option>
+                    <option value="SimSun, '宋体', serif">宋体</option>
+                    <option value="SimHei, '黑体', sans-serif">黑体</option>
+                    <option value="KaiTi, '楷体', serif">楷体</option>
+                    <option value="FangSong, '仿宋', serif">仿宋</option>
+                    <option value="Arial, Helvetica, sans-serif">Arial</option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="'Times New Roman', serif">Times New Roman</option>
+                    <option value="Consolas, Monaco, monospace">等宽 Consolas</option>
+                </select>
+                <select id="methods-size-select" data-cmd="fontSize" title="字号">
+                    <option value="12">12</option>
+                    <option value="14" selected>14</option>
+                    <option value="16">16</option>
+                    <option value="18">18</option>
+                    <option value="20">20</option>
+                    <option value="24">24</option>
+                    <option value="28">28</option>
+                    <option value="32">32</option>
+                    <option value="36">36</option>
+                    <option value="48">48</option>
+                </select>
+            </div>
+            <div class="tb-group">
+                <button type="button" data-cmd="bold" title="加粗 (Ctrl+B)" style="font-weight:900;">B</button>
+                <button type="button" data-cmd="italic" title="斜体 (Ctrl+I)" style="font-style:italic;font-family:Georgia,serif;">I</button>
+                <button type="button" data-cmd="underline" title="下划线 (Ctrl+U)" style="text-decoration:underline;">U</button>
+                <button type="button" data-cmd="strikeThrough" title="删除线" style="text-decoration:line-through;">S</button>
+            </div>
+            <div class="tb-group">
+                <label class="tb-color-wrap" title="文字颜色">
+                    <span class="tb-color-swatch" id="forecolor-swatch" style="background:#333333;"></span>
+                    <input type="color" id="methods-forecolor" data-cmd="foreColor" value="#333333">
+                </label>
+                <label class="tb-color-wrap" title="高亮颜色">
+                    <span class="tb-color-swatch" id="hilitecolor-swatch" style="background:#ffe066;"></span>
+                    <input type="color" id="methods-hilitecolor" data-cmd="hiliteColor" value="#ffe066">
+                </label>
+            </div>
+            <div class="tb-group">
+                <button type="button" data-cmd="insertUnorderedList" title="无序列表">☰</button>
+                <button type="button" data-cmd="insertOrderedList" title="有序列表" style="font-family:monospace;">1.</button>
+            </div>
+            <div class="tb-group">
+                <button type="button" data-cmd="justifyLeft" title="左对齐" style="text-align:left;justify-content:flex-start;">左</button>
+                <button type="button" data-cmd="justifyCenter" title="居中">中</button>
+                <button type="button" data-cmd="justifyRight" title="右对齐" style="justify-content:flex-end;">右</button>
+                <button type="button" data-cmd="justifyFull" title="两端对齐">均</button>
+            </div>
+            <div class="tb-group">
+                <button type="button" data-cmd="undo" title="撤销 (Ctrl+Z)">↶</button>
+                <button type="button" data-cmd="redo" title="重做 (Ctrl+Y)">↷</button>
+            </div>
+            <div class="tb-group">
+                <button type="button" data-cmd="removeFormat" title="清除格式" style="font-style:italic;">T<sub style="font-size:9px;">x</sub></button>
+                <button type="button" data-cmd="insertHorizontalRule" title="插入分隔线" style="font-weight:900;">—</button>
+            </div>
+        </div>
+        <div class="methods-paper">
+            <div class="methods-content" id="methods-content" contenteditable="true" data-placeholder="在这里记录你的学习方法… 可以像 Word 一样调整字体、大小、颜色、加粗、列表等。"></div>
+        </div>
     </div>
 </div>
 </div>
@@ -1198,6 +1279,11 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.23.1', date: '2026-05-25', changes: [
+        '修复：学习方法跨设备同步可能丢失的问题（改为按文件独立 updatedAt 合并，只选更新的）',
+        '新增：学习方法支持多文件（左侧文件列表，可新建/重命名/删除/切换）',
+        '迁移：旧的学习方法内容自动转为「我的学习方法」文件'
+    ]},
     { version: 'v2.23.0', date: '2026-05-24', changes: [
         '新增：日计划「📋 待办清单」大类，独立于学习/其他，长期显示',
         '待办清单里的任务不能完成、不能设置属性，只作为「想法池」保留',
@@ -1260,6 +1346,7 @@ let appData = {
     exerciseSchedule: {}, dailyExerciseChecks: {}, dailyReflections: {}, dailyLogs: {},
     selectedDate: getTodayString(), yearlyGoals: "",
     learningMethods: "", learningMethodsHtml: "", methodsCollapsed: false,
+    methodsFiles: [], activeMethodsFileId: null,
     themeColor: "#2383e2", themeMode: "light",
     fonts: { title: "18px", content: "14px", hint: "12px", small: "10px" },
     radius: "8px",
@@ -1516,8 +1603,30 @@ function ensureEnergyData() {
     if (appData.learningMethods === undefined) appData.learningMethods = "";
     if (appData.learningMethodsHtml === undefined) appData.learningMethodsHtml = "";
     if (appData.methodsCollapsed === undefined) appData.methodsCollapsed = false;
-    // 兼容：已有的历史任务如果没有 type 字段（旧版本可能没有），默认设为 learning（避免影响）
-    // 但保留 todo 状态
+
+    // 迁移学习方法文件（旧 learningMethodsHtml → methodsFiles）
+    if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) {
+        const oldHtml = appData.learningMethodsHtml || '';
+        const oldText = appData.learningMethods || '';
+        appData.methodsFiles = [{
+            id: 'file_default',
+            name: '我的学习方法',
+            contentHtml: oldHtml,
+            contentText: oldText,
+            updatedAt: (oldHtml || oldText) ? Date.now() : 0
+        }];
+    }
+    // 确保每个文件字段完整
+    appData.methodsFiles.forEach(f => {
+        if (!f.id) f.id = 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        if (typeof f.name !== 'string' || !f.name) f.name = '未命名文件';
+        if (f.contentHtml === undefined) f.contentHtml = '';
+        if (f.contentText === undefined) f.contentText = '';
+        if (f.updatedAt === undefined) f.updatedAt = 0;
+    });
+    if (!appData.activeMethodsFileId || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId)) {
+        appData.activeMethodsFileId = appData.methodsFiles[0].id;
+    }
 }
 
 function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
@@ -1862,14 +1971,36 @@ function methodsSetStatus(txt, color) {
     }, 1600);
 }
 
+/* 获取当前文件 */
+function getCurrentMethodsFile() {
+    if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) return null;
+    return appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId) || appData.methodsFiles[0];
+}
+
+/* 把编辑器里的内容写回当前文件（只在内容真实变化时更新 updatedAt） */
+function commitMethodsEditorToFile() {
+    const editor = methodsGetEditor();
+    const f = getCurrentMethodsFile();
+    if (!editor || !f) return false;
+    const newHtml = editor.innerHTML;
+    const newText = editor.innerText || '';
+    if (f.contentHtml === newHtml && f.contentText === newText) return false;
+    f.contentHtml = newHtml;
+    f.contentText = newText;
+    f.updatedAt = Date.now();
+    // 兼容旧字段
+    appData.learningMethodsHtml = newHtml;
+    appData.learningMethods = newText;
+    return true;
+}
+
 function methodsTriggerSave() {
     const editor = methodsGetEditor();
     if (!editor) return;
     clearTimeout(methodsSaveTimer);
     methodsSaveTimer = setTimeout(() => {
-        appData.learningMethodsHtml = editor.innerHTML;
-        appData.learningMethods = editor.innerText || '';
-        saveDataToFile(appData);
+        const changed = commitMethodsEditorToFile();
+        if (changed) saveDataToFile(appData);
         methodsSetStatus('✅ 已保存', '#2e7d32');
     }, 500);
 }
@@ -1907,6 +2038,102 @@ function methodsExecCommand(cmd, val) {
     methodsTriggerSave();
 }
 
+/* ===== 文件列表 ===== */
+function renderMethodsFileList() {
+    const list = document.getElementById('methods-file-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) {
+        list.innerHTML = '<div class="methods-file-empty">暂无文件<br>点右上角 ➕ 新建</div>';
+        return;
+    }
+    appData.methodsFiles.forEach(f => {
+        const item = document.createElement('div');
+        item.className = 'methods-file-item' + (f.id === appData.activeMethodsFileId ? ' active' : '');
+        item.title = f.name + '\n双击重命名';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'methods-file-name';
+        nameSpan.textContent = f.name;
+        const delSpan = document.createElement('span');
+        delSpan.className = 'methods-file-del';
+        delSpan.textContent = '✕';
+        delSpan.title = '删除此文件';
+        item.appendChild(nameSpan);
+        item.appendChild(delSpan);
+        item.onclick = (e) => {
+            if (e.target === delSpan) return;
+            switchMethodsFile(f.id);
+        };
+        item.ondblclick = (e) => {
+            if (e.target === delSpan) return;
+            renameMethodsFile(f.id);
+        };
+        delSpan.onclick = (e) => {
+            e.stopPropagation();
+            deleteMethodsFile(f.id);
+        };
+        list.appendChild(item);
+    });
+}
+
+function switchMethodsFile(id) {
+    if (appData.activeMethodsFileId === id) return;
+    // 切换前把当前编辑器内容提交
+    commitMethodsEditorToFile();
+    appData.activeMethodsFileId = id;
+    refreshMethodsEditorContent();
+    renderMethodsFileList();
+    saveDataToFile(appData);
+}
+
+function createMethodsFile() {
+    const name = prompt('新文件名：', '新学习方法');
+    if (name === null || !name.trim()) return;
+    commitMethodsEditorToFile();
+    const newFile = {
+        id: 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: name.trim(),
+        contentHtml: '',
+        contentText: '',
+        updatedAt: Date.now()
+    };
+    appData.methodsFiles.push(newFile);
+    appData.activeMethodsFileId = newFile.id;
+    renderMethodsFileList();
+    refreshMethodsEditorContent();
+    saveDataToFile(appData);
+    showMiniToast('✅ 已创建「' + newFile.name + '」');
+}
+
+function renameMethodsFile(id) {
+    const f = appData.methodsFiles.find(x => x.id === id);
+    if (!f) return;
+    const name = prompt('修改文件名：', f.name);
+    if (name === null) return;
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === f.name) return;
+    f.name = trimmed;
+    f.updatedAt = Date.now();
+    renderMethodsFileList();
+    saveDataToFile(appData);
+    showMiniToast('✏️ 已重命名');
+}
+
+function deleteMethodsFile(id) {
+    if (appData.methodsFiles.length <= 1) { alert('至少保留一个文件'); return; }
+    const f = appData.methodsFiles.find(x => x.id === id);
+    if (!f) return;
+    if (!confirm(`删除「${f.name}」？内容将永久丢失。`)) return;
+    appData.methodsFiles = appData.methodsFiles.filter(x => x.id !== id);
+    if (appData.activeMethodsFileId === id) {
+        appData.activeMethodsFileId = appData.methodsFiles[0].id;
+    }
+    renderMethodsFileList();
+    refreshMethodsEditorContent();
+    saveDataToFile(appData);
+    showMiniToast('🗑️ 已删除');
+}
+
 function initMethodsEditor() {
     if (methodsEditorInitialized) return;
     methodsEditorInitialized = true;
@@ -1914,6 +2141,7 @@ function initMethodsEditor() {
     const toolbar = document.getElementById('methods-toolbar');
     if (!editor || !toolbar) return;
 
+    renderMethodsFileList();
     refreshMethodsEditorContent();
 
     document.addEventListener('selectionchange', () => {
@@ -1928,9 +2156,8 @@ function initMethodsEditor() {
     editor.addEventListener('keyup', methodsSaveSelection);
     editor.addEventListener('blur', () => {
         clearTimeout(methodsSaveTimer);
-        appData.learningMethodsHtml = editor.innerHTML;
-        appData.learningMethods = editor.innerText || '';
-        saveDataToFile(appData);
+        const changed = commitMethodsEditorToFile();
+        if (changed) saveDataToFile(appData);
     });
 
     toolbar.addEventListener('mousedown', (e) => {
@@ -1982,12 +2209,9 @@ function initMethodsEditor() {
 function refreshMethodsEditorContent() {
     const editor = methodsGetEditor();
     if (!editor) return;
-    if (document.activeElement === editor) return;
-    let html = appData.learningMethodsHtml || '';
-    if (!html && appData.learningMethods) {
-        html = escapeHtml(appData.learningMethods).split('\n').map(line => line ? `<p>${line}</p>` : '<p><br></p>').join('');
-    }
-    if (editor.innerHTML !== html) editor.innerHTML = html || '';
+    const f = getCurrentMethodsFile();
+    const html = f ? (f.contentHtml || '') : '';
+    if (editor.innerHTML !== html) editor.innerHTML = html;
 }
 /* ============ 学习方法富文本编辑器 ============ */
 
@@ -3034,7 +3258,6 @@ function generateTodoTaskDOM(task) {
                 </div>
             </div>
         </div>`;
-    // 子任务（只读，无勾选框、无操作菜单）
     if (task.subTasks && task.subTasks.length > 0) {
         html += `<div class="todo-sub-list" style="margin-left:24px;margin-top:8px;padding-left:12px;border-left:2px solid var(--border-color);display:flex;flex-direction:column;gap:4px;">`;
         task.subTasks.forEach(s => {
@@ -3048,7 +3271,6 @@ function generateTodoTaskDOM(task) {
         });
         html += `</div>`;
     }
-    // 子任务输入框 & 添加按钮
     html += `<input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')">`;
     html += `<div style="margin-top:8px;"><span class="action-pill-btn" onclick="showSubInput('${task.id}', this)">➕ 步骤</span></div>`;
     div.innerHTML = html;
@@ -3056,7 +3278,6 @@ function generateTodoTaskDOM(task) {
 }
 
 function generateTaskDOM(task, ds, options = {}) {
-    // 待办清单里的任务走简化分支
     if (task.type === 'todo') return generateTodoTaskDOM(task);
 
     const showSubTasks = !!options.showSubTasks;
@@ -3526,7 +3747,6 @@ function initTaskAndSubTaskDrag() {
                     setTaskDone(task, appData.selectedDate, toCompleted);
                 }
 
-                // 排序：把任务插入到目标容器的对应位置
                 const newOrderIds = Array.from(evt.to.querySelectorAll('.main-task-item')).map(el => el.dataset.taskId).filter(Boolean);
                 appData.tasks = appData.tasks.filter(t => t.id !== taskId);
                 const insertIndex = appData.tasks.findIndex(t => newOrderIds.includes(t.id));
@@ -3606,7 +3826,7 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
         else if (t === 'year') renderYearHeatmap();
         else if (t === 'week') { renderWeekBoard(); renderTaskPool(); renderExercisePool(); renderFixedBlockPool(); }
         else if (t === 'day') { renderDayPlan(); applyPanelLayout(); }
-        else if (t === 'methods') { initMethodsEditor(); refreshMethodsEditorContent(); }
+        else if (t === 'methods') { initMethodsEditor(); renderMethodsFileList(); refreshMethodsEditorContent(); }
         else if (t === 'settings') {
             renderP2PHistory(); updateBackupUI(); renderChangelog(); renderLevelConfig(); renderEnergyAndRPG(); renderTimeSlotConfig();
             const sh = localStorage.getItem('my_p2p_host_id');
@@ -4222,6 +4442,7 @@ window.importData = function(e) {
                 if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
                 renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
                 renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
+                renderMethodsFileList();
                 refreshMethodsEditorContent();
                 saveDataToFile(appData);
                 alert('导入成功！');
@@ -4501,10 +4722,52 @@ window.connectToPeer = function(targetId = null) {
 function mergeData(local, remote) {
     const merged = JSON.parse(JSON.stringify(local));
     
-    const configKeys = ['yearlyGoals', 'learningMethods', 'learningMethodsHtml', 'methodsCollapsed', 'themeColor', 'themeMode', 'fonts', 'radius', 'energyMax', 'energyWarnThreshold', 'expRatio', 'levelConfig', 'commonBtns', 'maxVisible', 'animationEnabled', 'panelLayout'];
+    // 学习方法相关字段不再用简单的"覆盖"策略（会导致丢失）
+    const configKeys = ['yearlyGoals', 'themeColor', 'themeMode', 'fonts', 'radius', 'energyMax', 'energyWarnThreshold', 'expRatio', 'levelConfig', 'commonBtns', 'maxVisible', 'animationEnabled', 'panelLayout'];
     configKeys.forEach(k => {
         if (remote[k] !== undefined) merged[k] = remote[k];
     });
+
+    // 学习方法文件：按 id + updatedAt 合并（选更新的，绝不覆盖）
+    if (remote.methodsFiles && Array.isArray(remote.methodsFiles)) {
+        if (!Array.isArray(merged.methodsFiles)) merged.methodsFiles = [];
+        const localFileMap = new Map(merged.methodsFiles.map(f => [f.id, f]));
+        remote.methodsFiles.forEach(rf => {
+            if (!localFileMap.has(rf.id)) {
+                merged.methodsFiles.push(JSON.parse(JSON.stringify(rf)));
+            } else {
+                const lf = localFileMap.get(rf.id);
+                const rAt = rf.updatedAt || 0;
+                const lAt = lf.updatedAt || 0;
+                if (rAt > lAt) {
+                    lf.name = rf.name;
+                    lf.contentHtml = rf.contentHtml;
+                    lf.contentText = rf.contentText;
+                    lf.updatedAt = rf.updatedAt;
+                }
+            }
+        });
+    }
+    // 保证至少一个文件
+    if (!Array.isArray(merged.methodsFiles) || merged.methodsFiles.length === 0) {
+        merged.methodsFiles = [{
+            id: 'file_default',
+            name: '我的学习方法',
+            contentHtml: '',
+            contentText: '',
+            updatedAt: 0
+        }];
+    }
+    // activeMethodsFileId：保持本地，如果失效则用第一个
+    if (!merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId)) {
+        merged.activeMethodsFileId = merged.methodsFiles[0].id;
+    }
+    // 同步旧字段镜像（取当前文件内容）
+    const curFile = merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId) || merged.methodsFiles[0];
+    merged.learningMethodsHtml = curFile.contentHtml || '';
+    merged.learningMethods = curFile.contentText || '';
+    // 稳定排序，避免排序差异导致签名不一致引发循环
+    merged.methodsFiles.sort((a, b) => String(a.id).localeCompare(String(b.id)));
 
     const localTasksMap = new Map(merged.tasks.map(t => [t.id, t]));
     (remote.tasks || []).forEach(rt => {
@@ -4512,7 +4775,6 @@ function mergeData(local, remote) {
             merged.tasks.push(rt);
         } else {
             const lt = localTasksMap.get(rt.id);
-            // 类型和日期的变化：以远端为准（用于 todo ↔ learning/other 的状态切换）
             if (rt.type !== undefined && rt.type !== lt.type) lt.type = rt.type;
             if (rt.date !== undefined && rt.date !== lt.date) lt.date = rt.date;
             lt.text = rt.text || lt.text;
@@ -4654,6 +4916,7 @@ function applyRemoteData(payload) {
     lastRpgState = null;
     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
     renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
+    renderMethodsFileList();
     refreshMethodsEditorContent();
     saveLocalStorage();
     setTimeout(() => { isSyncing = false; }, 100);
