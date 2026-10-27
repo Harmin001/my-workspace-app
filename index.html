@@ -220,13 +220,29 @@ body.dark-mode .deadline-preview { background: #3a1c1c; }
 body.dark-mode .week-grid-cell.today-col { background: #1a2a3a; }
 
 .week-grid-cell > .task-item.lecture-task { 
-    flex: 1 1 0; min-height: 36px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: #fff; border: none; border-radius: 8px; padding: 8px 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.12); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; position: relative; overflow: hidden; text-align: center; line-height: 1.4;
+    flex: 0 0 auto; 
+    min-height: 36px; 
+    background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); 
+    color: #fff; 
+    border: none; 
+    border-radius: 8px; 
+    padding: 8px 20px; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12); 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 13px; 
+    position: relative; 
+    overflow: hidden; 
+    text-align: center;
+    line-height: 1.4;
 }
 .week-grid-cell > .task-item.lecture-task .task-text { font-weight: 600; color: #fff; font-size: 13px; word-break: break-all; }
 .week-grid-cell > .task-item.lecture-task input[type="checkbox"] { margin: 0 0 4px 0; width: 14px; height: 14px; }
 .week-grid-cell > .task-item.lecture-task.count-task { background: linear-gradient(135deg, #93c5fd 0%, #bfdbfe 100%); color: #1e3a8a; }
 .week-grid-cell > .task-item.lecture-task.count-task .task-text { color: #1e3a8a; font-size: 13px; }
-.week-grid-cell > .fixed-block-item { flex: 1 1 0; min-height: 36px; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 8px; padding: 8px 20px; font-size: 13px; }
+.week-grid-cell > .fixed-block-item { flex: 0 0 auto; min-height: 36px; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 8px; padding: 8px 20px; font-size: 13px; }
 .week-grid-cell > .fixed-block-item > span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 
 .week-column { flex: 1; background: var(--bg-sidebar); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; border: 1px dashed transparent; overflow-y: auto; min-height: 0; }
@@ -1279,6 +1295,15 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 
 <script>
 const APP_CHANGELOG = [
+    { version: 'v2.24.0', date: '2026-05-26', changes: [
+        '修复：日计划里把任务拖到空白区域消失的问题（现在会回滚并提示）',
+        '修复：周计划里循环/次数任务拖到时间池时行为不统一的问题',
+        '修复：从格子拖回时间池后 timeSlots 未清理的残留问题',
+        '优化：拖入课表格子内的任务改为固定高度，多个任务不再互相挤压',
+        '重大优化：P2P 同步改为「差异驱动 + 局部刷新」，不再全页刷新',
+        '新增：同步时只刷新当前正在查看的视图（切走后下次打开会自动是最新的）',
+        '新增：正在编辑学习方法时，即使收到远端更新也不会覆盖正在输入的编辑器内容'
+    ]},
     { version: 'v2.23.1', date: '2026-05-25', changes: [
         '修复：学习方法跨设备同步可能丢失的问题（改为按文件独立 updatedAt 合并，只选更新的）',
         '新增：学习方法支持多文件（左侧文件列表，可新建/重命名/删除/切换）',
@@ -1287,37 +1312,13 @@ const APP_CHANGELOG = [
     { version: 'v2.23.0', date: '2026-05-24', changes: [
         '新增：日计划「📋 待办清单」大类，独立于学习/其他，长期显示',
         '待办清单里的任务不能完成、不能设置属性，只作为「想法池」保留',
-        '可以创建子任务（也不能完成，纯记录）',
-        '把待办任务拖入学习/其他后，才正式成为可执行任务（可勾选、可设属性、计入进度）',
-        '可以随时把学习/其他里的任务拖回待办清单，重新变回「想法」状态'
+        '把待办任务拖入学习/其他后，才正式成为可执行任务'
     ]},
     { version: 'v2.22.0', date: '2026-05-23', changes: [
-        '新增：左侧栏「📚 学习方法」导航页，右侧打开类似 Word 的富文本编辑器',
-        '支持：段落样式、字体、字号、加粗、斜体、下划线、删除线、文字颜色、高亮颜色、有序/无序列表、对齐、撤销/重做、清除格式、插入分隔线',
-        '学习方法内容随数据自动保存、随 JSON 导出/导入、随 P2P 同步'
-    ]},
-    { version: 'v2.21.5', date: '2026-05-22', changes: [
-        '新增：左侧栏「📚 学习方法」栏，可随时记录学到的学习方法，像 txt 一样自由书写',
-        '学习方法支持折叠/展开，随数据一同备份和 P2P 同步'
-    ]},
-    { version: 'v2.21.4', date: '2026-05-21', changes: [
-        '优化：父任务、子任务的循环/预计时长/精力消耗/次数/截止日期等状态徽章统一靠右对齐',
-        '优化：RPG 面板「今日精力」的数字挪到进度条右下角，不再挤占标题行'
-    ]},
-    { version: 'v2.21.3', date: '2026-05-20', changes: [
-        '修复：日计划中添加步骤的文本输入框超出母任务卡片的问题',
-        '修复：子任务名称靠右显示精力消耗 ⚡、预计时长 ⏱ 徽章',
-        '修复：RPG 属性区「今日精力 100/100」在字体放大后换行的问题'
-    ]},
-    { version: 'v2.21.2', date: '2026-05-19', changes: [
-        '修复：日计划卡片 / 详情弹窗中点击「➕ 步骤」无法弹出输入框的问题',
-        '优化：日/周/月/年完成度统计弹窗，按视图周期收集「操作记录」',
-        '优化：日完成度基于当前选中日期，周完成度基于当前视图周，月/年同理'
+        '新增：左侧栏「📚 学习方法」导航页，右侧打开类似 Word 的富文本编辑器'
     ]},
     { version: 'v2.21.1', date: '2026-05-18', changes: [
-        '优化：任务卡片的循环、计数、截止时间、精力等状态全部以胶囊标签外显',
-        '修复：点击任务卡片无法打开详情窗口的问题',
-        '修复：P2P 同步时因数组排序差异导致无限互相覆盖闪烁的问题'
+        '优化：任务卡片的循环、计数、截止时间、精力等状态全部以胶囊标签外显'
     ]}
 ];
 
@@ -1376,6 +1377,8 @@ let currentDetailTaskId = null;
 let lastRpgState = null;
 let userPickedDate = false;
 const expandedSubTasks = new Set();
+// ★ 拖拽中状态，避免同步中断拖拽
+let isDraggingActive = false;
 
 function getTodayString() {
     const d = new Date();
@@ -1616,7 +1619,6 @@ function ensureEnergyData() {
             updatedAt: (oldHtml || oldText) ? Date.now() : 0
         }];
     }
-    // 确保每个文件字段完整
     appData.methodsFiles.forEach(f => {
         if (!f.id) f.id = 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
         if (typeof f.name !== 'string' || !f.name) f.name = '未命名文件';
@@ -1971,13 +1973,11 @@ function methodsSetStatus(txt, color) {
     }, 1600);
 }
 
-/* 获取当前文件 */
 function getCurrentMethodsFile() {
     if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) return null;
     return appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId) || appData.methodsFiles[0];
 }
 
-/* 把编辑器里的内容写回当前文件（只在内容真实变化时更新 updatedAt） */
 function commitMethodsEditorToFile() {
     const editor = methodsGetEditor();
     const f = getCurrentMethodsFile();
@@ -1988,7 +1988,6 @@ function commitMethodsEditorToFile() {
     f.contentHtml = newHtml;
     f.contentText = newText;
     f.updatedAt = Date.now();
-    // 兼容旧字段
     appData.learningMethodsHtml = newHtml;
     appData.learningMethods = newText;
     return true;
@@ -2038,7 +2037,6 @@ function methodsExecCommand(cmd, val) {
     methodsTriggerSave();
 }
 
-/* ===== 文件列表 ===== */
 function renderMethodsFileList() {
     const list = document.getElementById('methods-file-list');
     if (!list) return;
@@ -2078,7 +2076,6 @@ function renderMethodsFileList() {
 
 function switchMethodsFile(id) {
     if (appData.activeMethodsFileId === id) return;
-    // 切换前把当前编辑器内容提交
     commitMethodsEditorToFile();
     appData.activeMethodsFileId = id;
     refreshMethodsEditorContent();
@@ -2705,7 +2702,7 @@ function createWeekTaskDOM(t, ds, options = {}) {
     const item = document.createElement('div');
     item.className = 'task-item';
     item.draggable = true;
-    item.ondragstart = (e) => drag(e, t.id);
+    item.ondragstart = (e) => { isDraggingActive = true; drag(e, t.id); };
 
     if (t.countOnly) {
         item.classList.add('count-task');
@@ -2821,7 +2818,7 @@ function renderWeekBoard() {
                 const exDiv = document.createElement('div');
                 exDiv.className = 'exercise-capsule';
                 exDiv.draggable = true;
-                exDiv.ondragstart = (e) => dragExercise(e, n, 'date:' + ds);
+                exDiv.ondragstart = (e) => { isDraggingActive = true; dragExercise(e, n, 'date:' + ds); };
                 const cb = document.createElement('input');
                 cb.type = 'checkbox'; cb.checked = ad;
                 cb.onchange = (e) => {
@@ -2928,7 +2925,7 @@ function renderExercisePool() {
         div.className = 'exercise-capsule';
         div.innerText = ex.name;
         div.draggable = true;
-        div.ondragstart = (e) => dragExercise(e, ex.name, 'pool');
+        div.ondragstart = (e) => { isDraggingActive = true; dragExercise(e, ex.name, 'pool'); };
         pool.appendChild(div);
     });
 }
@@ -2942,7 +2939,7 @@ function renderFixedBlockPool() {
         const div = document.createElement('div');
         div.className = 'fixed-block-capsule';
         div.draggable = true;
-        div.ondragstart = (e) => dragFixedBlock(e, fb.id);
+        div.ondragstart = (e) => { isDraggingActive = true; dragFixedBlock(e, fb.id); };
         const txt = document.createElement('span');
         txt.innerText = '📌 ' + fb.name;
         txt.title = '双击改名';
@@ -3238,7 +3235,6 @@ function renderSubTaskHtml(task, sub, ds) {
         </div>`;
 }
 
-// 生成待办清单里的简化任务卡片
 function generateTodoTaskDOM(task) {
     const div = document.createElement('div');
     div.className = 'main-task-item todo-task-item';
@@ -3704,25 +3700,37 @@ function renderTaskListModalContent(type) {
     setTimeout(initTaskAndSubTaskDrag, 0);
 }
 
+// ★ 修复拖到空白回滚
 function initTaskAndSubTaskDrag() {
     document.querySelectorAll('.task-drop-zone').forEach(zone => {
         if (zone._sortable) zone._sortable.destroy();
         zone._sortable = new Sortable(zone, {
             group: 'shared-tasks', animation: 150, ghostClass: 'sortable-ghost', draggable: '.main-task-item',
+            onStart: function() { isDraggingActive = true; },
             onEnd: function(evt) {
+                isDraggingActive = false;
                 const item = evt.item, taskId = item.dataset.taskId;
                 if (!taskId) return;
                 const task = appData.tasks.find(t => t.id === taskId);
                 if (!task) return;
+                
                 const fromType = task.type || '';
-                const toType = evt.to.dataset.type;
-                const toCompleted = evt.to.dataset.completed === 'true';
+                const toType = evt.to && evt.to.dataset ? evt.to.dataset.type : null;
+                const toCompleted = evt.to && evt.to.dataset ? evt.to.dataset.completed === 'true' : false;
+
+                // ★ 防御：拖到无效区域（空白），回滚
+                const validTypes = ['todo', 'learning', 'other'];
+                if (!toType || !validTypes.includes(toType)) {
+                    renderDayPlan();
+                    showMiniToast('❌ 请拖到「待办 / 学习 / 其他」区域内');
+                    return;
+                }
 
                 if (toType === 'todo') {
-                    // 拖入待办清单 → 重置为「想法」状态
                     task.type = 'todo';
                     task.date = 'pool';
                     delete task.timeSlot;
+                    if (task.timeSlots) task.timeSlots = [];
                     delete task.pinned;
                     task.completed = false;
                     if (task.completions) delete task.completions;
@@ -3732,7 +3740,6 @@ function initTaskAndSubTaskDrag() {
                         if (s.completions) delete s.completions;
                     });
                 } else if (fromType === 'todo') {
-                    // 从待办清单拖入学习/其他 → 正式成为任务
                     task.type = toType;
                     task.date = appData.selectedDate;
                     delete task.completed;
@@ -3742,7 +3749,6 @@ function initTaskAndSubTaskDrag() {
                         if (s.completions) delete s.completions;
                     });
                 } else {
-                    // 学习 ↔ 其他互拖
                     task.type = toType;
                     setTaskDone(task, appData.selectedDate, toCompleted);
                 }
@@ -3761,7 +3767,9 @@ function initTaskAndSubTaskDrag() {
         if (list._sortable) list._sortable.destroy();
         list._sortable = new Sortable(list, {
             group: 'subtasks', animation: 150, ghostClass: 'sortable-ghost', draggable: '.sub-task-item',
+            onStart: function() { isDraggingActive = true; },
             onEnd: function(evt) {
+                isDraggingActive = false;
                 const taskId = evt.to.dataset.taskId;
                 if (!taskId) return;
                 const task = appData.tasks.find(t => t.id === taskId);
@@ -3846,9 +3854,9 @@ window.handleReflectionInput = function(val) {
 };
 let draggedTaskId = null, draggedExerciseName = null, draggedExerciseSource = null, draggedFixedBlockId = null;
 function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
-function drag(ev, id) { draggedTaskId = id; draggedExerciseName = null; draggedExerciseSource = null; draggedFixedBlockId = null; }
-function dragExercise(ev, n, s) { draggedExerciseName = n; draggedExerciseSource = s || 'pool'; draggedTaskId = null; draggedFixedBlockId = null; }
-function dragFixedBlock(ev, id) { draggedFixedBlockId = id; draggedTaskId = null; draggedExerciseName = null; draggedExerciseSource = null; }
+function drag(ev, id) { draggedTaskId = id; draggedExerciseName = null; draggedExerciseSource = null; draggedFixedBlockId = null; isDraggingActive = true; }
+function dragExercise(ev, n, s) { draggedExerciseName = n; draggedExerciseSource = s || 'pool'; draggedTaskId = null; draggedFixedBlockId = null; isDraggingActive = true; }
+function dragFixedBlock(ev, id) { draggedFixedBlockId = id; draggedTaskId = null; draggedExerciseName = null; draggedExerciseSource = null; isDraggingActive = true; }
 
 window.unscheduleTask = function(taskId) {
     const t = appData.tasks.find(x => x.id === taskId);
@@ -3857,14 +3865,17 @@ window.unscheduleTask = function(taskId) {
     if (t._poolOrigin) { t.date = 'pool'; delete t._poolOrigin; }
     else if (t._prevDate) { t.date = t._prevDate; delete t._prevDate; }
     delete t.timeSlot;
+    if (t.timeSlots) t.timeSlots = []; // ★ 清理 timeSlots
     saveDataToFile(appData);
     renderWeekBoard(); renderTaskPool(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
     renderDayPlan();
 };
 
+// ★ 修复拖拽行为：统一 countOnly 与普通任务的时间池处理
 function handleDrop(ev, td, timeslot) {
     ev.preventDefault();
     document.querySelectorAll('.week-column, .task-pool-list, #exercise-pool, .week-grid-cell').forEach(c => c.classList.remove('drag-over'));
+
     if (draggedFixedBlockId) {
         if (td !== 'pool' && timeslot) {
             ensureEnergyData();
@@ -3881,43 +3892,41 @@ function handleDrop(ev, td, timeslot) {
             }
         }
         draggedFixedBlockId = null;
+        isDraggingActive = false;
         renderWeekBoard(); renderTaskPool(); renderExercisePool(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
         return;
     }
+
     if (draggedTaskId) {
         const t = appData.tasks.find(t => t.id === draggedTaskId);
         if (t) {
-            if (t.type === 'todo') { draggedTaskId = null; return; }
-            if (t.countOnly && td !== 'pool') {
-                if (timeslot) {
+            if (t.type === 'todo') { draggedTaskId = null; isDraggingActive = false; return; }
+
+            if (td === 'pool') {
+                // ★ 拖到时间池：countOnly 与普通任务统一处理
+                t.date = 'pool';
+                delete t.timeSlot;
+                if (t.timeSlots) t.timeSlots = [];
+                delete t._poolOrigin;
+                delete t._prevDate;
+            } else if (timeslot) {
+                // ★ 拖到具体格子
+                if (t.countOnly) {
+                    // countOnly 支持多个格子（timeSlots 数组）
                     if (!t.timeSlots) t.timeSlots = [];
                     const key = td + '_' + timeslot;
                     if (!t.timeSlots.includes(key)) t.timeSlots.push(key);
                     saveDataToFile(appData);
                     renderWeekBoard(); renderTaskPool();
                     draggedTaskId = null;
+                    isDraggingActive = false;
                     return;
-                }
-            } else if (t.countOnly && td === 'pool') {
-                t.timeSlots = [];
-                saveDataToFile(appData);
-                renderWeekBoard(); renderTaskPool();
-                draggedTaskId = null;
-                return;
-            }
-            
-            if (td === 'pool') {
-                t.date = 'pool';
-                delete t.timeSlot;
-                delete t._poolOrigin;
-                delete t._prevDate;
-            } else {
-                if (t.date === 'pool') t._poolOrigin = true;
-                else if (timeslot && !t._prevDate && t.date !== td) t._prevDate = t.date;
-                t.date = td;
-                if (timeslot !== undefined) {
-                    if (timeslot === '') delete t.timeSlot;
-                    else t.timeSlot = timeslot;
+                } else {
+                    // 普通任务 / 循环任务 / 有 target 的任务
+                    if (t.date === 'pool') t._poolOrigin = true;
+                    else if (!t._prevDate && t.date !== td) t._prevDate = t.date;
+                    t.date = td;
+                    t.timeSlot = timeslot;
                 }
             }
         }
@@ -3933,7 +3942,7 @@ function handleDrop(ev, td, timeslot) {
     saveDataToFile(appData);
     renderWeekBoard(); renderTaskPool(); renderExercisePool(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
     renderDayPlan();
-    draggedTaskId = null; draggedExerciseName = null; draggedExerciseSource = null;
+    draggedTaskId = null; draggedExerciseName = null; draggedExerciseSource = null; isDraggingActive = false;
 }
 
 window.deleteTask = function(id) {
@@ -4722,13 +4731,11 @@ window.connectToPeer = function(targetId = null) {
 function mergeData(local, remote) {
     const merged = JSON.parse(JSON.stringify(local));
     
-    // 学习方法相关字段不再用简单的"覆盖"策略（会导致丢失）
     const configKeys = ['yearlyGoals', 'themeColor', 'themeMode', 'fonts', 'radius', 'energyMax', 'energyWarnThreshold', 'expRatio', 'levelConfig', 'commonBtns', 'maxVisible', 'animationEnabled', 'panelLayout'];
     configKeys.forEach(k => {
         if (remote[k] !== undefined) merged[k] = remote[k];
     });
 
-    // 学习方法文件：按 id + updatedAt 合并（选更新的，绝不覆盖）
     if (remote.methodsFiles && Array.isArray(remote.methodsFiles)) {
         if (!Array.isArray(merged.methodsFiles)) merged.methodsFiles = [];
         const localFileMap = new Map(merged.methodsFiles.map(f => [f.id, f]));
@@ -4748,7 +4755,6 @@ function mergeData(local, remote) {
             }
         });
     }
-    // 保证至少一个文件
     if (!Array.isArray(merged.methodsFiles) || merged.methodsFiles.length === 0) {
         merged.methodsFiles = [{
             id: 'file_default',
@@ -4758,15 +4764,12 @@ function mergeData(local, remote) {
             updatedAt: 0
         }];
     }
-    // activeMethodsFileId：保持本地，如果失效则用第一个
     if (!merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId)) {
         merged.activeMethodsFileId = merged.methodsFiles[0].id;
     }
-    // 同步旧字段镜像（取当前文件内容）
     const curFile = merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId) || merged.methodsFiles[0];
     merged.learningMethodsHtml = curFile.contentHtml || '';
     merged.learningMethods = curFile.contentText || '';
-    // 稳定排序，避免排序差异导致签名不一致引发循环
     merged.methodsFiles.sort((a, b) => String(a.id).localeCompare(String(b.id)));
 
     const localTasksMap = new Map(merged.tasks.map(t => [t.id, t]));
@@ -4788,6 +4791,8 @@ function mergeData(local, remote) {
             if (rt.countEnded !== undefined) lt.countEnded = rt.countEnded || lt.countEnded;
             if (rt.estimate !== undefined) lt.estimate = rt.estimate;
             if (rt.pinned !== undefined) lt.pinned = rt.pinned;
+            if (rt.timeSlot !== undefined) lt.timeSlot = rt.timeSlot;
+            if (rt.timeSlots !== undefined) lt.timeSlots = rt.timeSlots;
             
             if (rt.completions) {
                 if (!lt.completions) lt.completions = {};
@@ -4903,24 +4908,118 @@ function mergeData(local, remote) {
     return merged;
 }
 
-function applyRemoteData(payload) {
+// ★ 计算两版数据的差异，用于局部刷新
+function computeDiffs(oldData, newData) {
+    const diffs = {};
+    if (!oldData) { diffs.all = true; return diffs; }
+    const jstr = (v) => JSON.stringify(v);
+    diffs.tasks = jstr(oldData.tasks) !== jstr(newData.tasks);
+    diffs.exercises = jstr(oldData.exercises) !== jstr(newData.exercises);
+    diffs.exerciseSchedule = jstr(oldData.exerciseSchedule) !== jstr(newData.exerciseSchedule);
+    diffs.dailyExerciseChecks = jstr(oldData.dailyExerciseChecks) !== jstr(newData.dailyExerciseChecks);
+    diffs.fixedBlocks = jstr(oldData.fixedBlocks) !== jstr(newData.fixedBlocks);
+    diffs.fixedBlockSchedule = jstr(oldData.fixedBlockSchedule) !== jstr(newData.fixedBlockSchedule);
+    diffs.timeSlots = jstr(oldData.timeSlots) !== jstr(newData.timeSlots);
+    diffs.methodsFiles = jstr(oldData.methodsFiles) !== jstr(newData.methodsFiles);
+    diffs.rpg = jstr(oldData.rpg) !== jstr(newData.rpg);
+    diffs.dailyEnergy = jstr(oldData.dailyEnergy) !== jstr(newData.dailyEnergy);
+    diffs.dailyReflections = jstr(oldData.dailyReflections) !== jstr(newData.dailyReflections);
+    diffs.levelConfig = jstr(oldData.levelConfig) !== jstr(newData.levelConfig);
+    diffs.commonBtns = jstr(oldData.commonBtns) !== jstr(newData.commonBtns);
+    diffs.maxVisible = oldData.maxVisible !== newData.maxVisible;
+    diffs.themeMode = oldData.themeMode !== newData.themeMode;
+    diffs.themeColor = oldData.themeColor !== newData.themeColor;
+    diffs.fonts = jstr(oldData.fonts) !== jstr(newData.fonts);
+    diffs.radius = oldData.radius !== newData.radius;
+    diffs.yearlyGoals = oldData.yearlyGoals !== newData.yearlyGoals;
+    return diffs;
+}
+
+// ★ 局部刷新：只更新变化的部分 + 只刷新当前活跃视图
+function applyRemoteData(payload, oldData) {
     isSyncing = true;
+    // 拖拽中：推迟处理，避免打断
+    if (isDraggingActive) {
+        setTimeout(() => {
+            isSyncing = false;
+            applyRemoteData(payload, appData);
+        }, 300);
+        return;
+    }
+    const diffs = computeDiffs(oldData, payload);
     appData = payload;
     ensureEnergyData();
-    if (!appData._lastModified) appData._lastModified = 1;
-    document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
-    if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
-    if (appData.fonts) ['title','content','hint','small'].forEach(k => document.documentElement.style.setProperty(`--font-${k}`, appData.fonts[k]));
-    if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
+
+    // 主题/字体/圆角
+    if (diffs.themeMode) document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
+    if (diffs.themeColor && appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
+    if (diffs.fonts && appData.fonts) ['title','content','hint','small'].forEach(k => document.documentElement.style.setProperty(`--font-${k}`, appData.fonts[k]));
+    if (diffs.radius && appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
+
+    // 年度目标
+    if (diffs.yearlyGoals) {
+        const g = appData.yearlyGoals || "";
+        const yg = document.getElementById('yearly-goals');
+        const ygb = document.getElementById('yearly-goals-bottom');
+        if (yg && document.activeElement !== yg) yg.innerText = g;
+        if (ygb && document.activeElement !== ygb) ygb.value = g;
+    }
+
+    // 侧边栏进度条
+    if (diffs.tasks || diffs.exercises || diffs.exerciseSchedule || diffs.dailyExerciseChecks) {
+        updateFixedProgressBars();
+    }
+
+    // RPG 和精力
+    if (diffs.rpg || diffs.dailyEnergy) {
+        lastRpgState = null;
+        renderEnergyAndRPG();
+    }
+
+    // 学习方法文件列表 + 编辑器（编辑器正在输入时不覆盖）
+    if (diffs.methodsFiles) {
+        renderMethodsFileList();
+        const editor = methodsGetEditor();
+        if (!editor || document.activeElement !== editor) {
+            refreshMethodsEditorContent();
+        }
+    }
+
+    // 设置面板相关
+    if (diffs.levelConfig) renderLevelConfig();
+    if (diffs.commonBtns && appData.commonBtns) {
+        document.querySelectorAll('#common-btns-config input[type="checkbox"]').forEach(cb => { cb.checked = appData.commonBtns.includes(cb.value); });
+    }
+    if (diffs.timeSlots) renderTimeSlotConfig();
+    if (diffs.fixedBlocks) renderFixedBlockPool();
+    if (diffs.maxVisible) {
+        const el = document.getElementById('max-visible-val');
+        if (el) el.innerText = appData.maxVisible;
+    }
+
+    // ★ 只刷新当前活跃视图（如果数据有变化且用户不在编辑中）
+    const activeViewEl = document.querySelector('.view-container.active');
+    const activeView = activeViewEl ? activeViewEl.id : '';
+    const viewNeedsUpdate = diffs.tasks || diffs.exercises || diffs.dailyExerciseChecks ||
+                            diffs.exerciseSchedule || diffs.fixedBlockSchedule || diffs.dailyReflections ||
+                            diffs.timeSlots || diffs.fixedBlocks;
+    if (viewNeedsUpdate) {
+        // 用户正在输入时不刷新（下次切换视图会刷新）
+        const activeEl = document.activeElement;
+        const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+        if (!isEditing) {
+            if (activeView === 'view-day') renderDayPlan();
+            else if (activeView === 'view-week') { renderWeekBoard(); renderTaskPool(); }
+            else if (activeView === 'view-month') renderCalendar();
+            else if (activeView === 'view-year') renderYearHeatmap();
+        }
+    }
+
     lastSavedSignature = getDataSignature(appData);
-    lastRpgState = null;
-    renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
-    renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
-    renderMethodsFileList();
-    refreshMethodsEditorContent();
     saveLocalStorage();
     setTimeout(() => { isSyncing = false; }, 100);
 }
+
 function setupConnection(connection, isHost, targetId) {
     connection.on('open', () => {
         if (conn !== connection) return;
@@ -4947,6 +5046,8 @@ function setupConnection(connection, isHost, targetId) {
         } else if (data.type === 'SYNC_NEED_DATA') {
             try { connection.send({ type: 'SYNC_DATA', payload: appData, lastModified: appData._lastModified || 1 }); } catch(e){}
         } else if (data.type === 'SYNC_DATA') {
+            // ★ 保存旧数据用于 diff
+            const oldData = JSON.parse(JSON.stringify(appData));
             const merged = mergeData(appData, data.payload);
             const remoteSig = getDataSignature(data.payload);
             const mergedSig = getDataSignature(merged);
@@ -4957,7 +5058,8 @@ function setupConnection(connection, isHost, targetId) {
             } else {
                 merged._lastModified = Math.max(appData._lastModified || 1, data.lastModified || 1);
             }
-            applyRemoteData(merged);
+            // ★ 传 oldData，用于局部刷新判断
+            applyRemoteData(merged, oldData);
             handshakeDone = true;
             document.getElementById('p2p-status').innerText = "✅ 已合并同步";
             document.getElementById('p2p-status').style.color = "#27ae60";
@@ -5019,8 +5121,8 @@ document.addEventListener('dragover', (e) => {
     else if (e.clientY > rect.bottom - threshold) startAutoScroll(view, 1);
     else stopAutoScroll();
 });
-document.addEventListener('dragend', stopAutoScroll);
-document.addEventListener('drop', stopAutoScroll, true);
+document.addEventListener('dragend', () => { stopAutoScroll(); isDraggingActive = false; });
+document.addEventListener('drop', () => { stopAutoScroll(); }, true);
 (function() {
     const tab = document.getElementById('week-drawer-tab');
     if (!tab) return;
