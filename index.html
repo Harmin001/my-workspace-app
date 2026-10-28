@@ -522,7 +522,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 #view-methods .year-header { margin-bottom: 12px; }
 .methods-layout { display: flex; gap: 12px; flex: 1; min-height: 0; overflow: hidden; }
 .methods-sidebar {
-    width: 240px;
+    width: 260px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
@@ -576,7 +576,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
     line-height: 1.6;
 }
 .methods-file-item {
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-radius: 4px;
     cursor: pointer;
     display: flex;
@@ -586,10 +586,14 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
     font-size: var(--font-hint);
     transition: background .15s, color .15s;
     color: var(--text-main);
+    user-select: none;
 }
 .methods-file-item:hover { background: var(--hover-bg); }
 .methods-file-item.active { background: var(--accent-color); color: #fff; }
 .methods-file-item.active .methods-file-del { color: #fff; }
+.methods-file-item .folder-toggle { width: 16px; text-align: center; font-size: 10px; color: var(--text-muted); }
+.methods-file-item.active .folder-toggle { color: #fff; }
+.methods-file-item .file-icon { margin-right: 4px; }
 .methods-file-name {
     flex: 1;
     overflow: hidden;
@@ -767,6 +771,21 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 .methods-paper.split-screen { gap: 20px; }
 .methods-paper.split-screen .methods-content { max-width: 50%; padding: 32px; }
 .methods-paper.split-screen .methods-content.mirror { display: block !important; }
+.methods-split-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding: 4px 0;
+}
+.methods-split-controls select {
+    padding: 4px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-main);
+    font-size: var(--font-hint);
+    max-width: 200px;
+}
 
 @media(max-width: 900px) { .settings-grid { grid-template-columns: 1fr; gap: 12px; } .rpg-edit-grid { grid-template-columns: repeat(2, 1fr); } }
 @media(max-width: 768px) {
@@ -778,12 +797,12 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
     .nav-item:hover { transform: none; background-color: transparent; }
     .nav-item.active { background-color: var(--hover-bg); color: var(--accent-color); font-weight: bold; }
     .main-content { order: 1; height: calc(100vh - 65px); }
-    .view-container { padding: 12px; }
-    #view-methods { padding: 8px 10px; }
+    .view-container { padding: 12px 12px 80px 12px; } /* 确保底部内容不被导航栏遮挡 */
+    #view-methods { padding: 8px 10px 80px 10px; }
     .methods-layout { flex-direction: column; }
-    .methods-sidebar { width: 100%; max-height: 120px; flex-shrink: 0; }
-    .methods-file-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 6px; }
-    .methods-file-item { flex-shrink: 0; min-width: 100px; max-width: 180px; padding: 6px 10px; }
+    .methods-sidebar { width: 100%; max-height: 180px; flex-shrink: 0; }
+    .methods-file-list { flex-direction: column; overflow-x: hidden; overflow-y: auto; padding: 6px; }
+    .methods-file-item { flex-shrink: 0; padding: 6px 10px; }
     .methods-paper { padding: 12px 6px; }
     .methods-content { padding: 24px 18px; font-size: 14px; }
     .methods-paper.split-screen { flex-direction: column; }
@@ -871,12 +890,12 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 <div class="energy-left">
     <div class="energy-header"><span>⚡ 今日精力</span></div>
     <div class="energy-bar-bg"><div class="energy-bar-fill" id="energy-fill" style="width:100%;"></div></div>
-    <div class="energy-footer"><span id="energy-text">100 / 100</span></div>
+    <div class="energy-footer"><span id="energy-text">200 / 200</span></div>
     <div class="energy-warn" id="energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
 </div>
 <div class="energy-right">
-    <button class="btn-energy-restore" onclick="restoreEnergy('nap')" id="btn-nap" title="恢复精力">😴+40</button>
-    <button class="btn-energy-restore" onclick="restoreEnergy('break')" id="btn-break" title="恢复精力">☕+15</button>
+    <button class="btn-energy-restore" onclick="restoreEnergy('nap')" id="btn-nap" title="恢复精力">😴+50</button>
+    <button class="btn-energy-restore" onclick="restoreEnergy('break')" id="btn-break" title="恢复精力">☕+20</button>
 </div>
 </div>
 <div class="rpg-card-main" onclick="openRPGModal()">
@@ -897,7 +916,7 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 </div>
 </div>
 
-<div class="mobile-rpg-fab" id="mobile-rpg-fab" onclick="openRPGModal()"><span id="mobile-rpg-lv">Lv.1</span><span id="mobile-rpg-energy">⚡100</span></div>
+<div class="mobile-rpg-fab" id="mobile-rpg-fab" onclick="openRPGModal()"><span id="mobile-rpg-lv">Lv.1</span><span id="mobile-rpg-energy">⚡200</span></div>
 
 <div class="main-content">
 <div class="view-container" id="view-year">
@@ -1004,8 +1023,11 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 <div class="methods-layout">
     <div class="methods-sidebar">
         <div class="methods-sidebar-header">
-            <span>📁 文件</span>
-            <button class="methods-new-file-btn" onclick="createMethodsFile()" title="新建文件">➕</button>
+            <span>📁 文件树</span>
+            <div style="display:flex;gap:4px;">
+                <button class="methods-new-file-btn" onclick="createMethodsFolder()" title="新建文件夹" style="background:#27ae60;">📁+</button>
+                <button class="methods-new-file-btn" onclick="createMethodsFile()" title="新建文件">📄+</button>
+            </div>
         </div>
         <div class="methods-file-list" id="methods-file-list"></div>
     </div>
@@ -1079,6 +1101,10 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
                 <button type="button" data-cmd="insertHorizontalRule" title="插入分隔线" style="font-weight:900;">—</button>
             </div>
         </div>
+        <div id="methods-split-controls" class="methods-split-controls" style="display:none;">
+            <label>左侧: <select id="split-left-select" onchange="switchMethodsFile(this.value)"></select></label>
+            <label>右侧: <select id="split-right-select" onchange="switchMethodsFile2(this.value)"></select></label>
+        </div>
         <div class="methods-paper" id="methods-paper-container">
             <div class="methods-content" id="methods-content" contenteditable="true" data-placeholder="在这里记录你的学习方法… 可以像 Word 一样调整字体、大小、颜色、加粗、列表等。"></div>
             <div class="methods-content" id="methods-content-2" contenteditable="true" style="display:none;" data-placeholder="第二篇文档对比区..."></div>
@@ -1130,8 +1156,8 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 <div class="section-box" style="border-color:#fde68a;">
 <div class="panel-content">
 <h2 style="color:#b45309;">⚡ 精力与经验设置</h2>
-<div style="margin-top:6px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">今日精力上限 (<span id="energy-max-val">100</span>)</div>
-<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">50</span><input type="range" id="energy-max-slider" min="50" max="200" step="10" value="100" oninput="changeEnergyMax(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">200</span></div>
+<div style="margin-top:6px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">今日精力上限 (<span id="energy-max-val">200</span>)</div>
+<div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">50</span><input type="range" id="energy-max-slider" min="50" max="300" step="10" value="200" oninput="changeEnergyMax(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">300</span></div>
 <div style="margin-top:8px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力警告阈值 (<span id="energy-warn-val">30</span>)</div>
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">10</span><input type="range" id="energy-warn-slider" min="10" max="100" step="5" value="30" oninput="changeEnergyWarn(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">100</span></div>
 <div style="margin-top:8px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力转经验折损率 (<span id="exp-ratio-val">60</span>%)</div>
@@ -1193,14 +1219,14 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 </div>
 <div class="section-box span-full" style="border-color:#90caf9;">
 <details class="settings-details">
-<summary style="color:#1565c0;">💾 数据备份与管理</summary>
+<summary style="color:#1565c0;">💾 数据备份与恢复</summary>
 <div class="panel-content" style="padding-top:0;">
 <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-<button class="btn btn-sm" onclick="exportData()">📤 导出 JSON</button>
-<label class="btn btn-sm" style="cursor:pointer;">📥 导入 JSON<input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)"></label>
+<button class="btn btn-sm" onclick="exportData()">📤 导出全量 JSON</button>
+<label class="btn btn-sm" style="cursor:pointer;">📥 导入全量 JSON<input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)"></label>
 <button class="btn btn-danger btn-sm" onclick="resetAllData()" style="margin-left:auto;">🚨 清空所有数据</button>
 </div>
-<p style="margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px;">📁 <b>自动备份到文件夹</b>：每 N 分钟把数据覆盖写入所选文件夹的 <code>myWorkspace_backup.json</code>，同时会自动创建一个 <code>methods</code> 子文件夹单独保存你的学习方法文档。<br><span style="color:#e65100;">需 Chrome / Edge，通过 https 或 localhost 打开。</span></p>
+<p style="margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px;">📁 <b>自动备份到文件夹</b>：每 N 分钟把数据分模块写入所选文件夹（核心任务、设置、学习方法独立保存）。<br><span style="color:#e65100;">需 Chrome / Edge，通过 https 或 localhost 打开。</span></p>
 <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;">
 <button class="btn btn-sm btn-primary" onclick="chooseBackupFolder()">📂 选择文件夹</button>
 <button class="btn btn-sm" id="btn-restore-backup-folder" style="display:none;color:#1565c0;border-color:#90caf9;animation:pulse 2s infinite;" onclick="restoreBackupFolder()">🔄 恢复文件夹权限</button>
@@ -1212,6 +1238,15 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 </div>
 <div id="backup-status-text" class="backup-status">状态：未开启</div>
 <div id="last-backup-time" class="backup-status"></div>
+<div style="margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px;">
+    <b>部分恢复（需先选择文件夹）</b>
+    <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" id="restore-core" checked> 核心任务数据</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" id="restore-settings" checked> 系统设置</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" id="restore-methods" checked> 学习方法</label>
+    </div>
+    <button class="btn btn-sm btn-primary" onclick="restoreFromFolder()" style="margin-top:8px;">📥 从备份文件夹恢复选中部分</button>
+</div>
 </div>
 </details>
 </div>
@@ -1271,12 +1306,12 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
     <div class="energy-left">
         <div class="energy-header"><span>⚡ 今日精力</span></div>
         <div class="energy-bar-bg"><div class="energy-bar-fill" id="modal-energy-fill" style="width:100%;"></div></div>
-        <div class="energy-footer"><span id="modal-energy-text">100 / 100</span></div>
+        <div class="energy-footer"><span id="modal-energy-text">200 / 200</span></div>
         <div class="energy-warn" id="modal-energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
     </div>
     <div class="energy-right">
-        <button class="btn-energy-restore" onclick="restoreEnergy('nap')" id="modal-btn-nap">😴+40</button>
-        <button class="btn-energy-restore" onclick="restoreEnergy('break')" id="modal-btn-break">☕+15</button>
+        <button class="btn-energy-restore" onclick="restoreEnergy('nap')" id="modal-btn-nap">😴+50</button>
+        <button class="btn-energy-restore" onclick="restoreEnergy('break')" id="modal-btn-break">☕+20</button>
     </div>
 </div>
 <div class="rpg-modal-grid" id="rpg-modal-grid"></div>
@@ -1338,7 +1373,7 @@ let appData = {
         { id: 'ex_cardio', name: '有氧', subTasks: [], recurringType: '', energyCost: 15 }
     ],
     exerciseSchedule: {}, dailyExerciseChecks: {}, dailyReflections: {}, dailyLogs: {},
-    weeklyReflections: {},
+    weeklyReflections: {}, monthlyReflections: {},
     selectedDate: getTodayString(), yearlyGoals: "",
     learningMethods: "", learningMethodsHtml: "", methodsCollapsed: false,
     methodsFiles: [], activeMethodsFileId: null, activeMethodsFileId2: null, splitScreenMode: false,
@@ -1346,8 +1381,8 @@ let appData = {
     fonts: { title: "18px", content: "14px", hint: "12px", small: "10px" },
     radius: "8px",
     viewYear: new Date().getFullYear(), viewMonth: new Date().getMonth(), viewWeekBaseDate: getTodayString(),
-    _lastModified: 1, energyMax: 100, energyWarnThreshold: 30, expRatio: 0.6, dailyEnergy: {},
-    napEnergy: 40, breakEnergy: 15,
+    _lastModified: 1, energyMax: 200, energyWarnThreshold: 30, expRatio: 0.6, dailyEnergy: {},
+    napEnergy: 50, breakEnergy: 20,
     rpg: { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' },
     panelLayout: { order: ['todo', 'learning', 'other', 'exercise'], spans: {}, sizes: {} },
     levelConfig: { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) },
@@ -1372,6 +1407,7 @@ let currentDetailTaskId = null;
 let lastRpgState = null;
 let userPickedDate = false;
 const expandedSubTasks = new Set();
+const expandedMethodFolders = new Set();
 let isDraggingActive = false;
 
 function getTodayString() {
@@ -1570,15 +1606,16 @@ function ensureEnergyData() {
     if (!appData.dailyExerciseChecks) appData.dailyExerciseChecks = {};
     if (!appData.dailyReflections) appData.dailyReflections = {};
     if (!appData.weeklyReflections) appData.weeklyReflections = {};
+    if (!appData.monthlyReflections) appData.monthlyReflections = {};
     if (!appData.dailyLogs) appData.dailyLogs = {};
     if (!appData.dailyEnergy) appData.dailyEnergy = {};
     if (!appData.fixedBlockSchedule) appData.fixedBlockSchedule = {};
     
-    if (!appData.energyMax) appData.energyMax = 100;
+    if (!appData.energyMax || appData.energyMax === 100) appData.energyMax = 200; // 强制升级默认值
     if (appData.energyWarnThreshold === undefined) appData.energyWarnThreshold = 30;
     if (appData.expRatio === undefined) appData.expRatio = 0.6;
-    if (appData.napEnergy === undefined) appData.napEnergy = 40;
-    if (appData.breakEnergy === undefined) appData.breakEnergy = 15;
+    if (appData.napEnergy === undefined || appData.napEnergy === 40) appData.napEnergy = 50;
+    if (appData.breakEnergy === undefined || appData.breakEnergy === 15) appData.breakEnergy = 20;
     
     const def = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
     if (!appData.rpg) appData.rpg = { ...def };
@@ -1612,6 +1649,8 @@ function ensureEnergyData() {
         appData.methodsFiles = [{
             id: 'file_default',
             name: '我的学习方法',
+            type: 'file',
+            parentId: null,
             contentHtml: oldHtml,
             contentText: oldText,
             updatedAt: (oldHtml || oldText) ? Date.now() : 0
@@ -1620,15 +1659,20 @@ function ensureEnergyData() {
     appData.methodsFiles.forEach(f => {
         if (!f.id) f.id = 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
         if (typeof f.name !== 'string' || !f.name) f.name = '未命名文件';
-        if (f.contentHtml === undefined) f.contentHtml = '';
-        if (f.contentText === undefined) f.contentText = '';
-        if (f.updatedAt === undefined) f.updatedAt = 0;
+        if (!f.type) f.type = 'file';
+        if (f.type === 'file') {
+            if (f.contentHtml === undefined) f.contentHtml = '';
+            if (f.contentText === undefined) f.contentText = '';
+            if (f.updatedAt === undefined) f.updatedAt = 0;
+        }
     });
     if (!appData.activeMethodsFileId || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId)) {
-        appData.activeMethodsFileId = appData.methodsFiles[0].id;
+        const firstFile = appData.methodsFiles.find(f => f.type === 'file') || appData.methodsFiles[0];
+        appData.activeMethodsFileId = firstFile ? firstFile.id : null;
     }
     if (!appData.activeMethodsFileId2 || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId2)) {
-        appData.activeMethodsFileId2 = appData.methodsFiles.length > 1 ? appData.methodsFiles[1].id : appData.methodsFiles[0].id;
+        const secondFile = appData.methodsFiles.filter(f => f.type === 'file')[1] || appData.methodsFiles.find(f => f.type === 'file') || appData.methodsFiles[0];
+        appData.activeMethodsFileId2 = secondFile ? secondFile.id : null;
     }
 
     appData.tasks.forEach(t => {
@@ -1876,7 +1920,10 @@ window.restoreEnergy = function(type) {
     ensureEnergyData();
     const amt = type === 'nap' ? appData.napEnergy : appData.breakEnergy;
     const today = getTodayString();
-    appData.dailyEnergy[today] = Math.max(0, (appData.dailyEnergy[today] || 0) - amt);
+    let remain = getTodayEnergyRemaining();
+    if (remain < 0) remain = 0; // 先归零
+    remain = Math.min(appData.energyMax, remain + amt); // 再加恢复值
+    appData.dailyEnergy[today] = Math.max(0, appData.energyMax - remain);
     renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.changeRestoreEnergy = function(type, val) {
@@ -1887,7 +1934,7 @@ window.changeRestoreEnergy = function(type, val) {
     else appData.breakEnergy = num;
     renderEnergyAndRPG(); saveDataToFile(appData);
 };
-window.changeEnergyMax = function(val) { ensureEnergyData(); appData.energyMax = parseInt(val) || 100; renderEnergyAndRPG(); saveDataToFile(appData); };
+window.changeEnergyMax = function(val) { ensureEnergyData(); appData.energyMax = parseInt(val) || 200; renderEnergyAndRPG(); saveDataToFile(appData); };
 window.changeEnergyWarn = function(val) { ensureEnergyData(); appData.energyWarnThreshold = parseInt(val) || 30; renderEnergyAndRPG(); saveDataToFile(appData); };
 window.changeExpRatio = function(val) { ensureEnergyData(); appData.expRatio = parseFloat(val) / 100; renderEnergyAndRPG(); saveDataToFile(appData); };
 window.editRPGValue = function(key, val) {
@@ -1956,7 +2003,7 @@ window.openRPGModal = function() {
 };
 window.closeRPGModal = function() { document.getElementById('rpg-modal').classList.remove('active'); };
 
-/* ============ 学习方法富文本编辑器 (支持双开) ============ */
+/* ============ 学习方法富文本编辑器 (支持双开与文件夹) ============ */
 let methodsEditorInitialized = false;
 let methodsSavedRange = null;
 let methodsSaveTimer = null;
@@ -2014,12 +2061,12 @@ function methodsSetStatus(txt, color) {
 function getCurrentMethodsFile(idStr) {
     if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) return null;
     const targetId = idStr || appData.activeMethodsFileId;
-    return appData.methodsFiles.find(f => f.id === targetId) || appData.methodsFiles[0];
+    const f = appData.methodsFiles.find(f => f.id === targetId);
+    return (f && f.type === 'file') ? f : appData.methodsFiles.find(f => f.type === 'file');
 }
 
 function commitMethodsEditorToFile() {
     let changed = false;
-    // 保存主编辑器
     const editor1 = document.getElementById('methods-content');
     const f1 = getCurrentMethodsFile(appData.activeMethodsFileId);
     if (editor1 && f1) {
@@ -2030,7 +2077,6 @@ function commitMethodsEditorToFile() {
             changed = true;
         }
     }
-    // 保存分屏编辑器
     if (appData.splitScreenMode) {
         const editor2 = document.getElementById('methods-content-2');
         const f2 = getCurrentMethodsFile(appData.activeMethodsFileId2);
@@ -2045,8 +2091,8 @@ function commitMethodsEditorToFile() {
     }
     if (changed) {
         const curFile = getCurrentMethodsFile(appData.activeMethodsFileId);
-        appData.learningMethodsHtml = curFile.contentHtml || '';
-        appData.learningMethods = curFile.contentText || '';
+        appData.learningMethodsHtml = curFile ? curFile.contentHtml || '' : '';
+        appData.learningMethods = curFile ? curFile.contentText || '' : '';
     }
     return changed;
 }
@@ -2095,6 +2141,93 @@ function methodsExecCommand(cmd, val) {
     methodsTriggerSave();
 }
 
+function getFileFullPath(fileId) {
+    let path = [];
+    let current = appData.methodsFiles.find(f => f.id === fileId);
+    while (current) {
+        path.unshift(current.name);
+        current = appData.methodsFiles.find(f => f.id === current.parentId);
+    }
+    return path.join('/');
+}
+
+function buildFileTree(parentId = null) {
+    return appData.methodsFiles.filter(f => (f.parentId || null) === parentId);
+}
+
+function renderMethodsFileTree(node, listElement, depth = 0) {
+    node.forEach(f => {
+        const isFolder = f.type === 'folder';
+        const isExpanded = expandedMethodFolders.has(f.id);
+        
+        const item = document.createElement('div');
+        item.className = 'methods-file-item' + (f.id === appData.activeMethodsFileId && !isFolder ? ' active' : '');
+        item.style.paddingLeft = (10 + depth * 12) + 'px';
+        item.title = f.name + '\n双击重命名';
+        
+        const icon = document.createElement('span');
+        icon.className = 'file-icon';
+        icon.textContent = isFolder ? (isExpanded ? '📂' : '📁') : '📄';
+        
+        const toggle = document.createElement('span');
+        toggle.className = 'folder-toggle';
+        toggle.textContent = isFolder ? (isExpanded ? '▼' : '▶') : '';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'methods-file-name';
+        nameSpan.textContent = f.name;
+        
+        const delSpan = document.createElement('span');
+        delSpan.className = 'methods-file-del';
+        delSpan.textContent = '✕';
+        delSpan.title = '删除';
+        
+        if (isFolder) {
+            toggle.onclick = (e) => {
+                e.stopPropagation();
+                if (isExpanded) expandedMethodFolders.delete(f.id);
+                else expandedMethodFolders.add(f.id);
+                renderMethodsFileList();
+            };
+        }
+        
+        item.appendChild(toggle);
+        item.appendChild(icon);
+        item.appendChild(nameSpan);
+        item.appendChild(delSpan);
+        
+        item.onclick = (e) => {
+            if (e.target === delSpan || e.target === toggle) return;
+            if (isFolder) {
+                if (isExpanded) expandedMethodFolders.delete(f.id);
+                else expandedMethodFolders.add(f.id);
+                renderMethodsFileList();
+            } else {
+                switchMethodsFile(f.id);
+            }
+        };
+        
+        item.ondblclick = (e) => {
+            if (e.target === delSpan || e.target === toggle) return;
+            renameMethodsFile(f.id);
+        };
+        
+        delSpan.onclick = (e) => {
+            e.stopPropagation();
+            deleteMethodsFile(f.id);
+        };
+        
+        listElement.appendChild(item);
+        
+        if (isFolder && isExpanded) {
+            const children = buildFileTree(f.id);
+            if (children.length > 0) {
+                renderMethodsFileTree(children, listElement, depth + 1);
+            }
+        }
+    });
+}
+
 function renderMethodsFileList() {
     const list = document.getElementById('methods-file-list');
     if (!list) return;
@@ -2103,33 +2236,24 @@ function renderMethodsFileList() {
         list.innerHTML = '<div class="methods-file-empty">暂无文件<br>点右上角 ➕ 新建</div>';
         return;
     }
-    appData.methodsFiles.forEach(f => {
-        const item = document.createElement('div');
-        item.className = 'methods-file-item' + (f.id === appData.activeMethodsFileId ? ' active' : '');
-        item.title = f.name + '\n双击重命名';
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'methods-file-name';
-        nameSpan.textContent = f.name;
-        const delSpan = document.createElement('span');
-        delSpan.className = 'methods-file-del';
-        delSpan.textContent = '✕';
-        delSpan.title = '删除此文件';
-        item.appendChild(nameSpan);
-        item.appendChild(delSpan);
-        item.onclick = (e) => {
-            if (e.target === delSpan) return;
-            switchMethodsFile(f.id);
+    
+    const roots = buildFileTree(null);
+    renderMethodsFileTree(roots, list);
+    
+    // 更新下拉选择器
+    const files = appData.methodsFiles.filter(f => f.type === 'file');
+    const leftSel = document.getElementById('split-left-select');
+    const rightSel = document.getElementById('split-right-select');
+    if (leftSel && rightSel) {
+        const buildOpts = (selectedId) => {
+            return files.map(f => {
+                const fullPath = getFileFullPath(f.id);
+                return `<option value="${f.id}" ${f.id === selectedId ? 'selected' : ''}>${fullPath}</option>`;
+            }).join('');
         };
-        item.ondblclick = (e) => {
-            if (e.target === delSpan) return;
-            renameMethodsFile(f.id);
-        };
-        delSpan.onclick = (e) => {
-            e.stopPropagation();
-            deleteMethodsFile(f.id);
-        };
-        list.appendChild(item);
-    });
+        leftSel.innerHTML = buildOpts(appData.activeMethodsFileId);
+        rightSel.innerHTML = buildOpts(appData.activeMethodsFileId2);
+    }
 }
 
 function switchMethodsFile(id) {
@@ -2141,51 +2265,123 @@ function switchMethodsFile(id) {
     saveDataToFile(appData);
 }
 
-function createMethodsFile() {
+window.switchMethodsFile2 = function(id) {
+    if (appData.activeMethodsFileId2 === id) return;
+    commitMethodsEditorToFile();
+    appData.activeMethodsFileId2 = id;
+    refreshMethodsEditorContent();
+    renderMethodsFileList();
+    saveDataToFile(appData);
+};
+
+window.createMethodsFolder = function() {
+    const name = prompt('新文件夹名称：', '新建文件夹');
+    if (name === null || !name.trim()) return;
+    
+    // 找到当前选中文件的父级，或者放在根目录
+    let parentId = null;
+    const activeFile = appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId);
+    if (activeFile && activeFile.parentId) {
+        parentId = activeFile.parentId;
+    } else if (activeFile && activeFile.type === 'folder') {
+        parentId = activeFile.id;
+    }
+    
+    const newFolder = {
+        id: 'folder_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: name.trim(),
+        type: 'folder',
+        parentId: parentId
+    };
+    appData.methodsFiles.push(newFolder);
+    if (parentId) expandedMethodFolders.add(parentId);
+    renderMethodsFileList();
+    saveDataToFile(appData);
+    showMiniToast('✅ 已创建文件夹「' + newFolder.name + '」');
+};
+
+window.createMethodsFile = function() {
     const name = prompt('新文件名：', '新学习方法');
     if (name === null || !name.trim()) return;
     commitMethodsEditorToFile();
+    
+    // 找到当前选中文件的父级
+    let parentId = null;
+    const activeFile = appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId);
+    if (activeFile && activeFile.parentId) {
+        parentId = activeFile.parentId;
+    } else if (activeFile && activeFile.type === 'folder') {
+        parentId = activeFile.id;
+    }
+    
     const newFile = {
         id: 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         name: name.trim(),
+        type: 'file',
+        parentId: parentId,
         contentHtml: '',
         contentText: '',
         updatedAt: Date.now()
     };
     appData.methodsFiles.push(newFile);
     appData.activeMethodsFileId = newFile.id;
+    if (parentId) expandedMethodFolders.add(parentId);
+    
     renderMethodsFileList();
     refreshMethodsEditorContent();
     saveDataToFile(appData);
     showMiniToast('✅ 已创建「' + newFile.name + '」');
-}
+};
 
 function renameMethodsFile(id) {
     const f = appData.methodsFiles.find(x => x.id === id);
     if (!f) return;
-    const name = prompt('修改文件名：', f.name);
+    const name = prompt('修改名称：', f.name);
     if (name === null) return;
     const trimmed = name.trim();
     if (!trimmed || trimmed === f.name) return;
     f.name = trimmed;
-    f.updatedAt = Date.now();
+    if (f.type === 'file') f.updatedAt = Date.now();
     renderMethodsFileList();
     saveDataToFile(appData);
     showMiniToast('✏️ 已重命名');
 }
 
 function deleteMethodsFile(id) {
-    if (appData.methodsFiles.length <= 1) { alert('至少保留一个文件'); return; }
     const f = appData.methodsFiles.find(x => x.id === id);
     if (!f) return;
+    
+    // 如果是文件夹，检查是否为空
+    if (f.type === 'folder') {
+        const children = appData.methodsFiles.filter(x => x.parentId === id);
+        if (children.length > 0) {
+            alert('文件夹不为空，请先删除内部的文件/文件夹。');
+            return;
+        }
+    }
+    
+    if (appData.methodsFiles.filter(x => x.type === 'file').length <= 1 && f.type === 'file') {
+        alert('至少保留一个文件'); return;
+    }
+    
     if (!confirm(`删除「${f.name}」？内容将永久丢失。`)) return;
-    appData.methodsFiles = appData.methodsFiles.filter(x => x.id !== id);
+    
+    const deleteRecursive = (delId) => {
+        const children = appData.methodsFiles.filter(x => x.parentId === delId);
+        children.forEach(c => deleteRecursive(c.id));
+        appData.methodsFiles = appData.methodsFiles.filter(x => x.id !== delId);
+    };
+    deleteRecursive(id);
+    
     if (appData.activeMethodsFileId === id) {
-        appData.activeMethodsFileId = appData.methodsFiles[0].id;
+        const firstFile = appData.methodsFiles.find(x => x.type === 'file');
+        appData.activeMethodsFileId = firstFile ? firstFile.id : null;
     }
     if (appData.activeMethodsFileId2 === id) {
-        appData.activeMethodsFileId2 = appData.methodsFiles[0].id;
+        const secondFile = appData.methodsFiles.filter(x => x.type === 'file')[1] || appData.methodsFiles.find(x => x.type === 'file');
+        appData.activeMethodsFileId2 = secondFile ? secondFile.id : null;
     }
+    
     renderMethodsFileList();
     refreshMethodsEditorContent();
     saveDataToFile(appData);
@@ -2198,26 +2394,22 @@ window.toggleSplitScreen = function() {
     const container = document.getElementById('methods-paper-container');
     const editor2 = document.getElementById('methods-content-2');
     const btn = document.getElementById('btn-toggle-split');
+    const splitControls = document.getElementById('methods-split-controls');
     
     if (appData.splitScreenMode) {
         container.classList.add('split-screen');
         editor2.classList.add('mirror');
         btn.classList.add('btn-primary');
         btn.innerText = '🖥️ 单栏模式';
+        if (splitControls) splitControls.style.display = 'flex';
     } else {
         container.classList.remove('split-screen');
         editor2.classList.remove('mirror');
         btn.classList.remove('btn-primary');
         btn.innerText = '🖥️ 双栏模式';
+        if (splitControls) splitControls.style.display = 'none';
     }
-    refreshMethodsEditorContent();
-    saveDataToFile(appData);
-};
-
-window.switchMethodsFile2 = function(id) {
-    if (appData.activeMethodsFileId2 === id) return;
-    commitMethodsEditorToFile();
-    appData.activeMethodsFileId2 = id;
+    renderMethodsFileList();
     refreshMethodsEditorContent();
     saveDataToFile(appData);
 };
@@ -2314,6 +2506,7 @@ function refreshMethodsEditorContent() {
         editor2.classList.add('mirror');
         document.getElementById('btn-toggle-split').classList.add('btn-primary');
         document.getElementById('btn-toggle-split').innerText = '🖥️ 单栏模式';
+        document.getElementById('methods-split-controls').style.display = 'flex';
     }
 }
 /* ============ 学习方法富文本编辑器结束 ============ */
@@ -2515,7 +2708,6 @@ window.changeWeek = function(o) {
     b.setDate(b.getDate() + o * 7);
     appData.viewWeekBaseDate = `${b.getFullYear()}-${String(b.getMonth()+1).padStart(2,'0')}-${String(b.getDate()).padStart(2,'0')}`;
     renderWeekBoard(); renderTaskPool();
-    // 更新周总结
     const wkDetails = document.getElementById('week-summary-details');
     const wkText = document.getElementById('week-summary-textarea');
     const wkVal = appData.weeklyReflections[appData.viewWeekBaseDate] || '';
@@ -2746,7 +2938,6 @@ function renderYearHeatmap() {
         const logs = (appData.dailyLogs && appData.dailyLogs[ds]) ? appData.dailyLogs[ds] : {};
         Object.values(logs).forEach(l => {
             if (l.completed && !learning.includes(l.name) && !other.includes(l.name)) {
-                // 按名字推断分类，或者直接放“已打卡”
                 other.push(l.name + ' (打卡)');
             }
         });
@@ -4076,7 +4267,6 @@ window.handleReflectionInput = function(val) {
     if (document.getElementById('view-month').classList.contains('active')) renderCalendar();
 };
 
-// 月总结和年总结输入监听（已替换原有逻辑）
 document.getElementById('month-summary-textarea').addEventListener('input', (e) => {
     const mKey = `${appData.viewYear}-${appData.viewMonth}`;
     if (!appData.monthlyReflections) appData.monthlyReflections = {};
@@ -4805,34 +4995,133 @@ window.performBackup = async function(silent) {
         let p = await backupDirHandle.queryPermission({ mode: 'readwrite' });
         if (p !== 'granted') { p = await backupDirHandle.requestPermission({ mode: 'readwrite' }); if (p !== 'granted') throw new Error('无写入权限'); }
         
-        // 主数据备份
-        const fh = await backupDirHandle.getFileHandle('myWorkspace_backup.json', { create: true });
-        const w = await fh.createWritable();
-        await w.write(getCleanedDataForBackup(appData));
-        await w.close();
+        // 核心数据
+        const coreData = {
+            tasks: appData.tasks,
+            exercises: appData.exercises,
+            exerciseSchedule: appData.exerciseSchedule,
+            dailyExerciseChecks: appData.dailyExerciseChecks,
+            dailyEnergy: appData.dailyEnergy,
+            dailyLogs: appData.dailyLogs,
+            dailyReflections: appData.dailyReflections,
+            weeklyReflections: appData.weeklyReflections,
+            monthlyReflections: appData.monthlyReflections,
+            rpg: appData.rpg,
+            fixedBlocks: appData.fixedBlocks,
+            fixedBlockSchedule: appData.fixedBlockSchedule,
+            timeSlots: appData.timeSlots
+        };
+        const fhCore = await backupDirHandle.getFileHandle('core_data.json', { create: true });
+        const wCore = await fhCore.createWritable();
+        await wCore.write(JSON.stringify(coreData, null, 2));
+        await wCore.close();
         
-        // 学习方法单独备份到 methods 文件夹
-        try {
-            const methodsDir = await backupDirHandle.getDirectoryHandle('methods', { create: true });
-            for (const file of appData.methodsFiles) {
-                const safeName = file.name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim() || file.id;
-                const mfh = await methodsDir.getFileHandle(safeName + '.html', { create: true });
-                const mw = await mfh.createWritable();
-                await mw.write(`<meta charset="utf-8">\n` + (file.contentHtml || ''));
-                await mw.close();
-            }
-        } catch (e) {
-            console.warn('备份学习方法失败', e);
-        }
+        // 设置
+        const settingsData = {
+            yearlyGoals: appData.yearlyGoals,
+            themeColor: appData.themeColor,
+            themeMode: appData.themeMode,
+            fonts: appData.fonts,
+            radius: appData.radius,
+            energyMax: appData.energyMax,
+            energyWarnThreshold: appData.energyWarnThreshold,
+            expRatio: appData.expRatio,
+            napEnergy: appData.napEnergy,
+            breakEnergy: appData.breakEnergy,
+            levelConfig: appData.levelConfig,
+            commonBtns: appData.commonBtns,
+            maxVisible: appData.maxVisible,
+            animationEnabled: appData.animationEnabled,
+            panelLayout: appData.panelLayout,
+            selectedDate: appData.selectedDate,
+            viewYear: appData.viewYear,
+            viewMonth: appData.viewMonth,
+            viewWeekBaseDate: appData.viewWeekBaseDate
+        };
+        const fhSet = await backupDirHandle.getFileHandle('app_settings.json', { create: true });
+        const wSet = await fhSet.createWritable();
+        await wSet.write(JSON.stringify(settingsData, null, 2));
+        await wSet.close();
+        
+        // 学习方法
+        const methodsData = {
+            methodsFiles: appData.methodsFiles,
+            activeMethodsFileId: appData.activeMethodsFileId,
+            activeMethodsFileId2: appData.activeMethodsFileId2,
+            splitScreenMode: appData.splitScreenMode
+        };
+        const fhMeth = await backupDirHandle.getFileHandle('methods_data.json', { create: true });
+        const wMeth = await fhMeth.createWritable();
+        await wMeth.write(JSON.stringify(methodsData, null, 2));
+        await wMeth.close();
 
         lastBackupTime = Date.now();
         lastBackupModified = appData._lastModified || 0;
         localStorage.setItem('myWorkspaceLastBackupTime', String(lastBackupTime));
         updateBackupUI();
-        if (!silent) alert('✅ 已备份');
+        if (!silent) alert('✅ 已分文件备份');
         return true;
     } catch (e) { if (!silent) alert('备份失败：' + e.message); return false; }
     finally { isBackingUp = false; }
+};
+window.restoreFromFolder = async function() {
+    if (!backupDirHandle) { alert('请先选择备份文件夹'); return; }
+    const restoreCore = document.getElementById('restore-core').checked;
+    const restoreSettings = document.getElementById('restore-settings').checked;
+    const restoreMethods = document.getElementById('restore-methods').checked;
+    if (!restoreCore && !restoreSettings && !restoreMethods) { alert('请至少勾选一项要恢复的内容'); return; }
+    
+    if (!confirm('恢复选中模块会覆盖当前对应数据，确定继续吗？')) return;
+    
+    let p = await backupDirHandle.queryPermission({ mode: 'readwrite' });
+    if (p !== 'granted') { p = await backupDirHandle.requestPermission({ mode: 'readwrite' }); if (p !== 'granted') { alert('无权限读取文件夹'); return; } }
+    
+    try {
+        if (restoreCore) {
+            try {
+                const fileHandle = await backupDirHandle.getFileHandle('core_data.json');
+                const file = await fileHandle.getFile();
+                const text = await file.text();
+                const data = JSON.parse(text);
+                Object.assign(appData, data);
+            } catch (e) { console.warn('读取核心数据失败', e); }
+        }
+        if (restoreSettings) {
+            try {
+                const fileHandle = await backupDirHandle.getFileHandle('app_settings.json');
+                const file = await fileHandle.getFile();
+                const text = await file.text();
+                const data = JSON.parse(text);
+                Object.assign(appData, data);
+            } catch (e) { console.warn('读取设置失败', e); }
+        }
+        if (restoreMethods) {
+            try {
+                const fileHandle = await backupDirHandle.getFileHandle('methods_data.json');
+                const file = await fileHandle.getFile();
+                const text = await file.text();
+                const data = JSON.parse(text);
+                Object.assign(appData, data);
+            } catch (e) { console.warn('读取学习方法失败', e); }
+        }
+        
+        ensureEnergyData();
+        lastSavedSignature = '';
+        lastRpgState = null;
+        document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
+        if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
+        if (appData.fonts) ['title','content','hint','small'].forEach(k => document.documentElement.style.setProperty(`--font-${k}`, appData.fonts[k]));
+        if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
+        
+        renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
+        renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
+        renderMethodsFileList(); refreshMethodsEditorContent();
+        saveDataToFile(appData);
+        
+        alert('✅ 部分恢复成功！');
+    } catch(e) {
+        alert('恢复失败：' + e.message);
+    }
 };
 function updateBackupUI() {
     const s = document.getElementById('backup-status-text');
@@ -5035,8 +5324,12 @@ function mergeData(local, remote) {
                 const lAt = lf.updatedAt || 0;
                 if (rAt > lAt) {
                     lf.name = rf.name;
-                    lf.contentHtml = rf.contentHtml;
-                    lf.contentText = rf.contentText;
+                    lf.type = rf.type;
+                    lf.parentId = rf.parentId;
+                    if (rf.type === 'file') {
+                        lf.contentHtml = rf.contentHtml;
+                        lf.contentText = rf.contentText;
+                    }
                     lf.updatedAt = rf.updatedAt;
                 }
             }
@@ -5046,17 +5339,19 @@ function mergeData(local, remote) {
         merged.methodsFiles = [{
             id: 'file_default',
             name: '我的学习方法',
+            type: 'file',
+            parentId: null,
             contentHtml: '',
             contentText: '',
             updatedAt: 0
         }];
     }
     if (!merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId)) {
-        merged.activeMethodsFileId = merged.methodsFiles[0].id;
+        merged.activeMethodsFileId = merged.methodsFiles.find(f => f.type === 'file')?.id;
     }
-    const curFile = merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId) || merged.methodsFiles[0];
-    merged.learningMethodsHtml = curFile.contentHtml || '';
-    merged.learningMethods = curFile.contentText || '';
+    const curFile = merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId);
+    merged.learningMethodsHtml = curFile ? curFile.contentHtml || '' : '';
+    merged.learningMethods = curFile ? curFile.contentText || '' : '';
     merged.methodsFiles.sort((a, b) => String(a.id).localeCompare(String(b.id)));
 
     const localTasksMap = new Map(merged.tasks.map(t => [t.id, t]));
