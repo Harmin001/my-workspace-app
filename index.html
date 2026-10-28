@@ -797,7 +797,7 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
     .nav-item:hover { transform: none; background-color: transparent; }
     .nav-item.active { background-color: var(--hover-bg); color: var(--accent-color); font-weight: bold; }
     .main-content { order: 1; height: calc(100vh - 65px); }
-    .view-container { padding: 12px 12px 80px 12px; } /* 确保底部内容不被导航栏遮挡 */
+    .view-container { padding: 12px 12px 80px 12px; }
     #view-methods { padding: 8px 10px 80px 10px; }
     .methods-layout { flex-direction: column; }
     .methods-sidebar { width: 100%; max-height: 180px; flex-shrink: 0; }
@@ -1374,6 +1374,7 @@ let appData = {
     ],
     exerciseSchedule: {}, dailyExerciseChecks: {}, dailyReflections: {}, dailyLogs: {},
     weeklyReflections: {}, monthlyReflections: {},
+    exerciseTimeSlotSchedule: {},
     selectedDate: getTodayString(), yearlyGoals: "",
     learningMethods: "", learningMethodsHtml: "", methodsCollapsed: false,
     methodsFiles: [], activeMethodsFileId: null, activeMethodsFileId2: null, splitScreenMode: false,
@@ -1603,6 +1604,7 @@ function ensureEnergyData() {
     if (!appData.tasks) appData.tasks = [];
     if (!appData.exercises) appData.exercises = [];
     if (!appData.exerciseSchedule) appData.exerciseSchedule = {};
+    if (!appData.exerciseTimeSlotSchedule) appData.exerciseTimeSlotSchedule = {};
     if (!appData.dailyExerciseChecks) appData.dailyExerciseChecks = {};
     if (!appData.dailyReflections) appData.dailyReflections = {};
     if (!appData.weeklyReflections) appData.weeklyReflections = {};
@@ -2772,8 +2774,12 @@ function calcProgress(dateStr, type) {
     ensureEnergyData();
     if (type === '锻炼') {
         const manual = appData.exerciseSchedule[dateStr] || [];
+        const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[dateStr]) || {};
+        let allSlotExs = [];
+        Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
+        
         const recurring = appData.exercises.filter(e => isRecurringMatch(e.recurringType, dateStr)).map(e => e.name);
-        const names = [...new Set([...manual, ...recurring])];
+        const names = [...new Set([...manual, ...recurring, ...allSlotExs])];
         if (names.length === 0) return { done: 0, total: 0 };
         let tot = 0, d = 0;
         const checks = appData.dailyExerciseChecks[dateStr] || {};
@@ -2833,8 +2839,11 @@ window.openStatsModal = function(type) {
         });
         const checks = appData.dailyExerciseChecks[d] || {};
         const manual = appData.exerciseSchedule[d] || [];
+        const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[d]) || {};
+        let allSlotExs = [];
+        Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
         const rec = appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, d)).map(ex => ex.name);
-        [...new Set([...manual, ...rec])].forEach(n => {
+        [...new Set([...manual, ...allSlotExs, ...rec])].forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
             if (ex && ex.subTasks) ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) ed++; });
         });
@@ -2879,8 +2888,11 @@ window.openStatsModal = function(type) {
         getTasksForDate(ds).forEach(t => { const pr = getTaskProgress(t, ds); dayTotal += pr.done; });
         const checks = appData.dailyExerciseChecks[ds] || {};
         const manual = appData.exerciseSchedule[ds] || [];
+        const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds]) || {};
+        let allSlotExs = [];
+        Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
         const rec = appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex => ex.name);
-        [...new Set([...manual, ...rec])].forEach(n => {
+        [...new Set([...manual, ...allSlotExs, ...rec])].forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
             if (ex && ex.subTasks) ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) dayTotal++; });
         });
@@ -2949,7 +2961,10 @@ function renderYearHeatmap() {
         const exCompleted = [];
         const exChecks = appData.dailyExerciseChecks[ds] || {};
         const manualEx = appData.exerciseSchedule[ds] || [];
-        [...new Set([...manualEx, ...appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex=>ex.name)])].forEach(n => {
+        const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds]) || {};
+        let allSlotExs = [];
+        Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
+        [...new Set([...manualEx, ...allSlotExs, ...appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex=>ex.name)])].forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
             if (ex && ex.subTasks && ex.subTasks.every(s => exChecks[`${ex.id}_${s.id}`])) exCompleted.push(n);
         });
@@ -3031,7 +3046,10 @@ function renderCalendar() {
         const exCompleted = [];
         const exChecks = appData.dailyExerciseChecks[ds] || {};
         const manualEx = appData.exerciseSchedule[ds] || [];
-        [...new Set([...manualEx, ...appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex=>ex.name)])].forEach(n => {
+        const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds]) || {};
+        let allSlotExs = [];
+        Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
+        [...new Set([...manualEx, ...allSlotExs, ...appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex=>ex.name)])].forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
             if (ex && ex.subTasks && ex.subTasks.every(s => exChecks[`${ex.id}_${s.id}`])) exCompleted.push(n);
         });
@@ -3205,8 +3223,12 @@ function renderWeekBoard() {
                 col.appendChild(item);
             });
             const manual = appData.exerciseSchedule[ds] || [];
+            const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds]) || {};
+            let allSlotExs = [];
+            Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
             const rec = appData.exercises.filter(e => isRecurringMatch(e.recurringType, ds)).map(e => e.name);
-            const names = [...new Set([...manual, ...rec])];
+            const names = [...new Set([...manual.filter(n => !allSlotExs.includes(n)), ...rec.filter(n => !allSlotExs.includes(n))])];
+            
             const checks = appData.dailyExerciseChecks[ds] || {};
             names.forEach(n => {
                 const ex = appData.exercises.find(e => e.name === n);
@@ -3286,6 +3308,42 @@ function renderWeekBoard() {
                 const item = createWeekTaskDOM(t, ds, { slotDate: ds, slotId: ts.id });
                 item.classList.add('lecture-task');
                 cell.appendChild(item);
+            });
+            
+            const exSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds] && appData.exerciseTimeSlotSchedule[ds][ts.id]) || [];
+            exSched.forEach(exName => {
+                const ex = appData.exercises.find(e => e.name === exName);
+                let ad = false;
+                if (ex && ex.subTasks.length > 0) ad = ex.subTasks.every(s => (appData.dailyExerciseChecks[ds] || {})[`${ex.id}_${s.id}`]);
+                const exDiv = document.createElement('div');
+                exDiv.className = 'exercise-capsule';
+                exDiv.style.margin = '0';
+                exDiv.draggable = true;
+                exDiv.ondragstart = (e) => { isDraggingActive = true; dragExercise(e, exName, 'slot:' + ds + ':' + ts.id); };
+                const cb = document.createElement('input');
+                cb.type = 'checkbox'; cb.checked = ad;
+                cb.onchange = (e) => {
+                    const was = isExerciseAllChecked(ds, ex);
+                    if (!appData.dailyExerciseChecks[ds]) appData.dailyExerciseChecks[ds] = {};
+                    const ns = e.target.checked;
+                    if (ex && ex.subTasks) ex.subTasks.forEach(s => { appData.dailyExerciseChecks[ds][`${ex.id}_${s.id}`] = ns; });
+                    if (ex && was !== ns) {
+                        if (ns) { adjustTodayEnergy(ex.energyCost || 15); adjustExp(ex.energyCost || 15); adjustAttr('exercise', 1); updateStreak(); }
+                        else { adjustTodayEnergy(-(ex.energyCost || 15)); adjustExp(-(ex.energyCost || 15)); adjustAttr('exercise', -1); }
+                    }
+                    renderWeekBoard(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
+                };
+                const lbl = document.createElement('span'); lbl.innerText = '💪 ' + exName; lbl.style.fontSize = '12px';
+                const del = document.createElement('span'); del.className = 'ex-del-btn'; del.innerText = '✕';
+                del.onclick = (e) => {
+                    e.stopPropagation();
+                    if (appData.exerciseTimeSlotSchedule[ds] && appData.exerciseTimeSlotSchedule[ds][ts.id]) {
+                        appData.exerciseTimeSlotSchedule[ds][ts.id] = appData.exerciseTimeSlotSchedule[ds][ts.id].filter(n => n !== exName);
+                        saveDataToFile(appData); renderWeekBoard(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
+                    }
+                };
+                exDiv.appendChild(cb); exDiv.appendChild(lbl); exDiv.appendChild(del);
+                cell.appendChild(exDiv);
             });
             
             const fbSched = (appData.fixedBlockSchedule && appData.fixedBlockSchedule[ds]) || {};
@@ -3470,6 +3528,42 @@ window.enableTaskEdit = function(span, taskId, subId) {
         else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
     });
 };
+
+window.enableExerciseTaskEdit = function(span, exId, sid) {
+    if (span.dataset.editing === '1') return;
+    span.dataset.editing = '1';
+    const orig = span.innerText;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = orig;
+    input.style.cssText = 'font:inherit;padding:2px 6px;border:1px solid var(--accent-color);border-radius:4px;width:100%;max-width:360px;background:var(--bg-input);color:var(--text-main);outline:none;';
+    span.style.display = 'none';
+    span.parentNode.insertBefore(input, span.nextSibling);
+    input.focus(); input.select();
+    let fin = false;
+    const finish = (save) => {
+        if (fin) return; fin = true;
+        const nv = input.value.trim();
+        if (save && nv && nv !== orig) {
+            const ex = appData.exercises.find(e => e.id === exId);
+            if (ex) {
+                const s = ex.subTasks.find(sub => sub.id === sid);
+                if (s) s.text = nv;
+            }
+            if (input.parentNode) input.parentNode.removeChild(input);
+            renderDayExercises(); renderWeekBoard(); saveDataToFile(appData);
+            return;
+        }
+        if (input.parentNode) input.parentNode.removeChild(input);
+        span.style.display = ''; span.dataset.editing = '';
+    };
+    input.addEventListener('blur', () => finish(true));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+        else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+};
+
 window.setTaskEstimate = function(taskId) {
     const t = appData.tasks.find(t => t.id === taskId);
     if (!t) return;
@@ -4224,10 +4318,10 @@ function renderDayExercises() {
         else {
             const act = ex.subTasks.filter(s => !checks[`${ex.id}_${s.id}`]);
             const done = ex.subTasks.filter(s => checks[`${ex.id}_${s.id}`]);
-            act.forEach(s => { html += `<div class="exercise-item"><div class="exercise-item-left"><input type="checkbox" onchange="toggleExerciseTask('${ex.id}', '${s.id}')"><span>${s.text}</span></div><span class="btn-del-action" onclick="deleteExerciseAction('${ex.id}', '${s.id}')">✕</span></div>`; });
+            act.forEach(s => { html += `<div class="exercise-item"><div class="exercise-item-left"><input type="checkbox" onchange="toggleExerciseTask('${ex.id}', '${s.id}')"><span ondblclick="enableExerciseTaskEdit(this, '${ex.id}', '${s.id}')" title="双击编辑" style="cursor:text;">${s.text}</span></div><span class="btn-del-action" onclick="deleteExerciseAction('${ex.id}', '${s.id}')">✕</span></div>`; });
             if (done.length > 0) {
                 html += `<details><summary>已完成 (${done.length})</summary>`;
-                done.forEach(s => { html += `<div class="exercise-item"><div class="exercise-item-left"><input type="checkbox" checked onchange="toggleExerciseTask('${ex.id}', '${s.id}')"><span class="task-completed">${s.text}</span></div></div>`; });
+                done.forEach(s => { html += `<div class="exercise-item"><div class="exercise-item-left"><input type="checkbox" checked onchange="toggleExerciseTask('${ex.id}', '${s.id}')"><span class="task-completed" ondblclick="enableExerciseTaskEdit(this, '${ex.id}', '${s.id}')" title="双击编辑" style="cursor:text;">${s.text}</span></div></div>`; });
                 html += `</details>`;
             }
         }
@@ -4372,10 +4466,32 @@ function handleDrop(ev, td, timeslot, poolKind) {
             }
         }
     } else if (draggedExerciseName) {
-        const sd = draggedExerciseSource && draggedExerciseSource.startsWith('date:') ? draggedExerciseSource.substring(5) : null;
-        if (td === 'pool') { if (sd) removeExerciseFromDate(draggedExerciseName, sd); }
-        else if (!(sd && sd === td)) {
+        const isSlot = draggedExerciseSource && draggedExerciseSource.startsWith('slot:');
+        let oldSd = null, oldTs = null;
+        if (isSlot) {
+            const parts = draggedExerciseSource.split(':');
+            oldSd = parts[1];
+            oldTs = parts[2];
+            if (appData.exerciseTimeSlotSchedule[oldSd] && appData.exerciseTimeSlotSchedule[oldSd][oldTs]) {
+                appData.exerciseTimeSlotSchedule[oldSd][oldTs] = appData.exerciseTimeSlotSchedule[oldSd][oldTs].filter(n => n !== draggedExerciseName);
+                if (appData.exerciseTimeSlotSchedule[oldSd][oldTs].length === 0) delete appData.exerciseTimeSlotSchedule[oldSd][oldTs];
+                if (Object.keys(appData.exerciseTimeSlotSchedule[oldSd]).length === 0) delete appData.exerciseTimeSlotSchedule[oldSd];
+            }
+        } else {
+            const sd = draggedExerciseSource && draggedExerciseSource.startsWith('date:') ? draggedExerciseSource.substring(5) : null;
             if (sd) removeExerciseFromDate(draggedExerciseName, sd);
+        }
+        
+        if (td === 'pool') {
+            // 已经从源移除，无需操作
+        } else if (timeslot) {
+            if (!appData.exerciseTimeSlotSchedule) appData.exerciseTimeSlotSchedule = {};
+            if (!appData.exerciseTimeSlotSchedule[td]) appData.exerciseTimeSlotSchedule[td] = {};
+            if (!appData.exerciseTimeSlotSchedule[td][timeslot]) appData.exerciseTimeSlotSchedule[td][timeslot] = [];
+            if (!appData.exerciseTimeSlotSchedule[td][timeslot].includes(draggedExerciseName)) {
+                appData.exerciseTimeSlotSchedule[td][timeslot].push(draggedExerciseName);
+            }
+        } else {
             if (!appData.exerciseSchedule[td]) appData.exerciseSchedule[td] = [];
             if (!appData.exerciseSchedule[td].includes(draggedExerciseName)) appData.exerciseSchedule[td].push(draggedExerciseName);
         }
@@ -5000,6 +5116,7 @@ window.performBackup = async function(silent) {
             tasks: appData.tasks,
             exercises: appData.exercises,
             exerciseSchedule: appData.exerciseSchedule,
+            exerciseTimeSlotSchedule: appData.exerciseTimeSlotSchedule,
             dailyExerciseChecks: appData.dailyExerciseChecks,
             dailyEnergy: appData.dailyEnergy,
             dailyLogs: appData.dailyLogs,
@@ -5425,7 +5542,7 @@ function mergeData(local, remote) {
         }
     });
 
-    const dictKeys = ['dailyExerciseChecks', 'dailyReflections', 'weeklyReflections', 'dailyLogs', 'exerciseSchedule', 'fixedBlockSchedule', 'monthlyReflections'];
+    const dictKeys = ['dailyExerciseChecks', 'dailyReflections', 'weeklyReflections', 'dailyLogs', 'exerciseSchedule', 'fixedBlockSchedule', 'monthlyReflections', 'exerciseTimeSlotSchedule'];
     dictKeys.forEach(key => {
         if (!remote[key]) return;
         if (!merged[key]) merged[key] = {};
@@ -5498,6 +5615,7 @@ function computeDiffs(oldData, newData) {
     diffs.tasks = jstr(oldData.tasks) !== jstr(newData.tasks);
     diffs.exercises = jstr(oldData.exercises) !== jstr(newData.exercises);
     diffs.exerciseSchedule = jstr(oldData.exerciseSchedule) !== jstr(newData.exerciseSchedule);
+    diffs.exerciseTimeSlotSchedule = jstr(oldData.exerciseTimeSlotSchedule) !== jstr(newData.exerciseTimeSlotSchedule);
     diffs.dailyExerciseChecks = jstr(oldData.dailyExerciseChecks) !== jstr(newData.dailyExerciseChecks);
     diffs.fixedBlocks = jstr(oldData.fixedBlocks) !== jstr(newData.fixedBlocks);
     diffs.fixedBlockSchedule = jstr(oldData.fixedBlockSchedule) !== jstr(newData.fixedBlockSchedule);
@@ -5547,7 +5665,7 @@ function applyRemoteData(payload, oldData) {
         if (ygb && document.activeElement !== ygb) ygb.value = g;
     }
 
-    if (diffs.tasks || diffs.exercises || diffs.exerciseSchedule || diffs.dailyExerciseChecks) {
+    if (diffs.tasks || diffs.exercises || diffs.exerciseSchedule || diffs.exerciseTimeSlotSchedule || diffs.dailyExerciseChecks) {
         updateFixedProgressBars();
     }
 
@@ -5578,7 +5696,7 @@ function applyRemoteData(payload, oldData) {
     const activeViewEl = document.querySelector('.view-container.active');
     const activeView = activeViewEl ? activeViewEl.id : '';
     const viewNeedsUpdate = diffs.tasks || diffs.exercises || diffs.dailyExerciseChecks ||
-                            diffs.exerciseSchedule || diffs.fixedBlockSchedule || diffs.dailyReflections ||
+                            diffs.exerciseSchedule || diffs.exerciseTimeSlotSchedule || diffs.fixedBlockSchedule || diffs.dailyReflections ||
                             diffs.weeklyReflections || diffs.monthlyReflections ||
                             diffs.timeSlots || diffs.fixedBlocks;
     if (viewNeedsUpdate) {
@@ -5623,6 +5741,10 @@ function setupConnection(connection, isHost, targetId) {
         } else if (data.type === 'SYNC_NEED_DATA') {
             try { connection.send({ type: 'SYNC_DATA', payload: appData, lastModified: appData._lastModified || 1 }); } catch(e){}
         } else if (data.type === 'SYNC_DATA') {
+            // 关键修复：如果收到的数据比本地旧，直接忽略，防止旧数据覆盖新数据
+            if (data.lastModified < (appData._lastModified || 1)) {
+                return;
+            }
             const oldData = JSON.parse(JSON.stringify(appData));
             const merged = mergeData(appData, data.payload);
             const remoteSig = getDataSignature(data.payload);
