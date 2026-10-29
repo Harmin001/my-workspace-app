@@ -1432,12 +1432,21 @@ const DEFAULT_LEVELS = [
     { name: '新手', needExp: 100 }, { name: '学习者', needExp: 1000 }, { name: '学霸', needExp: 10000 },
     { name: '博学者', needExp: 100000 }, { name: '大师', needExp: 1000000 }, { name: '宗师', needExp: 10000000 }, { name: '传说', needExp: 100000000 }
 ];
+// 默认课表时间段：第一节 ~ 第十三节（顺序严格对应，id 规则不变）
 const DEFAULT_TIMESLOTS = [
-    { id: 'ts1', label: '08:30-09:10' }, { id: 'ts2', label: '09:15-09:55' }, { id: 'ts3', label: '10:10-10:50' },
-    { id: 'ts4', label: '10:55-11:35' }, { id: 'ts5', label: '11:35-13:05' }, { id: 'ts6', label: '13:10-13:50' },
-    { id: 'ts7', label: '13:55-14:35' }, { id: 'ts8', label: '14:45-15:25' }, { id: 'ts9', label: '15:30-16:10' },
-    { id: 'ts10', label: '16:15-16:55' }, { id: 'ts11', label: '18:00-18:40' }, { id: 'ts12', label: '18:45-19:25' },
-    { id: 'ts13', label: '19:30-20:10' }
+    { id: 'ts1',  label: '08:30-09:10' }, // 第一节
+    { id: 'ts2',  label: '09:15-09:55' }, // 第二节
+    { id: 'ts3',  label: '10:10-10:50' }, // 第三节
+    { id: 'ts4',  label: '10:55-11:35' }, // 第四节
+    { id: 'ts5',  label: '11:35-13:05' }, // 第五节
+    { id: 'ts6',  label: '13:10-13:50' }, // 第六节
+    { id: 'ts7',  label: '13:55-14:35' }, // 第七节
+    { id: 'ts8',  label: '14:45-15:25' }, // 第八节
+    { id: 'ts9',  label: '15:30-16:10' }, // 第九节
+    { id: 'ts10', label: '16:15-16:55' }, // 第十节
+    { id: 'ts11', label: '18:00-18:40' }, // 第十一节
+    { id: 'ts12', label: '18:45-19:25' }, // 第十二节
+    { id: 'ts13', label: '19:30-20:10' }  // 第十三节
 ];
 const DEFAULT_FIXED_BLOCKS = [
     { id: 'fb_class', name: '上课', energyCost: 20 }, { id: 'fb_meal', name: '吃饭', energyCost: 5 }, { id: 'fb_rest', name: '休息', energyCost: 0 }, { id: 'fb_commute', name: '通勤', energyCost: 10 }
@@ -1850,7 +1859,8 @@ function getTodayEnergyRemaining() { ensureEnergyData(); return Math.max(-20, ap
 function adjustTodayEnergy(delta) {
     ensureEnergyData();
     const today = getTodayString();
-    appData.dailyEnergy[today] = Math.max(0, (appData.dailyEnergy[today] || 0) + delta);
+    // 允许为负值（负数表示额外恢复额度），避免与恢复按钮互相抵消时出现跳变
+    appData.dailyEnergy[today] = (appData.dailyEnergy[today] || 0) + delta;
 }
 function adjustExp(delta) {
     ensureEnergyData();
@@ -2051,13 +2061,26 @@ window.showLevelUpModal = function(level, title, expInLevel, needed) {
 window.closeLevelUpModal = function() { document.getElementById('levelup-overlay').classList.remove('active'); };
 window.restoreEnergy = function(type) {
     ensureEnergyData();
-    const amt = type === 'nap' ? appData.napEnergy : appData.breakEnergy;
+    const amt = Math.max(0, Number(type === 'nap' ? appData.napEnergy : appData.breakEnergy) || 0);
+    if (amt <= 0) return;
     const today = getTodayString();
-    let remain = getTodayEnergyRemaining();
-    if (remain < 0) remain = 0;
-    remain = Math.min(appData.energyMax, remain + amt);
-    appData.dailyEnergy[today] = Math.max(0, appData.energyMax - remain);
-    renderEnergyAndRPG(); saveDataToFile(appData);
+    const max = appData.energyMax;
+
+    // 总消耗 = 手动消耗 + 固定块消耗 + 已排期未完成任务消耗
+    const spentTotal = getDateEnergySpent(today);
+    const rawRemain = max - spentTotal;              // 未截断的真实剩余（可能远低于 -20）
+    const shownRemain = Math.max(-20, rawRemain);    // 界面上显示的剩余（下限 -20，与精力条一致）
+    const targetRemain = Math.min(max, shownRemain + amt); // 恢复后：+amt，且不超过当日上限
+    if (targetRemain <= shownRemain) { showMiniToast('⚡ 精力已满，无需恢复'); return; }
+
+    // 只调整「手动消耗」这一项来抬升剩余精力，不覆盖固定块/排期任务带来的消耗
+    // 当显示值为 -20 而真实值更低时，reduce 会把隐藏的超支一并抵扣，因此可正常回到正数
+    const reduce = targetRemain - rawRemain;
+    appData.dailyEnergy[today] = (appData.dailyEnergy[today] || 0) - reduce;
+
+    renderEnergyAndRPG();
+    saveDataToFile(appData);
+    showMiniToast(`⚡ 精力 +${targetRemain - shownRemain}`);
 };
 window.changeRestoreEnergy = function(type, val) {
     ensureEnergyData();
@@ -4662,7 +4685,7 @@ window.decrementCountTask = function(taskId) {
     t.countTotal = t.countTotal - 1;
     const ec = t.energyCost || 1;
     const today = getTodayString();
-    appData.dailyEnergy[today] = Math.max(0, (appData.dailyEnergy[today] || 0) - ec);
+    appData.dailyEnergy[today] = (appData.dailyEnergy[today] || 0) - ec;
     appData.rpg.exp = Math.max(0, appData.rpg.exp - Math.floor(ec * appData.expRatio));
     logTaskAction(today, t.id, t.text, 'count', -1);
     
