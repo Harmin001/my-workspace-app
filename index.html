@@ -92,6 +92,8 @@ body.dark-mode .energy-warn { background: #3a1c1c; color: #fca5a5; }
 .rpg-card.rpg-critical, .rpg-modal-energy.rpg-critical { border-color: var(--danger-color) !important; background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important; animation: pulseRed 1s infinite alternate; }
 body.dark-mode .rpg-card.rpg-critical, body.dark-mode .rpg-modal-energy.rpg-critical { background: linear-gradient(135deg, #3a1c1c 0%, #2a1111 100%) !important; border-color: #ef4444 !important; }
 @keyframes pulseRed { 0% { box-shadow: 0 0 0 rgba(239,68,68,.4); } 100% { box-shadow: 0 0 15px rgba(239,68,68,.8); } }
+body:not(.invisible-anim) .rpg-card.rpg-critical { animation: pulseRed 1s infinite alternate; }
+body.invisible-anim .rpg-card.rpg-critical { animation: none; }
 .rpg-card-main { cursor: pointer; }
 .rpg-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .rpg-level { font-size: var(--font-content); font-weight: 800; color: #b45309; letter-spacing: .5px; }
@@ -625,34 +627,16 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="nav-item" data-target="year">📊 全年</div>
 <div class="nav-item" data-target="month">📅 月计划</div>
 <div class="nav-item" data-target="week">🗓️ 周计划</div>
-<div class="nav-item" data-target="day" style="justify-content:space-between; padding-right:6px;">
-    <span>📝 日计划</span>
-    <span onclick="jumpToToday(event)" style="color:var(--accent-color);font-weight:700;font-size:var(--font-hint);padding:2px 6px;border-radius:4px;background:rgba(35,131,226,.1);" title="回到今天">📍 今天</span>
-</div>
+<div class="nav-item" data-target="day" style="justify-content:space-between; padding-right:6px;"><span>📝 日计划</span><span onclick="jumpToToday(event)" style="color:var(--accent-color);font-weight:700;font-size:var(--font-hint);padding:2px 6px;border-radius:4px;background:rgba(35,131,226,.1);" title="回到今天">📍 今天</span></div>
 <div class="nav-item" data-target="methods">📚 学习方法</div>
 <div class="nav-item" data-target="settings">⚙️ 设置</div>
 <div class="sidebar-footer">
-<div class="sidebar-goal-box">
-<div class="sidebar-goal-title">🎯 我的目标</div>
-<div class="sidebar-goal-input" id="yearly-goals" contenteditable="true" placeholder="写下核心目标..."></div>
-</div>
+<div class="sidebar-goal-box"><div class="sidebar-goal-title">🎯 我的目标</div><div class="sidebar-goal-input" id="yearly-goals" contenteditable="true" placeholder="写下核心目标..."></div></div>
 <div class="fixed-progress-bars">
-<div class="prog-row" onclick="openStatsModal('year')">
-    <div class="prog-label-row"><span>年完成度</span><span id="prog-year-text">0%</span></div>
-    <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-year-fill" style="background:#2383e2;"></div></div>
-</div>
-<div class="prog-row" onclick="openStatsModal('month')">
-    <div class="prog-label-row"><span>月完成度</span><span id="prog-month-text">0%</span></div>
-    <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-month-fill" style="background:#f2994a;"></div></div>
-</div>
-<div class="prog-row" onclick="openStatsModal('week')">
-    <div class="prog-label-row"><span>周完成度</span><span id="prog-week-text">0%</span></div>
-    <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-week-fill" style="background:#9b51e0;"></div></div>
-</div>
-<div class="prog-row" onclick="openStatsModal('day')">
-    <div class="prog-label-row"><span>日完成度</span><span id="prog-day-text">0%</span></div>
-    <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-day-fill" style="background:#27ae60;"></div></div>
-</div>
+<div class="prog-row" onclick="openStatsModal('year')"><div class="prog-label-row"><span>年完成度</span><span id="prog-year-text">0%</span></div><div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-year-fill" style="background:#2383e2;"></div></div></div>
+<div class="prog-row" onclick="openStatsModal('month')"><div class="prog-label-row"><span>月完成度</span><span id="prog-month-text">0%</span></div><div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-month-fill" style="background:#f2994a;"></div></div></div>
+<div class="prog-row" onclick="openStatsModal('week')"><div class="prog-label-row"><span>周完成度</span><span id="prog-week-text">0%</span></div><div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-week-fill" style="background:#9b51e0;"></div></div></div>
+<div class="prog-row" onclick="openStatsModal('day')"><div class="prog-label-row"><span>日完成度</span><span id="prog-day-text">0%</span></div><div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-day-fill" style="background:#27ae60;"></div></div></div>
 </div>
 <div class="energy-rpg-panel">
 <div class="rpg-card" id="rpg-card">
@@ -698,18 +682,12 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="time-nav"><button onclick="changeMonth(-1)">← 上月</button><span id="month-display">2025年 10月</span><button onclick="changeMonth(1)">下月 →</button></div>
 <div class="calendar-grid" id="calendar-grid"></div>
 </div>
-<details class="bottom-summary" id="month-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:12px;">
-    <summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">📝 本月总结 (点击展开/收起)</summary>
-    <textarea id="month-summary-textarea" placeholder="写点什么记录这个月吧..." style="margin-top:8px;"></textarea>
-</details>
+<details class="bottom-summary" id="month-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:12px;"><summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">📝 本月总结 (点击展开/收起)</summary><textarea id="month-summary-textarea" placeholder="写点什么记录这个月吧..." style="margin-top:8px;"></textarea></details>
 </div>
 <div class="view-container" id="view-week">
 <div class="year-header"><h1>🗓️ 周计划</h1><div class="time-nav" style="margin-bottom:0;"><button onclick="changeWeek(-1)">← 上周</button><span id="week-display" style="font-size:var(--font-content);">本周</span><button onclick="changeWeek(1)">下周 →</button></div></div>
 <div class="week-board" id="week-board"></div>
-<details class="bottom-summary" id="week-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;">
-    <summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">📝 本周总结 (点击展开/收起)</summary>
-    <textarea id="week-summary-textarea" placeholder="记录这一周的感受与收获..." style="margin-top:8px;"></textarea>
-</details>
+<details class="bottom-summary" id="week-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;"><summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">📝 本周总结 (点击展开/收起)</summary><textarea id="week-summary-textarea" placeholder="记录这一周的感受与收获..." style="margin-top:8px;"></textarea></details>
 <div class="week-drawer-panel" id="week-drawer-panel">
 <div class="week-drawer-header"><span>📋 待办与排期</span><span class="week-drawer-close" onclick="toggleWeekDrawer(false)" title="收起">✕</span></div>
 <div class="week-drawer-body">
@@ -717,10 +695,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="todo-column"><h3>📚 学习待办</h3><input type="text" class="todo-input" id="pool-input-learning" placeholder="📝 添加待办 (支持：任务名 * 100)..."><div class="task-pool-list" id="task-pool-learning" ondrop="handleDrop(event, 'pool', undefined, 'learning')" ondragover="allowDrop(event)"></div></div>
 <div class="todo-column"><h3>🧺 其他待办</h3><input type="text" class="todo-input" id="pool-input-other" placeholder="📝 添加待办 (支持：任务名 * 100)..."><div class="task-pool-list" id="task-pool-other" ondrop="handleDrop(event, 'pool', undefined, 'other')" ondragover="allowDrop(event)"></div></div>
 </div>
-<div class="overdue-wrapper" id="overdue-wrapper">
-<h3>⚠️ 逾期任务</h3>
-<div class="task-pool-list" id="task-pool-overdue" ondrop="handleDrop(event, 'pool')" ondragover="allowDrop(event)"></div>
-</div>
+<div class="overdue-wrapper" id="overdue-wrapper"><h3>⚠️ 逾期任务</h3><div class="task-pool-list" id="task-pool-overdue" ondrop="handleDrop(event, 'pool')" ondragover="allowDrop(event)"></div></div>
 <div class="exercise-pool-wrapper">
 <div class="exercise-pool-header"><h2 style="margin:0;font-size:var(--font-content);">🏋️ 锻炼排期</h2><button class="btn btn-sm btn-primary" onclick="addExerciseCategory()">➕ 添加</button></div>
 <div class="exercise-pool" id="exercise-pool" ondrop="handleDrop(event, 'pool')" ondragover="allowDrop(event)"></div>
@@ -738,145 +713,43 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="view-container" id="view-day">
 <h1 id="day-title">📝 日计划</h1>
 <div class="day-panels-grid" id="day-panels-grid">
-<div class="section-box" data-panel="todo">
-<div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 📋 待办清单</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div>
-<div class="panel-content">
-<div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="添加待办 (支持：任务名 * 100)" id="todo-input"></div>
-<div id="todo-list" class="task-drop-zone" data-type="todo" data-completed="false"></div>
-<p style="font-size:var(--font-small);color:var(--text-muted);margin-top:8px;line-height:1.5;">💡 这里是一直显示的清单，随时可增删，不支持完成或设置属性。把它拖入「学习」或「其他」才算正式开始处理。</p>
+<div class="section-box" data-panel="todo"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 📋 待办清单</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div><div class="panel-content"><div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="添加待办 (支持：任务名 * 100)" id="todo-input"></div><div id="todo-list" class="task-drop-zone" data-type="todo" data-completed="false"></div><p style="font-size:var(--font-small);color:var(--text-muted);margin-top:8px;line-height:1.5;">💡 这里是一直显示的清单，随时可增删，不支持完成或设置属性。把它拖入「学习」或「其他」才算正式开始处理。</p></div></div>
+<div class="section-box" data-panel="learning"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 📚 学习</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div><div class="panel-content"><div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="按回车添加 (如：看教程 * 100)" id="learning-input"></div><div id="learning-list" class="task-drop-zone" data-type="learning" data-completed="false"></div><div id="learning-completed" class="task-drop-zone" data-type="learning" data-completed="true"></div></div></div>
+<div class="section-box" data-panel="other"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 🧺 其他</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div><div class="panel-content"><div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="按回车添加 (如：跳绳 * 500)" id="other-input"></div><div id="other-list" class="task-drop-zone" data-type="other" data-completed="false"></div><div id="other-completed" class="task-drop-zone" data-type="other" data-completed="true"></div></div></div>
+<div class="section-box" data-panel="exercise"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 💪 锻炼</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span><button class="btn btn-sm btn-primary" onclick="addExerciseCategory()">➕ 添加</button></div></div><div class="panel-content"><div class="exercise-grid" id="exercise-grid"></div></div></div>
 </div>
-</div>
-<div class="section-box" data-panel="learning">
-<div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 📚 学习</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div>
-<div class="panel-content">
-<div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="按回车添加 (如：看教程 * 100)" id="learning-input"></div>
-<div id="learning-list" class="task-drop-zone" data-type="learning" data-completed="false"></div>
-<div id="learning-completed" class="task-drop-zone" data-type="learning" data-completed="true"></div>
-</div>
-</div>
-<div class="section-box" data-panel="other">
-<div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 🧺 其他</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div>
-<div class="panel-content">
-<div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="按回车添加 (如：跳绳 * 500)" id="other-input"></div>
-<div id="other-list" class="task-drop-zone" data-type="other" data-completed="false"></div>
-<div id="other-completed" class="task-drop-zone" data-type="other" data-completed="true"></div>
-</div>
-</div>
-<div class="section-box" data-panel="exercise">
-<div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 💪 锻炼</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span><button class="btn btn-sm btn-primary" onclick="addExerciseCategory()">➕ 添加</button></div></div>
-<div class="panel-content">
-<div class="exercise-grid" id="exercise-grid"></div>
-</div>
-</div>
-</div>
-<details class="bottom-summary" id="day-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;">
-    <summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">💭 今日反思 (点击展开/收起)</summary>
-    <textarea id="daily-reflection-textarea" placeholder="今天过得怎么样？有什么想记录的？" oninput="handleReflectionInput(this.value)" style="margin-top:8px;"></textarea>
-</details>
+<details class="bottom-summary" id="day-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;"><summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">💭 今日反思 (点击展开/收起)</summary><textarea id="daily-reflection-textarea" placeholder="今天过得怎么样？有什么想记录的？" oninput="handleReflectionInput(this.value)" style="margin-top:8px;"></textarea></details>
 </div>
 <div class="view-container" id="view-methods">
 <div class="year-header">
     <h1>📚 学习方法</h1>
     <div style="font-size:var(--font-hint);color:var(--text-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:4px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:4px;padding:2px 6px;">
-            <input type="text" id="methods-search-input" placeholder="检索文本..." style="border:none;padding:2px;background:transparent;font-size:var(--font-hint);outline:none;width:80px;">
-            <span id="search-count" style="font-size:10px;color:var(--text-muted);min-width:24px;text-align:center;">0/0</span>
-            <span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="prevSearch()" title="上一处">↑</span>
-            <span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="nextSearch()" title="下一处">↓</span>
-            <span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="clearSearch()" title="清除">✕</span>
-        </div>
-        <label style="display:flex;align-items:center;gap:2px;font-size:11px;cursor:pointer;">
-            <input type="checkbox" id="search-both-sides" onchange="performSearch()"> 双栏均搜
-        </label>
+        <div style="display:flex;align-items:center;gap:4px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:4px;padding:2px 6px;"><input type="text" id="methods-search-input" placeholder="检索文本..." style="border:none;padding:2px;background:transparent;font-size:var(--font-hint);outline:none;width:80px;"><span id="search-count" style="font-size:10px;color:var(--text-muted);min-width:24px;text-align:center;">0/0</span><span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="prevSearch()" title="上一处">↑</span><span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="nextSearch()" title="下一处">↓</span><span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="clearSearch()" title="清除">✕</span></div>
+        <label style="display:flex;align-items:center;gap:2px;font-size:11px;cursor:pointer;"><input type="checkbox" id="search-both-sides" onchange="performSearch()"> 双栏均搜</label>
         <button class="btn btn-sm" id="btn-toggle-split" onclick="toggleSplitScreen()">🖥️ 双栏模式</button>
         <span id="methods-save-status">💾 自动保存</span>
     </div>
 </div>
 <div class="methods-layout">
     <div class="methods-sidebar">
-        <div class="methods-sidebar-header">
-            <span>📁 文件树</span>
-            <div style="display:flex;gap:4px;">
-                <button class="methods-new-file-btn" onclick="createMethodsFolder()" title="新建文件夹" style="background:#27ae60;">📁+</button>
-                <button class="methods-new-file-btn" onclick="createMethodsFile()" title="新建文件">📄+</button>
-            </div>
-        </div>
+        <div class="methods-sidebar-header"><span>📁 文件树</span><div style="display:flex;gap:4px;"><button class="methods-new-file-btn" onclick="createMethodsFolder()" title="新建文件夹" style="background:#27ae60;">📁+</button><button class="methods-new-file-btn" onclick="createMethodsFile()" title="新建文件">📄+</button></div></div>
         <div class="methods-file-list" id="methods-file-list"></div>
     </div>
     <div class="methods-editor-area">
         <div class="methods-toolbar" id="methods-toolbar">
             <div class="tb-group">
-                <select id="methods-format-select" data-cmd="formatBlock" title="段落样式">
-                    <option value="p">正文</option>
-                    <option value="h1">标题 1</option>
-                    <option value="h2">标题 2</option>
-                    <option value="h3">标题 3</option>
-                    <option value="blockquote">引用</option>
-                </select>
-                <select id="methods-font-select" data-cmd="fontName" title="字体">
-                    <option value="">系统默认</option>
-                    <option value="'Microsoft YaHei', '微软雅黑', sans-serif">微软雅黑</option>
-                    <option value="SimSun, '宋体', serif">宋体</option>
-                    <option value="SimHei, '黑体', sans-serif">黑体</option>
-                    <option value="KaiTi, '楷体', serif">楷体</option>
-                    <option value="FangSong, '仿宋', serif">仿宋</option>
-                    <option value="Arial, Helvetica, sans-serif">Arial</option>
-                    <option value="Georgia, serif">Georgia</option>
-                    <option value="'Times New Roman', serif">Times New Roman</option>
-                    <option value="Consolas, Monaco, monospace">等宽 Consolas</option>
-                </select>
-                <select id="methods-size-select" data-cmd="fontSize" title="字号">
-                    <option value="12">12</option>
-                    <option value="14" selected>14</option>
-                    <option value="16">16</option>
-                    <option value="18">18</option>
-                    <option value="20">20</option>
-                    <option value="24">24</option>
-                    <option value="28">28</option>
-                    <option value="32">32</option>
-                    <option value="36">36</option>
-                    <option value="48">48</option>
-                </select>
+                <select id="methods-format-select" data-cmd="formatBlock" title="段落样式"><option value="p">正文</option><option value="h1">标题 1</option><option value="h2">标题 2</option><option value="h3">标题 3</option><option value="blockquote">引用</option></select>
+                <select id="methods-font-select" data-cmd="fontName" title="字体"><option value="">系统默认</option><option value="'Microsoft YaHei', '微软雅黑', sans-serif">微软雅黑</option><option value="SimSun, '宋体', serif">宋体</option><option value="SimHei, '黑体', sans-serif">黑体</option><option value="KaiTi, '楷体', serif">楷体</option><option value="FangSong, '仿宋', serif">仿宋</option><option value="Arial, Helvetica, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Times New Roman', serif">Times New Roman</option><option value="Consolas, Monaco, monospace">等宽 Consolas</option></select>
+                <select id="methods-size-select" data-cmd="fontSize" title="字号"><option value="12">12</option><option value="14" selected>14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="24">24</option><option value="28">28</option><option value="32">32</option><option value="36">36</option><option value="48">48</option></select>
             </div>
-            <div class="tb-group">
-                <button type="button" data-cmd="bold" title="加粗 (Ctrl+B)" style="font-weight:900;">B</button>
-                <button type="button" data-cmd="italic" title="斜体 (Ctrl+I)" style="font-style:italic;font-family:Georgia,serif;">I</button>
-                <button type="button" data-cmd="underline" title="下划线 (Ctrl+U)" style="text-decoration:underline;">U</button>
-                <button type="button" data-cmd="strikeThrough" title="删除线" style="text-decoration:line-through;">S</button>
-            </div>
-            <div class="tb-group">
-                <label class="tb-color-wrap" title="文字颜色">
-                    <span class="tb-color-swatch" id="forecolor-swatch" style="background:#333333;"></span>
-                    <input type="color" id="methods-forecolor" data-cmd="foreColor" value="#333333">
-                </label>
-                <label class="tb-color-wrap" title="高亮颜色">
-                    <span class="tb-color-swatch" id="hilitecolor-swatch" style="background:#ffe066;"></span>
-                    <input type="color" id="methods-hilitecolor" data-cmd="hiliteColor" value="#ffe066">
-                </label>
-            </div>
-            <div class="tb-group">
-                <button type="button" data-cmd="insertUnorderedList" title="无序列表">☰</button>
-                <button type="button" data-cmd="insertOrderedList" title="有序列表" style="font-family:monospace;">1.</button>
-            </div>
-            <div class="tb-group">
-                <button type="button" data-cmd="justifyLeft" title="左对齐" style="text-align:left;justify-content:flex-start;">左</button>
-                <button type="button" data-cmd="justifyCenter" title="居中">中</button>
-                <button type="button" data-cmd="justifyRight" title="右对齐" style="justify-content:flex-end;">右</button>
-                <button type="button" data-cmd="justifyFull" title="两端对齐">均</button>
-            </div>
-            <div class="tb-group">
-                <button type="button" data-cmd="undo" title="撤销 (Ctrl+Z)">↶</button>
-                <button type="button" data-cmd="redo" title="重做 (Ctrl+Y)">↷</button>
-            </div>
-            <div class="tb-group">
-                <button type="button" data-cmd="removeFormat" title="清除格式" style="font-style:italic;">T<sub style="font-size:9px;">x</sub></button>
-                <button type="button" data-cmd="insertHorizontalRule" title="插入分隔线" style="font-weight:900;">—</button>
-            </div>
+            <div class="tb-group"><button type="button" data-cmd="bold" title="加粗 (Ctrl+B)" style="font-weight:900;">B</button><button type="button" data-cmd="italic" title="斜体 (Ctrl+I)" style="font-style:italic;font-family:Georgia,serif;">I</button><button type="button" data-cmd="underline" title="下划线 (Ctrl+U)" style="text-decoration:underline;">U</button><button type="button" data-cmd="strikeThrough" title="删除线" style="text-decoration:line-through;">S</button></div>
+            <div class="tb-group"><label class="tb-color-wrap" title="文字颜色"><span class="tb-color-swatch" id="forecolor-swatch" style="background:#333333;"></span><input type="color" id="methods-forecolor" data-cmd="foreColor" value="#333333"></label><label class="tb-color-wrap" title="高亮颜色"><span class="tb-color-swatch" id="hilitecolor-swatch" style="background:#ffe066;"></span><input type="color" id="methods-hilitecolor" data-cmd="hiliteColor" value="#ffe066"></label></div>
+            <div class="tb-group"><button type="button" data-cmd="insertUnorderedList" title="无序列表">☰</button><button type="button" data-cmd="insertOrderedList" title="有序列表" style="font-family:monospace;">1.</button></div>
+            <div class="tb-group"><button type="button" data-cmd="justifyLeft" title="左对齐" style="text-align:left;justify-content:flex-start;">左</button><button type="button" data-cmd="justifyCenter" title="居中">中</button><button type="button" data-cmd="justifyRight" title="右对齐" style="justify-content:flex-end;">右</button><button type="button" data-cmd="justifyFull" title="两端对齐">均</button></div>
+            <div class="tb-group"><button type="button" data-cmd="undo" title="撤销 (Ctrl+Z)">↶</button><button type="button" data-cmd="redo" title="重做 (Ctrl+Y)">↷</button></div>
+            <div class="tb-group"><button type="button" data-cmd="removeFormat" title="清除格式" style="font-style:italic;">T<sub style="font-size:9px;">x</sub></button><button type="button" data-cmd="insertHorizontalRule" title="插入分隔线" style="font-weight:900;">—</button></div>
         </div>
-        <div id="methods-split-controls" class="methods-split-controls" style="display:none;">
-            <label>左侧: <select id="split-left-select" onchange="switchMethodsFile(this.value)"></select></label>
-            <label>右侧: <select id="split-right-select" onchange="switchMethodsFile2(this.value)"></select></label>
-        </div>
+        <div id="methods-split-controls" class="methods-split-controls" style="display:none;"><label>左侧: <select id="split-left-select" onchange="switchMethodsFile(this.value)"></select></label><label>右侧: <select id="split-right-select" onchange="switchMethodsFile2(this.value)"></select></label></div>
         <div class="methods-paper" id="methods-paper-container">
             <div class="methods-content" id="methods-content" contenteditable="true" data-placeholder="在这里记录你的学习方法… 支持 $公式$ 和 $$公式$$。"></div>
             <div class="methods-content" id="methods-content-2" contenteditable="true" style="display:none;" data-placeholder="第二篇文档对比区..."></div>
@@ -887,33 +760,16 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="view-container" id="view-settings">
 <h1>⚙️ 设置</h1>
 <div class="settings-grid">
-<div class="section-box">
-<div class="panel-content">
-<h2>🎨 主题与视觉</h2>
-<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
-<button class="btn btn-sm" onclick="changeThemeMode('light')">☀️ 明亮</button>
-<button class="btn btn-sm" onclick="changeThemeMode('dark')">🌙 黑暗</button>
-</div>
-<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
-<button class="btn btn-sm" onclick="changeTheme('#2383e2')">经典蓝</button>
-<button class="btn btn-sm" onclick="changeTheme('#f2994a')">活力橙</button>
-<button class="btn btn-sm" onclick="changeTheme('#27ae60')">护眼绿</button>
-<button class="btn btn-sm" onclick="changeTheme('#9b51e0')">浪漫紫</button>
-</div>
+<div class="section-box"><div class="panel-content"><h2>🎨 主题与视觉</h2>
+<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="changeThemeMode('light')">☀️ 明亮</button><button class="btn btn-sm" onclick="changeThemeMode('dark')">🌙 黑暗</button></div>
+<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="changeTheme('#2383e2')">经典蓝</button><button class="btn btn-sm" onclick="changeTheme('#f2994a')">活力橙</button><button class="btn btn-sm" onclick="changeTheme('#27ae60')">护眼绿</button><button class="btn btn-sm" onclick="changeTheme('#9b51e0')">浪漫紫</button></div>
 <div style="margin-top:8px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">卡片圆角 (<span id="radius-val">8</span>px)</div>
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">直角</span><input type="range" id="radius-slider" min="0" max="20" step="2" value="8" oninput="changeRadius(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">圆润</span></div>
 <div style="margin-top:8px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">日计划列每页最多显示 (<span id="max-visible-val">5</span>)</div>
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">3</span><input type="range" id="max-visible-slider" min="3" max="15" step="1" value="5" oninput="changeMaxVisible(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">15</span></div>
-<div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
-<label style="font-size:var(--font-hint);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:4px;">
-<input type="checkbox" id="animation-toggle" onchange="changeAnimation(this.checked)" style="accent-color:var(--accent-color);"> 启用动画效果
-</label>
-</div>
-</div>
-</div>
-<div class="section-box" style="border-color:#a5d6a7;">
-<div class="panel-content">
-<h2 style="color:#2e7d32;">🔠 字体大小设置</h2>
+<div style="margin-top:8px;display:flex;align-items:center;gap:8px;"><label style="font-size:var(--font-hint);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="animation-toggle" onchange="changeAnimation(this.checked)" style="accent-color:var(--accent-color);"> 启用动画效果</label></div>
+</div></div>
+<div class="section-box" style="border-color:#a5d6a7;"><div class="panel-content"><h2 style="color:#2e7d32;">🔠 字体大小设置</h2>
 <div style="margin-top:6px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">标题字号 (<span id="font-title-val">18</span>px)</div>
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">小</span><input type="range" id="font-title-slider" min="14" max="26" step="1" value="18" oninput="changeFontSetting('title', this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">大</span></div>
 <div style="margin-top:6px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">正文字号 (<span id="font-content-val">14</span>px)</div>
@@ -922,11 +778,8 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">小</span><input type="range" id="font-hint-slider" min="10" max="16" step="1" value="12" oninput="changeFontSetting('hint', this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">大</span></div>
 <div style="margin-top:6px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">次要字号 (<span id="font-small-val">10</span>px)</div>
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">小</span><input type="range" id="font-small-slider" min="8" max="14" step="1" value="10" oninput="changeFontSetting('small', this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">大</span></div>
-</div>
-</div>
-<div class="section-box" style="border-color:#fde68a;">
-<div class="panel-content">
-<h2 style="color:#b45309;">⚡ 精力与经验设置</h2>
+</div></div>
+<div class="section-box" style="border-color:#fde68a;"><div class="panel-content"><h2 style="color:#b45309;">⚡ 精力与经验设置</h2>
 <div style="margin-top:6px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">今日精力上限 (<span id="energy-max-val">200</span>)</div>
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">50</span><input type="range" id="energy-max-slider" min="50" max="300" step="10" value="200" oninput="changeEnergyMax(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">300</span></div>
 <div style="margin-top:8px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力警告阈值 (<span id="energy-warn-val">30</span>)</div>
@@ -934,15 +787,9 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div style="margin-top:8px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力转经验折损率 (<span id="exp-ratio-val">60</span>%)</div>
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">10%</span><input type="range" id="exp-ratio-slider" min="10" max="100" step="5" value="60" oninput="changeExpRatio(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">100%</span></div>
 <div style="margin-top:12px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力恢复值设置</div>
-<div style="display:flex;gap:12px;margin-top:4px;">
-    <label style="font-size:var(--font-hint);color:var(--text-main);display:flex;align-items:center;gap:4px;">😴 小憩: <input type="number" id="set-nap-energy" style="width:50px;padding:4px;" onchange="changeRestoreEnergy('nap', this.value)"> 点</label>
-    <label style="font-size:var(--font-hint);color:var(--text-main);display:flex;align-items:center;gap:4px;">☕ 休息: <input type="number" id="set-break-energy" style="width:50px;padding:4px;" onchange="changeRestoreEnergy('break', this.value)"> 点</label>
-</div>
-</div>
-</div>
-<div class="section-box" style="border-color:#c5cae9;">
-<div class="panel-content">
-<h2 style="color:#303f9f;">🎮 RPG 属性编辑</h2>
+<div style="display:flex;gap:12px;margin-top:4px;"><label style="font-size:var(--font-hint);color:var(--text-main);display:flex;align-items:center;gap:4px;">😴 小憩: <input type="number" id="set-nap-energy" style="width:50px;padding:4px;" onchange="changeRestoreEnergy('nap', this.value)"> 点</label><label style="font-size:var(--font-hint);color:var(--text-main);display:flex;align-items:center;gap:4px;">☕ 休息: <input type="number" id="set-break-energy" style="width:50px;padding:4px;" onchange="changeRestoreEnergy('break', this.value)"> 点</label></div>
+</div></div>
+<div class="section-box" style="border-color:#c5cae9;"><div class="panel-content"><h2 style="color:#303f9f;">🎮 RPG 属性编辑</h2>
 <div class="rpg-edit-grid">
 <label><span>📈 经验</span><input type="number" id="rpg-edit-exp" min="0" onchange="editRPGValue('exp', this.value)"></label>
 <label><span>📚 智力</span><input type="number" id="rpg-edit-int" min="0" onchange="editRPGValue('int', this.value)"></label>
@@ -950,80 +797,63 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <label><span>🎨 创造力</span><input type="number" id="rpg-edit-cre" min="0" onchange="editRPGValue('cre', this.value)"></label>
 <label><span>🎯 专注</span><input type="number" id="rpg-edit-foc" min="0" onchange="editRPGValue('foc', this.value)"></label>
 <label><span>🔥 毅力</span><input type="number" id="rpg-edit-wil" min="0" onchange="editRPGValue('wil', this.value)"></label>
-</div>
-</div>
-</div>
-<div class="section-box" style="border-color:#fde68a;">
-<div class="panel-content">
-<h2 style="color:#b45309;">🏆 等级配置</h2>
-<div class="level-config-list" id="level-config-list"></div>
-<button class="btn btn-sm" onclick="addLevelConfig()" style="margin-top:6px;color:#b45309;border-color:#fcd34d;">➕ 添加等级</button>
-<button class="btn btn-sm" onclick="resetLevelConfig()" style="margin-top:6px;color:var(--text-muted);margin-left:6px;">🔄 恢复默认</button>
-</div>
-</div>
-<div class="section-box" style="border-color:#c5cae9;">
-<div class="panel-content">
-<h2 style="color:#303f9f;">⏰ 课表时间段设置</h2>
-<p style="font-size:var(--font-hint);color:var(--text-muted);">拖动左侧 ⋮⋮ 图标可调整顺序；每行代表一节课，如 08:00-08:50</p>
-<div id="timeslot-config-list" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:280px;overflow-y:auto;"></div>
-<button class="btn btn-sm" onclick="addTimeSlot()" style="margin-top:6px;color:#303f9f;border-color:#c5cae9;">➕ 添加时间段</button>
-<button class="btn btn-sm" onclick="resetTimeSlots()" style="margin-top:6px;margin-left:6px;">🔄 恢复默认</button>
-</div>
-</div>
-<div class="section-box" style="border-color:#c5cae9;">
-<div class="panel-content">
-<h2 style="color:#303f9f;">📌 固定块精力设置</h2>
-<p style="font-size:var(--font-hint);color:var(--text-muted);">分配固定块到时间池时，会自动扣除这些精力。</p>
-<div id="fixed-block-energy-config-list" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:280px;overflow-y:auto;"></div>
-</div>
-</div>
-<div class="section-box" style="border-color:#a5d6a7;">
-<div class="panel-content">
-<h2 style="color:#2e7d32;">🔘 任务常用按钮</h2>
-<p>勾选要在日计划卡片上直接显示的按钮，未勾选的将收纳进「⋮」菜单中。</p>
+</div></div></div>
+<div class="section-box" style="border-color:#fde68a;"><div class="panel-content"><h2 style="color:#b45309;">🏆 等级配置</h2><div class="level-config-list" id="level-config-list"></div><button class="btn btn-sm" onclick="addLevelConfig()" style="margin-top:6px;color:#b45309;border-color:#fcd34d;">➕ 添加等级</button><button class="btn btn-sm" onclick="resetLevelConfig()" style="margin-top:6px;color:var(--text-muted);margin-left:6px;">🔄 恢复默认</button></div></div>
+<div class="section-box" style="border-color:#c5cae9;"><div class="panel-content"><h2 style="color:#303f9f;">⏰ 课表时间段设置</h2><p style="font-size:var(--font-hint);color:var(--text-muted);">拖动左侧 ⋮⋮ 图标可调整顺序；每行代表一节课，如 08:00-08:50</p><div id="timeslot-config-list" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:280px;overflow-y:auto;"></div><button class="btn btn-sm" onclick="addTimeSlot()" style="margin-top:6px;color:#303f9f;border-color:#c5cae9;">➕ 添加时间段</button><button class="btn btn-sm" onclick="resetTimeSlots()" style="margin-top:6px;margin-left:6px;">🔄 恢复默认</button></div></div>
+<div class="section-box" style="border-color:#c5cae9;"><div class="panel-content"><h2 style="color:#303f9f;">📌 固定块精力设置</h2><p style="font-size:var(--font-hint);color:var(--text-muted);">分配固定块到时间池时，会自动扣除这些精力。</p><div id="fixed-block-energy-config-list" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:280px;overflow-y:auto;"></div></div></div>
+<div class="section-box" style="border-color:#a5d6a7;"><div class="panel-content"><h2 style="color:#2e7d32;">🔘 任务常用按钮</h2><p>勾选要在日计划卡片上直接显示的按钮，未勾选的将收纳进「⋮」菜单中。</p>
 <div class="common-btns-grid" id="common-btns-config">
-    <label><input type="checkbox" value="skip" onchange="updateCommonBtn('skip', this.checked)"> ⏭️ 今日跳过</label>
-    <label><input type="checkbox" value="estimate" onchange="updateCommonBtn('estimate', this.checked)"> ⏱ 预计时长</label>
-    <label><input type="checkbox" value="energy" onchange="updateCommonBtn('energy', this.checked)"> ⚡ 精力消耗</label>
-    <label><input type="checkbox" value="pin" onchange="updateCommonBtn('pin', this.checked)"> 📌 置顶</label>
-    <label><input type="checkbox" value="target" onchange="updateCommonBtn('target', this.checked)"> # 次数</label>
-    <label><input type="checkbox" value="loop" onchange="updateCommonBtn('loop', this.checked)"> 🔁 循环</label>
-    <label><input type="checkbox" value="count" onchange="updateCommonBtn('count', this.checked)"> 🔄 计数</label>
-    <label><input type="checkbox" value="deadline" onchange="updateCommonBtn('deadline', this.checked)"> 📅 截止日期</label>
-    <label><input type="checkbox" value="view" onchange="updateCommonBtn('view', this.checked)"> 👁️ 查看详情（可选）</label>
-    <label><input type="checkbox" value="delete" onchange="updateCommonBtn('delete', this.checked)"> 🗑️ 删除</label>
-</div>
-</div>
-</div>
+<label><input type="checkbox" value="skip" onchange="updateCommonBtn('skip', this.checked)"> ⏭️ 今日跳过</label>
+<label><input type="checkbox" value="estimate" onchange="updateCommonBtn('estimate', this.checked)"> ⏱ 预计时长</label>
+<label><input type="checkbox" value="energy" onchange="updateCommonBtn('energy', this.checked)"> ⚡ 精力消耗</label>
+<label><input type="checkbox" value="pin" onchange="updateCommonBtn('pin', this.checked)"> 📌 置顶</label>
+<label><input type="checkbox" value="target" onchange="updateCommonBtn('target', this.checked)"> # 次数</label>
+<label><input type="checkbox" value="loop" onchange="updateCommonBtn('loop', this.checked)"> 🔁 循环</label>
+<label><input type="checkbox" value="count" onchange="updateCommonBtn('count', this.checked)"> 🔄 计数</label>
+<label><input type="checkbox" value="deadline" onchange="updateCommonBtn('deadline', this.checked)"> 📅 截止日期</label>
+<label><input type="checkbox" value="view" onchange="updateCommonBtn('view', this.checked)"> 👁️ 查看详情（可选）</label>
+<label><input type="checkbox" value="delete" onchange="updateCommonBtn('delete', this.checked)"> 🗑️ 删除</label>
+</div></div></div>
 <div class="section-box span-full" style="border-color:#90caf9;">
 <details class="settings-details">
 <summary style="color:#1565c0;">💾 数据备份与恢复</summary>
 <div class="panel-content" style="padding-top:0;">
 <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
 <button class="btn btn-sm" onclick="exportData()">📤 导出全量 JSON</button>
-<label class="btn btn-sm" style="cursor:pointer;">📥 导入全量 JSON<input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)"></label>
+<label class="btn btn-sm" style="cursor:pointer;">📥 导入 JSON<input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)"></label>
 <button class="btn btn-danger btn-sm" onclick="resetAllData()" style="margin-left:auto;">🚨 清空所有数据</button>
 </div>
-<p style="margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px;">📁 <b>自动备份到文件夹</b>：每 N 分钟把数据分模块写入所选文件夹（核心任务、设置、学习方法独立保存）。<br><span style="color:#e65100;">需 Chrome / Edge，通过 https 或 localhost 打开。</span></p>
+<div style="margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px;">
+    <b>📦 分模块导出（可勾选）</b>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;" id="export-module-checks">
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="tasks" checked> 核心任务</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="exercises" checked> 锻炼数据</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="rpg" checked> RPG与精力</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="settings" checked> 系统设置</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="methods" checked> 学习方法</label>
+    </div>
+    <button class="btn btn-sm btn-primary" onclick="exportSelectedModules()" style="margin-top:8px;">📦 导出选中模块</button>
+</div>
+<p style="margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px;">📁 <b>自动备份到文件夹</b>：每 N 分钟把数据按模块写入所选文件夹（tasks/exercises/rpg_energy/settings/methods 独立文件）。<br><span style="color:#e65100;">需 Chrome / Edge，通过 https 或 localhost 打开。</span></p>
 <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;">
 <button class="btn btn-sm btn-primary" onclick="chooseBackupFolder()">📂 选择文件夹</button>
 <button class="btn btn-sm" id="btn-restore-backup-folder" style="display:none;color:#1565c0;border-color:#90caf9;animation:pulse 2s infinite;" onclick="restoreBackupFolder()">🔄 恢复文件夹权限</button>
 <button class="btn btn-sm" onclick="performBackup(false)">💾 立即备份</button>
 <button class="btn btn-sm btn-danger" id="btn-stop-auto-backup" style="display:none;" onclick="stopAutoBackup()">⏹ 停止</button>
-<select id="backup-interval" onchange="changeBackupInterval(this.value)" style="padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;font-size:var(--font-hint);background:var(--bg-input);color:var(--text-main);">
-<option value="1">1 分钟</option><option value="2">2 分钟</option><option value="3" selected>3 分钟</option><option value="5">5 分钟</option><option value="10">10 分钟</option><option value="15">15 分钟</option><option value="30">30 分钟</option>
-</select>
+<select id="backup-interval" onchange="changeBackupInterval(this.value)" style="padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;font-size:var(--font-hint);background:var(--bg-input);color:var(--text-main);"><option value="1">1 分钟</option><option value="2">2 分钟</option><option value="3" selected>3 分钟</option><option value="5">5 分钟</option><option value="10">10 分钟</option><option value="15">15 分钟</option><option value="30">30 分钟</option></select>
 </div>
 <div id="backup-status-text" class="backup-status">状态：未开启</div>
 <div id="last-backup-time" class="backup-status"></div>
 <div style="margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px;">
-    <b>部分恢复（需先选择文件夹）</b>
-    <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap;">
-        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" id="restore-core" checked> 核心任务数据</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" id="restore-settings" checked> 系统设置</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" id="restore-methods" checked> 学习方法</label>
+    <b>📥 从文件夹恢复（按模块选择）</b>
+    <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap;" id="restore-module-checks">
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="tasks" checked> 核心任务</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="exercises" checked> 锻炼数据</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="rpg" checked> RPG与精力</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="settings" checked> 系统设置</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="methods" checked> 学习方法</label>
     </div>
-    <button class="btn btn-sm btn-primary" onclick="restoreFromFolder()" style="margin-top:8px;">📥 从备份文件夹恢复选中部分</button>
+    <button class="btn btn-sm btn-primary" onclick="restoreFromFolder()" style="margin-top:8px;">📥 从备份文件夹恢复选中模块</button>
 </div>
 </div>
 </details>
@@ -1035,21 +865,13 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div style="display:flex;gap:12px;flex-wrap:wrap;">
 <div style="flex:1;min-width:260px;background:var(--bg-sidebar);padding:8px;border-radius:8px;border:1px solid var(--border-color);">
 <h3 style="font-size:var(--font-content);margin-bottom:4px;">💻 我是主机</h3>
-<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-<span style="font-weight:bold;font-size:var(--font-hint);color:#e65100;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace;" id="my-peer-id">未生成</span>
-<button class="btn btn-sm btn-primary" onclick="initPeer(true)">开启</button>
-<button class="btn btn-sm" onclick="copyHostId()">📋 复制</button>
-<button class="btn btn-sm btn-danger" onclick="resetHostId()">🔄 重置</button>
-</div>
+<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-weight:bold;font-size:var(--font-hint);color:#e65100;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace;" id="my-peer-id">未生成</span><button class="btn btn-sm btn-primary" onclick="initPeer(true)">开启</button><button class="btn btn-sm" onclick="copyHostId()">📋 复制</button><button class="btn btn-sm btn-danger" onclick="resetHostId()">🔄 重置</button></div>
 </div>
 <div style="flex:1;min-width:260px;background:var(--bg-sidebar);padding:8px;border-radius:8px;border:1px solid var(--border-color);">
 <h3 style="font-size:var(--font-content);margin-bottom:4px;">📱 我是客户端</h3>
 <div style="display:flex;gap:6px;"><input type="text" id="target-peer-id" placeholder="粘贴连接码" style="padding:4px 6px;font-size:var(--font-hint);"><button class="btn btn-sm btn-primary" onclick="connectToPeer()">连接</button></div>
 <div id="p2p-status" style="font-size:var(--font-hint);color:var(--text-muted);margin-top:4px;">未连接</div>
-<div style="margin-top:6px;border-top:1px dashed var(--border-color);padding-top:4px;">
-<span style="font-size:var(--font-small);color:#1976d2;font-weight:bold;display:block;margin-bottom:4px;">历史记录</span>
-<div id="p2p-history-list" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
-</div>
+<div style="margin-top:6px;border-top:1px dashed var(--border-color);padding-top:4px;"><span style="font-size:var(--font-small);color:#1976d2;font-weight:bold;display:block;margin-bottom:4px;">历史记录</span><div id="p2p-history-list" style="display:flex;gap:4px;flex-wrap:wrap;"></div></div>
 </div>
 </div>
 </div>
@@ -1072,40 +894,20 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 </div>
 <div class="rpg-modal-overlay" id="rpg-modal" onclick="if(event.target===this)closeRPGModal()">
 <div class="rpg-modal">
-<div class="rpg-modal-header">
-<div style="font-size:2.2em;">🎮</div>
-<div class="rpg-modal-level" id="rpg-modal-level">Lv.1</div>
-<div class="rpg-modal-title" id="rpg-modal-title">新手</div>
-<div class="rpg-modal-exp" id="rpg-modal-exp">0 / 100 EXP</div>
-</div>
+<div class="rpg-modal-header"><div style="font-size:2.2em;">🎮</div><div class="rpg-modal-level" id="rpg-modal-level">Lv.1</div><div class="rpg-modal-title" id="rpg-modal-title">新手</div><div class="rpg-modal-exp" id="rpg-modal-exp">0 / 100 EXP</div></div>
 <div class="rpg-modal-energy" id="rpg-modal-energy-panel">
-    <div class="energy-left">
-        <div class="energy-header"><span>⚡ 今日精力</span></div>
-        <div class="energy-bar-bg"><div class="energy-bar-fill" id="modal-energy-fill" style="width:100%;"></div></div>
-        <div class="energy-footer"><span id="modal-energy-text">200 / 200</span></div>
-        <div class="energy-warn" id="modal-energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div>
-    </div>
-    <div class="energy-right">
-        <button class="btn-energy-restore" onclick="restoreEnergy('nap')" id="modal-btn-nap">😴+50</button>
-        <button class="btn-energy-restore" onclick="restoreEnergy('break')" id="modal-btn-break">☕+20</button>
-    </div>
+    <div class="energy-left"><div class="energy-header"><span>⚡ 今日精力</span></div><div class="energy-bar-bg"><div class="energy-bar-fill" id="modal-energy-fill" style="width:100%;"></div></div><div class="energy-footer"><span id="modal-energy-text">200 / 200</span></div><div class="energy-warn" id="modal-energy-warn" style="display:none;">⚠️ 精力过低，注意休息！</div></div>
+    <div class="energy-right"><button class="btn-energy-restore" onclick="restoreEnergy('nap')" id="modal-btn-nap">😴+50</button><button class="btn-energy-restore" onclick="restoreEnergy('break')" id="modal-btn-break">☕+20</button></div>
 </div>
 <div class="rpg-modal-grid" id="rpg-modal-grid"></div>
-<div class="rpg-modal-tips">
-💡 <b>经验规则</b>：每完成一次任务获得与精力消耗相同的 EXP（按设置中的折损率）。等级越高升级所需经验越多。<br>
-⚠️ <b>低精力惩罚</b>：精力低于警告阈值时，完成任务获得的经验减半。低于 -20 时只加 1 点。<br>
-💡 <b>属性提升</b>：学习任务→智力+1；锻炼→体力+1；其他→创造力+1；带次数目标达成→专注+1；毅力=连续打卡天数。
-</div>
+<div class="rpg-modal-tips">💡 <b>经验规则</b>：每完成一次任务获得与精力消耗相同的 EXP（按设置中的折损率）。等级越高升级所需经验越多。<br>⚠️ <b>低精力惩罚</b>：精力低于警告阈值时，完成任务获得的经验减半。低于 -20 时只加 1 点。<br>💡 <b>属性提升</b>：学习任务→智力+1；锻炼→体力+1；其他→创造力+1；带次数目标达成→专注+1；毅力=连续打卡天数。</div>
 <button class="rpg-modal-close" onclick="closeRPGModal()">关闭</button>
 </div>
 </div>
 <div class="stats-modal-overlay" id="stats-modal" onclick="if(event.target===this)closeStatsModal()">
 <div class="stats-modal">
 <div class="stats-modal-header"><h3 id="stats-modal-title">统计</h3><button class="stats-modal-close" onclick="closeStatsModal()">×</button></div>
-<div class="stats-layout">
-    <div class="stats-left" id="stats-left-content"></div>
-    <div class="stats-right"><div class="chart-title">近期活跃度趋势 (总计)</div><div class="bar-chart" id="stats-chart-content"></div></div>
-</div>
+<div class="stats-layout"><div class="stats-left" id="stats-left-content"></div><div class="stats-right"><div class="chart-title">近期活跃度趋势 (总计)</div><div class="bar-chart" id="stats-chart-content"></div></div></div>
 </div>
 </div>
 <div class="task-detail-modal-overlay" id="task-detail-modal" onclick="if(event.target===this)closeTaskDetailModal()">
@@ -1124,20 +926,16 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
     <div class="conflict-modal">
         <div class="conflict-title">⚠️ 数据冲突</div>
         <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">当前数据项在另一台设备上已被修改，请选择保留哪边：</p>
-        <div class="conflict-body">
-            <div class="conflict-box">
-                <h4>本地 (你的修改)</h4>
-                <div id="conflict-local-val" style="margin-top:8px;"></div>
-            </div>
-            <div class="conflict-box" style="border-color:var(--danger-color);">
-                <h4>远端 (对方的修改)</h4>
-                <div id="conflict-remote-val" style="margin-top:8px;"></div>
-            </div>
-        </div>
-        <div class="conflict-actions">
-            <button class="btn btn-sm" onclick="resolveConflict('local')">保留本地</button>
-            <button class="btn btn-sm btn-danger" onclick="resolveConflict('remote')">采用远端</button>
-        </div>
+        <div class="conflict-body"><div class="conflict-box"><h4>本地 (你的修改)</h4><div id="conflict-local-val" style="margin-top:8px;"></div></div><div class="conflict-box" style="border-color:var(--danger-color);"><h4>远端 (对方的修改)</h4><div id="conflict-remote-val" style="margin-top:8px;"></div></div></div>
+        <div class="conflict-actions"><button class="btn btn-sm" onclick="resolveConflict('local')">保留本地</button><button class="btn btn-sm btn-danger" onclick="resolveConflict('remote')">采用远端</button></div>
+    </div>
+</div>
+<div class="conflict-modal-overlay" id="import-confirm-modal">
+    <div class="conflict-modal" style="border-color:var(--accent-color);">
+        <div class="conflict-title" style="color:var(--accent-color);">📥 选择要恢复的模块</div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">文件包含以下数据模块，请勾选需要恢复的内容（未勾选的模块本地数据将保持不变）：</p>
+        <div id="import-module-list" style="display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow-y:auto;"></div>
+        <div class="conflict-actions" style="margin-top:16px;"><button class="btn btn-sm" onclick="closeImportModal()">取消</button><button class="btn btn-sm btn-primary" onclick="confirmImport()">✅ 确认恢复选中模块</button></div>
     </div>
 </div>
 <script>
@@ -1146,15 +944,22 @@ const DEFAULT_LEVELS = [
     { name: '博学者', needExp: 100000 }, { name: '大师', needExp: 1000000 }, { name: '宗师', needExp: 10000000 }, { name: '传说', needExp: 100000000 }
 ];
 const DEFAULT_TIMESLOTS = [
-    { id: 'ts1',  label: '08:30-09:10' }, { id: 'ts2',  label: '09:15-09:55' }, { id: 'ts3',  label: '10:10-10:50' },
-    { id: 'ts4',  label: '10:55-11:35' }, { id: 'ts5',  label: '11:35-13:05' }, { id: 'ts6',  label: '13:10-13:50' },
-    { id: 'ts7',  label: '13:55-14:35' }, { id: 'ts8',  label: '14:45-15:25' }, { id: 'ts9',  label: '15:30-16:10' },
+    { id: 'ts1', label: '08:30-09:10' }, { id: 'ts2', label: '09:15-09:55' }, { id: 'ts3', label: '10:10-10:50' },
+    { id: 'ts4', label: '10:55-11:35' }, { id: 'ts5', label: '11:35-13:05' }, { id: 'ts6', label: '13:10-13:50' },
+    { id: 'ts7', label: '13:55-14:35' }, { id: 'ts8', label: '14:45-15:25' }, { id: 'ts9', label: '15:30-16:10' },
     { id: 'ts10', label: '16:15-16:55' }, { id: 'ts11', label: '18:00-18:40' }, { id: 'ts12', label: '18:45-19:25' },
     { id: 'ts13', label: '19:30-20:10' }
 ];
 const DEFAULT_FIXED_BLOCKS = [
     { id: 'fb_class', name: '上课', energyCost: 20 }, { id: 'fb_meal', name: '吃饭', energyCost: 5 }, { id: 'fb_rest', name: '休息', energyCost: 0 }, { id: 'fb_commute', name: '通勤', energyCost: 10 }
 ];
+const BACKUP_MODULES = {
+    tasks:     { name: '核心任务',  fields: ['tasks','dailyLogs','dailyReflections','weeklyReflections','monthlyReflections','yearlyGoals','fixedBlockSchedule'] },
+    exercises: { name: '锻炼数据',  fields: ['exercises','exerciseSchedule','exerciseTimeSlotSchedule','dailyExerciseChecks'] },
+    rpg:       { name: 'RPG与精力', fields: ['rpg','dailyEnergy','panelLayout'] },
+    settings:  { name: '系统设置',  fields: ['themeColor','themeMode','fonts','radius','energyMax','energyWarnThreshold','expRatio','napEnergy','breakEnergy','levelConfig','commonBtns','timeSlots','fixedBlocks','maxVisible','animationEnabled'] },
+    methods:   { name: '学习方法',  fields: ['methodsFiles','learningMethods','learningMethodsHtml','activeMethodsFileId','activeMethodsFileId2','splitScreenMode'] }
+};
 let appData = {
     tasks: [],
     exercises: [
@@ -1164,8 +969,7 @@ let appData = {
         { id: 'ex_cardio', name: '有氧', subTasks: [], recurringType: '', energyCost: 15 }
     ],
     exerciseSchedule: {}, dailyExerciseChecks: {}, dailyReflections: {}, dailyLogs: {},
-    weeklyReflections: {}, monthlyReflections: {},
-    exerciseTimeSlotSchedule: {},
+    weeklyReflections: {}, monthlyReflections: {}, exerciseTimeSlotSchedule: {},
     selectedDate: getTodayString(), yearlyGoals: "",
     learningMethods: "", learningMethodsHtml: "", methodsCollapsed: false,
     methodsFiles: [], activeMethodsFileId: null, activeMethodsFileId2: null, splitScreenMode: false,
@@ -1181,13 +985,11 @@ let appData = {
     commonBtns: ['skip', 'target', 'loop', 'deadline', 'delete'],
     timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS)),
     fixedBlocks: JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS)),
-    fixedBlockSchedule: {},
-    maxVisible: 5,
-    animationEnabled: true
+    fixedBlockSchedule: {}, maxVisible: 5, animationEnabled: true
 };
 let peer = null, conn = null;
 let isSyncing = false, isAutoReconnecting = false, isConnecting = false;
-let connectTimer = null, syncDebounceTimer = null;
+let connectTimer = null;
 let currentTargetPeer = null, handshakeDone = false;
 const p2pIndicator = document.getElementById('p2p-indicator');
 const isMobileDevice = window.innerWidth <= 768;
@@ -1202,10 +1004,9 @@ const expandedMethodFolders = new Set();
 let isDraggingActive = false;
 const CLIENT_ID = Math.random().toString(36).substring(2, 11);
 let syncStatus = 'offline';
-let locks = {}; 
+let locks = {};
 let conflictQueue = [];
-let offlineQueue = [];
-let lastSyncedTasks = []; 
+let lastSyncedTasks = [];
 let lastSyncedExercises = [];
 let lastSyncedMethods = [];
 let lastSyncedSettings = {};
@@ -1215,6 +1016,17 @@ let lastSyncedExerciseTimeSlotSchedule = {};
 let lastSyncedReflections = {};
 let lastSyncedRpg = {};
 let lastSyncedEnergy = {};
+let _opDebounceTimer = null;
+let _mainLoopInterval = null;
+let _pendingImportData = null;
+let _backupTimerRegistry = [];
+function _registerBackupTimer(id) { _backupTimerRegistry.push(id); return id; }
+function _clearBackupTimers() { _backupTimerRegistry.forEach(id => { clearInterval(id); clearTimeout(id); }); _backupTimerRegistry = []; }
+function _cleanupFloatNodes() {
+    document.querySelectorAll('div').forEach(el => {
+        if (el.style && el.style.animation && el.style.animation.indexOf('rpgFloatUp') !== -1 && !el.parentNode) return;
+    });
+}
 function getTodayString() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1266,7 +1078,10 @@ function showMiniToast(msg) {
     el.textContent = msg;
     document.body.appendChild(el);
     requestAnimationFrame(() => { el.style.opacity = '1'; });
-    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 350); }, 1200);
+    setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 350);
+    }, 1200);
 }
 function isRecurringMatch(type, startDateStr, targetDateStr) {
     if (!type) return false;
@@ -1456,10 +1271,7 @@ function ensureEnergyData() {
     if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) {
         const oldHtml = appData.learningMethodsHtml || '';
         const oldText = appData.learningMethods || '';
-        appData.methodsFiles = [{
-            id: 'file_default', name: '我的学习方法', type: 'file', parentId: null,
-            contentHtml: oldHtml, contentText: oldText, updatedAt: (oldHtml || oldText) ? Date.now() : 0
-        }];
+        appData.methodsFiles = [{ id: 'file_default', name: '我的学习方法', type: 'file', parentId: null, contentHtml: oldHtml, contentText: oldText, updatedAt: (oldHtml || oldText) ? Date.now() : 0 }];
     }
     appData.methodsFiles.forEach(f => {
         if (!f.id) f.id = 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
@@ -1579,7 +1391,7 @@ function showRpgFloat(anchorEl, text, color) {
     float.style.cssText = `position:fixed;left:${rect.left + rect.width/2}px;top:${rect.top}px;color:${color};font-weight:800;font-size:15px;pointer-events:none;z-index:9999;animation:rpgFloatUp 1.2s cubic-bezier(.2,.9,.3,1) forwards;text-shadow:0 1px 3px rgba(255,255,255,.95);`;
     float.textContent = text;
     document.body.appendChild(float);
-    setTimeout(() => float.remove(), 1200);
+    setTimeout(() => { if (float.parentNode) float.parentNode.removeChild(float); }, 1200);
 }
 function flashElement(el, cls, ms) { if (!el) return; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), ms || 600); }
 function renderEnergyAndRPG() {
@@ -1711,7 +1523,11 @@ window.showLevelUpModal = function(level, title, expInLevel, needed) {
     }
     overlay.classList.add('active');
 };
-window.closeLevelUpModal = function() { document.getElementById('levelup-overlay').classList.remove('active'); };
+window.closeLevelUpModal = function() {
+    document.getElementById('levelup-overlay').classList.remove('active');
+    const confetti = document.getElementById('levelup-confetti');
+    if (confetti) confetti.innerHTML = '';
+};
 window.restoreEnergy = function(type) {
     ensureEnergyData();
     const amt = Math.max(0, Number(type === 'nap' ? appData.napEnergy : appData.breakEnergy) || 0);
@@ -1812,6 +1628,11 @@ let methodsStatusTimer = null;
 let activeEditorId = 'methods-content';
 let searchMatches = [];
 let searchIndex = -1;
+function cleanupMethodsTimers() {
+    if (methodsSaveTimer) { clearTimeout(methodsSaveTimer); methodsSaveTimer = null; }
+    if (methodsStatusTimer) { clearTimeout(methodsStatusTimer); methodsStatusTimer = null; }
+    methodsSavedRange = null;
+}
 function methodsGetEditor() { return document.getElementById(activeEditorId); }
 function methodsSaveSelection() {
     const editor = methodsGetEditor();
@@ -1858,11 +1679,7 @@ function getCurrentMethodsFile(idStr) {
 function renderKaTeX(el) {
     if (!el || typeof renderMathInElement === 'undefined') return;
     try {
-        renderMathInElement(el, {
-            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}],
-            throwOnError: false,
-            ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
-        });
+        renderMathInElement(el, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false, ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"] });
     } catch (e) { console.warn("KaTeX render error", e); }
 }
 function clearSearchHighlight() {
@@ -2031,11 +1848,7 @@ function renderMethodsFileTree(node, listElement, depth = 0) {
         delSpan.title = '删除';
         if (isFolder) toggle.onclick = (e) => { e.stopPropagation(); if (isExpanded) expandedMethodFolders.delete(f.id); else expandedMethodFolders.add(f.id); renderMethodsFileList(); };
         item.appendChild(toggle); item.appendChild(icon); item.appendChild(nameSpan); item.appendChild(delSpan);
-        item.onclick = (e) => {
-            if (e.target === delSpan || e.target === toggle) return;
-            if (isFolder) { if (isExpanded) expandedMethodFolders.delete(f.id); else expandedMethodFolders.add(f.id); renderMethodsFileList(); }
-            else switchMethodsFile(f.id);
-        };
+        item.onclick = (e) => { if (e.target === delSpan || e.target === toggle) return; if (isFolder) { if (isExpanded) expandedMethodFolders.delete(f.id); else expandedMethodFolders.add(f.id); renderMethodsFileList(); } else switchMethodsFile(f.id); };
         item.ondblclick = (e) => { if (e.target === delSpan || e.target === toggle) return; renameMethodsFile(f.id); };
         delSpan.onclick = (e) => { e.stopPropagation(); deleteMethodsFile(f.id); };
         listElement.appendChild(item);
@@ -2334,12 +2147,6 @@ window.updateFixedBlockEnergy = function(id, val) {
     const num = parseInt(val);
     if (!isNaN(num) && num >= 0) { fb.energyCost = num; saveDataToFile(appData); renderEnergyAndRPG(); }
 };
-function getDataSignature(data) {
-    const copy = JSON.parse(JSON.stringify(data));
-    delete copy.selectedDate; delete copy.viewYear; delete copy.viewMonth; delete copy.viewWeekBaseDate; delete copy._lastModified;
-    return JSON.stringify(copy);
-}
-let opDebounceTimer = null;
 function getSettingsObj() {
     return {
         energyMax: appData.energyMax, energyWarnThreshold: appData.energyWarnThreshold, expRatio: appData.expRatio,
@@ -2350,18 +2157,16 @@ function getSettingsObj() {
     };
 }
 function saveDataToFile(data) {
-    const sig = getDataSignature(data);
-    const changed = sig !== lastSavedSignature;
-    if (!isSyncing && changed) { data._lastModified = Date.now(); lastSavedSignature = getDataSignature(data); }
-    saveLocalStorage();
+    if (!isSyncing) data._lastModified = Date.now();
+    try { localStorage.setItem('myWorkspaceAppData', JSON.stringify(data)); } catch (e) { console.warn('localStorage 保存失败', e); }
     if (!isSyncing) {
-        clearTimeout(opDebounceTimer);
-        opDebounceTimer = setTimeout(() => {
+        clearTimeout(_opDebounceTimer);
+        _opDebounceTimer = setTimeout(() => {
             if (syncStatus === 'connected' || syncStatus === 'syncing') broadcastDiffs(data);
         }, 300);
     }
 }
-function saveLocalStorage() { localStorage.setItem('myWorkspaceAppData', JSON.stringify(appData)); }
+function saveLocalStorage() { try { localStorage.setItem('myWorkspaceAppData', JSON.stringify(appData)); } catch(e) {} }
 window.changeThemeMode = function(mode) { appData.themeMode = mode; document.body.classList.toggle('dark-mode', mode === 'dark'); saveDataToFile(appData); };
 function changeTheme(color) { appData.themeColor = color; document.documentElement.style.setProperty('--accent-color', color); if (!isSyncing) saveDataToFile(appData); }
 window.changeFontSetting = function(key, val) {
@@ -2460,21 +2265,22 @@ function broadcastDiffs(data) {
         if (!lt || jstr(lt) !== jstr(ct)) conn.send({ type: 'OP', data: { action: 'UPDATE_TASK', task: ct, clientId: CLIENT_ID, time: Date.now() } });
     });
     lastSyncedTasks.forEach(lt => { if (!currentTasks.find(x => x.id === lt.id)) conn.send({ type: 'OP', data: { action: 'DELETE_TASK', id: lt.id, clientId: CLIENT_ID, time: Date.now() } }); });
-    lastSyncedTasks = JSON.parse(jstr(currentTasks));
+    lastSyncedTasks = currentTasks.map(t => ({ id: t.id, _v: JSON.stringify(t) }));
+    lastSyncedTasks = currentTasks.map(t => t);
     const currentExercises = data.exercises || [];
     currentExercises.forEach(ce => {
         const le = lastSyncedExercises.find(x => x.id === ce.id);
         if (!le || jstr(le) !== jstr(ce)) conn.send({ type: 'OP', data: { action: 'UPDATE_EXERCISE', exercise: ce, clientId: CLIENT_ID, time: Date.now() } });
     });
     lastSyncedExercises.forEach(le => { if (!currentExercises.find(x => x.id === le.id)) conn.send({ type: 'OP', data: { action: 'DELETE_EXERCISE', id: le.id, clientId: CLIENT_ID, time: Date.now() } }); });
-    lastSyncedExercises = JSON.parse(jstr(currentExercises));
+    lastSyncedExercises = currentExercises.map(e => e);
     const currentMethods = data.methodsFiles || [];
     currentMethods.forEach(cm => {
         const lm = lastSyncedMethods.find(x => x.id === cm.id);
         if (!lm || jstr(lm) !== jstr(cm)) conn.send({ type: 'OP', data: { action: 'UPDATE_METHODS', method: cm, clientId: CLIENT_ID, time: Date.now() } });
     });
     lastSyncedMethods.forEach(lm => { if (!currentMethods.find(x => x.id === lm.id)) conn.send({ type: 'OP', data: { action: 'DELETE_METHODS', id: lm.id, clientId: CLIENT_ID, time: Date.now() } }); });
-    lastSyncedMethods = JSON.parse(jstr(currentMethods));
+    lastSyncedMethods = currentMethods.map(m => m);
 }
 function queueConflict(op) {
     syncStatus = 'conflict'; updateSyncUI();
@@ -2585,9 +2391,7 @@ function mergeDailyExerciseChecksDict(local, remote) {
             const lDay = merged[dateStr];
             const rDay = remote[dateStr];
             if (lDay && typeof lDay === 'object' && !Array.isArray(lDay) && rDay && typeof rDay === 'object' && !Array.isArray(rDay)) {
-                Object.keys(rDay).forEach(k => {
-                    if (lDay[k] === undefined || rDay[k] === true) lDay[k] = rDay[k];
-                });
+                Object.keys(rDay).forEach(k => { if (lDay[k] === undefined || rDay[k] === true) lDay[k] = rDay[k]; });
             } else merged[dateStr] = JSON.parse(JSON.stringify(rDay));
         }
     });
@@ -2681,7 +2485,7 @@ function savePanelOrder() {
     saveDataToFile(appData);
 }
 function setupResizeObserver() {
-    if (resizeObserver) resizeObserver.disconnect();
+    if (resizeObserver) { try { resizeObserver.disconnect(); } catch(e) {} resizeObserver = null; }
     if (!window.ResizeObserver) return;
     const grid = document.getElementById('day-panels-grid');
     if (!grid) return;
@@ -2709,16 +2513,15 @@ window.togglePanelWidth = function(btn) {
     appData.panelLayout.spans[k] = box.classList.contains('span-full');
     saveDataToFile(appData);
 };
+let _panelSortable = null;
 function initDragAndDrop() {
-    new Sortable(document.getElementById('day-panels-grid'), { animation: 200, handle: '.panel-header', ghostClass: 'sortable-ghost', onEnd: savePanelOrder });
+    const gridEl = document.getElementById('day-panels-grid');
+    if (!gridEl) return;
+    if (_panelSortable) { try { _panelSortable.destroy(); } catch(e){} _panelSortable = null; }
+    _panelSortable = new Sortable(gridEl, { animation: 200, handle: '.panel-header', ghostClass: 'sortable-ghost', onEnd: savePanelOrder });
     setupResizeObserver();
 }
-window.changeMonth = function(o) {
-    appData.viewMonth += o;
-    if (appData.viewMonth > 11) { appData.viewMonth = 0; appData.viewYear++; }
-    if (appData.viewMonth < 0) { appData.viewMonth = 11; appData.viewYear--; }
-    renderCalendar();
-};
+window.changeMonth = function(o) { appData.viewMonth += o; if (appData.viewMonth > 11) { appData.viewMonth = 0; appData.viewYear++; } if (appData.viewMonth < 0) { appData.viewMonth = 11; appData.viewYear--; } renderCalendar(); };
 window.changeYear = function(o) { appData.viewYear += o; renderYearHeatmap(); };
 window.changeWeek = function(o) {
     const b = new Date(appData.viewWeekBaseDate);
@@ -2731,11 +2534,7 @@ window.changeWeek = function(o) {
     if (wkText) wkText.value = wkVal;
     if (wkDetails) wkDetails.open = !!wkVal;
 };
-window.jumpToDay = function(ds) {
-    appData.selectedDate = ds;
-    userPickedDate = true;
-    document.querySelector('.nav-item[data-target="day"]').click();
-};
+window.jumpToDay = function(ds) { appData.selectedDate = ds; userPickedDate = true; document.querySelector('.nav-item[data-target="day"]').click(); };
 window.jumpToToday = function(e) {
     if (e) e.stopPropagation();
     const today = getTodayString();
@@ -2751,11 +2550,7 @@ window.jumpToToday = function(e) {
 function getSubTaskProgress(s, ds, parentTask) {
     if (s.countOnly) return { done: 0, total: 1, count: s.countTotal || 0 };
     const done = isSubTaskDone(s, ds);
-    if (s.target) {
-        let cur = getSubCurrent(s, ds, parentTask);
-        if (done) cur = s.target;
-        return { done: cur, total: s.target };
-    }
+    if (s.target) { let cur = getSubCurrent(s, ds, parentTask); if (done) cur = s.target; return { done: cur, total: s.target }; }
     return { done: done ? 1 : 0, total: 1 };
 }
 function getTaskProgress(t, ds) {
@@ -2766,11 +2561,7 @@ function getTaskProgress(t, ds) {
         t.subTasks.forEach(s => { const p = getSubTaskProgress(s, ds, t); d += p.done; tot += p.total; });
         return { done: d, total: tot };
     }
-    if (t.target) {
-        let cur = getTaskCurrent(t, ds);
-        if (done && cur < t.target) cur = t.target;
-        return { done: cur, total: t.target };
-    }
+    if (t.target) { let cur = getTaskCurrent(t, ds); if (done && cur < t.target) cur = t.target; return { done: cur, total: t.target }; }
     return { done: done ? 1 : 0, total: 1 };
 }
 function syncParentTaskStatus(t, ds) {
@@ -2832,11 +2623,7 @@ window.openStatsModal = function(type) {
     let hasLogs = false;
     while (cur <= end) {
         const d = formatDate(cur.getFullYear(), cur.getMonth(), cur.getDate());
-        getTasksForDate(d).forEach(t => {
-            const pr = getTaskProgress(t, d);
-            if (t.type === 'learning') ld += pr.done;
-            if (t.type === 'other') od += pr.done;
-        });
+        getTasksForDate(d).forEach(t => { const pr = getTaskProgress(t, d); if (t.type === 'learning') ld += pr.done; if (t.type === 'other') od += pr.done; });
         const checks = appData.dailyExerciseChecks[d] || {};
         const manual = appData.exerciseSchedule[d] || [];
         const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[d]) || {};
@@ -2846,11 +2633,8 @@ window.openStatsModal = function(type) {
         [...new Set([...manual, ...allSlotExs, ...rec])].forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
             if (!ex) return;
-            if (!ex.subTasks || ex.subTasks.length === 0) {
-                if (checks[ex.id]) ed++;
-            } else {
-                ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) ed++; });
-            }
+            if (!ex.subTasks || ex.subTasks.length === 0) { if (checks[ex.id]) ed++; }
+            else ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) ed++; });
         });
         const logs = (appData.dailyLogs && appData.dailyLogs[d]) ? appData.dailyLogs[d] : {};
         const logItems = [];
@@ -2877,8 +2661,7 @@ window.openStatsModal = function(type) {
     let maxDayTotal = 1;
     const dayData = [];
     for (let i = 6; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
+        const d = new Date(today); d.setDate(d.getDate() - i);
         const ds = formatDate(d.getFullYear(), d.getMonth(), d.getDate());
         let dayTotal = 0;
         getTasksForDate(ds).forEach(t => { const pr = getTaskProgress(t, ds); dayTotal += pr.done; });
@@ -2891,11 +2674,8 @@ window.openStatsModal = function(type) {
         [...new Set([...manual, ...allSlotExs, ...rec])].forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
             if (!ex) return;
-            if (!ex.subTasks || ex.subTasks.length === 0) {
-                if (checks[ex.id]) dayTotal++;
-            } else {
-                ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) dayTotal++; });
-            }
+            if (!ex.subTasks || ex.subTasks.length === 0) { if (checks[ex.id]) dayTotal++; }
+            else ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) dayTotal++; });
         });
         dayData.push({ label: `${d.getMonth()+1}/${d.getDate()}`, val: dayTotal });
         if (dayTotal > maxDayTotal) maxDayTotal = dayTotal;
@@ -2910,7 +2690,7 @@ function renderYearHeatmap() {
     document.getElementById('year-display').innerText = appData.viewYear + '年';
     const h = document.getElementById('year-heatmap');
     if (!h) return;
-    h.innerHTML = '';
+    const frag = document.createDocumentFragment();
     const y = appData.viewYear;
     const sd = new Date(y, 0, 1), ed = new Date(y, 11, 31);
     const td = getTodayString();
@@ -2932,30 +2712,10 @@ function renderYearHeatmap() {
         } else { div.style.backgroundColor = 'var(--bg-sidebar)'; div.style.color = 'var(--text-muted)'; }
         if (ds === td) div.classList.add('today-cell');
         div.onclick = () => { jumpToDay(ds); appData.viewYear = d.getFullYear(); appData.viewMonth = d.getMonth(); };
-        const completedTasks = getTasksForDate(ds).filter(t => !t.countOnly && isTaskDone(t, ds));
-        let tooltipArr = [getDateLabel(ds)];
-        const learning = completedTasks.filter(t => t.type === 'learning').map(t => t.text);
-        const other = completedTasks.filter(t => t.type === 'other').map(t => t.text);
-        const logs = (appData.dailyLogs && appData.dailyLogs[ds]) ? appData.dailyLogs[ds] : {};
-        Object.values(logs).forEach(l => {
-            if (l.completed && !learning.includes(l.name) && !other.includes(l.name)) other.push(l.name + ' (打卡)');
-        });
-        if (learning.length > 0) tooltipArr.push(`\n📚 学习:\n - ${learning.join('\n - ')}`);
-        if (other.length > 0) tooltipArr.push(`\n🧺 其他:\n - ${other.join('\n - ')}`);
-        const exCompleted = [];
-        const manualEx = appData.exerciseSchedule[ds] || [];
-        const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds]) || {};
-        let allSlotExs = [];
-        Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
-        [...new Set([...manualEx, ...allSlotExs, ...appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex=>ex.name)])].forEach(n => {
-            const ex = appData.exercises.find(e => e.name === n);
-            if (ex && isCategoryAllCheckedForDate(ex.id, ds)) exCompleted.push(n);
-        });
-        if (exCompleted.length > 0) tooltipArr.push(`\n💪 锻炼:\n - ${exCompleted.join('\n - ')}`);
-        if (tooltipArr.length === 1) tooltipArr.push('无已完成任务');
-        div.title = tooltipArr.join('\n');
-        h.appendChild(div);
+        frag.appendChild(div);
     }
+    h.innerHTML = '';
+    h.appendChild(frag);
     const g = appData.yearlyGoals || "";
     document.getElementById('yearly-goals').innerText = g;
     document.getElementById('yearly-goals-bottom').value = g;
@@ -2968,10 +2728,7 @@ function renderCalendar() {
     const y = appData.viewYear, m = appData.viewMonth;
     document.getElementById('month-display').innerText = `${y}年 ${m+1}月`;
     ['一','二','三','四','五','六','日'].forEach(d => {
-        const h = document.createElement('div');
-        h.className = 'calendar-header-cell';
-        h.innerText = '周' + d;
-        grid.appendChild(h);
+        const h = document.createElement('div'); h.className = 'calendar-header-cell'; h.innerText = '周' + d; grid.appendChild(h);
     });
     const dim = new Date(y, m+1, 0).getDate();
     let fd = new Date(y, m, 1).getDay();
@@ -3089,10 +2846,7 @@ function removeExerciseFromDate(name, ds) {
     appData.exerciseSchedule[ds] = appData.exerciseSchedule[ds].filter(n => n !== name);
     if (appData.exerciseSchedule[ds].length === 0) delete appData.exerciseSchedule[ds];
 }
-function isExerciseAllChecked(ds, ex) {
-    if (!ex) return false;
-    return isCategoryAllCheckedForDate(ex.id, ds);
-}
+function isExerciseAllChecked(ds, ex) { if (!ex) return false; return isCategoryAllCheckedForDate(ex.id, ds); }
 function renderWeekBoard() {
     ensureEnergyData();
     const board = document.getElementById('week-board');
@@ -3142,12 +2896,9 @@ function renderWeekBoard() {
                 const ex = appData.exercises.find(e => e.name === n);
                 if (!ex) return;
                 const ad = isCategoryAllCheckedForDate(ex.id, ds);
-                const exDiv = document.createElement('div');
-                exDiv.className = 'exercise-capsule';
-                exDiv.draggable = true;
+                const exDiv = document.createElement('div'); exDiv.className = 'exercise-capsule'; exDiv.draggable = true;
                 exDiv.ondragstart = (e) => { isDraggingActive = true; dragExercise(e, n, 'date:' + ds); };
-                const cb = document.createElement('input');
-                cb.type = 'checkbox'; cb.checked = ad;
+                const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = ad;
                 cb.onchange = (e) => {
                     const target = e.target.checked;
                     const result = setCategoryExerciseChecked(ex.id, ds, target);
@@ -3206,13 +2957,9 @@ function renderWeekBoard() {
                 const ex = appData.exercises.find(e => e.name === exName);
                 if (!ex) return;
                 const ad = isCategoryAllCheckedForDate(ex.id, ds);
-                const exDiv = document.createElement('div');
-                exDiv.className = 'exercise-capsule';
-                exDiv.style.margin = '0';
-                exDiv.draggable = true;
+                const exDiv = document.createElement('div'); exDiv.className = 'exercise-capsule'; exDiv.style.margin = '0'; exDiv.draggable = true;
                 exDiv.ondragstart = (e) => { isDraggingActive = true; dragExercise(e, exName, 'slot:' + ds + ':' + ts.id); };
-                const cb = document.createElement('input');
-                cb.type = 'checkbox'; cb.checked = ad;
+                const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = ad;
                 cb.onchange = (e) => {
                     const target = e.target.checked;
                     const result = setCategoryExerciseChecked(ex.id, ds, target);
@@ -3502,6 +3249,8 @@ window.openTaskDetailModal = function(taskId) {
 window.closeTaskDetailModal = function() {
     currentDetailTaskId = null;
     document.getElementById('task-detail-modal').classList.remove('active');
+    const body = document.getElementById('task-detail-modal-body');
+    if (body) body.innerHTML = '';
 };
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.more-menu-container')) document.querySelectorAll('.more-menu').forEach(menu => menu.classList.remove('active'));
@@ -3552,18 +3301,8 @@ function renderSubTaskHtml(task, sub, ds) {
     if (sub.countOnly) {
         return `
             <div class="sub-task-item" data-sub-id="${sub.id}">
-                <div class="sub-task-left">
-                    <span style="font-size:1em;">🔄</span>
-                    <span class="${sub.countEnded ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span>
-                </div>
-                <div class="sub-actions">
-                    ${ecBadge}${estBadge}
-                    <span class="count-display">累计 <b>${sub.countTotal || 0}</b> 次</span>
-                    <button class="btn-count-plus" style="padding:2px 8px;font-size:var(--font-small);" onclick="incrementSubCount('${task.id}', '${sub.id}')">+1</button>
-                    <span class="btn-icon btn-count-end" title="结束此子任务" onclick="endSubCount('${task.id}', '${sub.id}')" style="font-weight:bold;">🏁</span>
-                    <span class="btn-sub-count" title="转回普通子任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">↩️ 普通</span>
-                    <span class="btn-sub-delete" title="删除" onclick="deleteSubTask('${task.id}', '${sub.id}')" style="cursor:pointer;color:var(--text-muted);padding:0 2px;">🗑️</span>
-                </div>
+                <div class="sub-task-left"><span style="font-size:1em;">🔄</span><span class="${sub.countEnded ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span></div>
+                <div class="sub-actions">${ecBadge}${estBadge}<span class="count-display">累计 <b>${sub.countTotal || 0}</b> 次</span><button class="btn-count-plus" style="padding:2px 8px;font-size:var(--font-small);" onclick="incrementSubCount('${task.id}', '${sub.id}')">+1</button><span class="btn-icon btn-count-end" title="结束此子任务" onclick="endSubCount('${task.id}', '${sub.id}')" style="font-weight:bold;">🏁</span><span class="btn-sub-count" title="转回普通子任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">↩️ 普通</span><span class="btn-sub-delete" title="删除" onclick="deleteSubTask('${task.id}', '${sub.id}')" style="cursor:pointer;color:var(--text-muted);padding:0 2px;">🗑️</span></div>
             </div>`;
     }
     const sp = getSubTaskProgress(sub, ds, task);
@@ -3576,26 +3315,11 @@ function renderSubTaskHtml(task, sub, ds) {
     const progBadge = isCount ? `<span class="sub-badge" title="进度" style="background:#e3f2fd;color:#1976d2;border-color:#90caf9;">🎯 ${sp.done}/${sp.total}</span>` : '';
     return `
         <div class="sub-task-item" data-sub-id="${sub.id}">
-            <div class="sub-task-left">
-                <input type="checkbox" class="task-checkbox" ${done ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')">
-                <span class="${done ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span>
-            </div>
-            <div class="sub-actions">
-                ${ecBadge}${estBadge}${progBadge}
-                ${isCount ? `<div class="sub-prog-container">
-                    <div class="sub-prog-bar-bg"><div class="sub-prog-bar-fill" style="width:${pct}%;"></div></div>
-                    ${!done ? `<button class="btn-sub-plus" onclick="decrementSubTaskProgress('${task.id}', '${sub.id}')" title="减少一次">-1</button><button class="btn-sub-plus" onclick="incrementSubTaskProgress('${task.id}', '${sub.id}')" title="增加一次">+1</button>` : ''}
-                </div>` : ''}
+            <div class="sub-task-left"><input type="checkbox" class="task-checkbox" ${done ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')"><span class="${done ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span></div>
+            <div class="sub-actions">${ecBadge}${estBadge}${progBadge}
+                ${isCount ? `<div class="sub-prog-container"><div class="sub-prog-bar-bg"><div class="sub-prog-bar-fill" style="width:${pct}%;"></div></div>${!done ? `<button class="btn-sub-plus" onclick="decrementSubTaskProgress('${task.id}', '${sub.id}')" title="减少一次">-1</button><button class="btn-sub-plus" onclick="incrementSubTaskProgress('${task.id}', '${sub.id}')" title="增加一次">+1</button>` : ''}</div>` : ''}
                 <span class="btn-sub-count" title="转为累计计数任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">🔄 计数</span>
-                <div class="sub-more-container">
-                    <span class="sub-more-btn" onclick="toggleSubMore(this, event)" title="更多操作">⋮</span>
-                    <div class="sub-more-menu">
-                        <div class="sub-more-item" onclick="setSubTaskEstimate('${task.id}', '${sub.id}')">${estLabel} 预计时长</div>
-                        <div class="sub-more-item" onclick="setSubTaskEnergyCost('${task.id}', '${sub.id}')">⚡ 精力消耗 (${ec})</div>
-                        <div class="sub-more-item" onclick="setSubTaskTarget('${task.id}', '${sub.id}')"># 设置次数</div>
-                        <div class="sub-more-item" onclick="deleteSubTask('${task.id}', '${sub.id}')" style="color:var(--danger-color);">🗑️ 删除</div>
-                    </div>
-                </div>
+                <div class="sub-more-container"><span class="sub-more-btn" onclick="toggleSubMore(this, event)" title="更多操作">⋮</span><div class="sub-more-menu"><div class="sub-more-item" onclick="setSubTaskEstimate('${task.id}', '${sub.id}')">${estLabel} 预计时长</div><div class="sub-more-item" onclick="setSubTaskEnergyCost('${task.id}', '${sub.id}')">⚡ 精力消耗 (${ec})</div><div class="sub-more-item" onclick="setSubTaskTarget('${task.id}', '${sub.id}')"># 设置次数</div><div class="sub-more-item" onclick="deleteSubTask('${task.id}', '${sub.id}')" style="color:var(--danger-color);">🗑️ 删除</div></div></div>
             </div>
         </div>`;
 }
@@ -3604,36 +3328,13 @@ function generateTodoTaskDOM(task) {
     div.className = 'main-task-item todo-task-item';
     div.dataset.taskId = task.id;
     if (locks[task.id]) div.classList.add('locked-by-remote');
-    let html = `
-        <div class="main-task-header">
-            <div class="main-task-top-row">
-                <div class="main-task-title-area">
-                    <span style="font-size:1.2em;">📋</span>
-                    <span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${escapeHtml(task.text)}</span>
-                    <span class="task-badge" style="color:#7e22ce;background:#f3e8ff;border-color:#d8b4fe;">拖入学习/其他开始处理</span>
-                </div>
-                <div class="task-right-group">
-                    <div class="task-meta">
-                        <span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span>
-                    </div>
-                </div>
-            </div>
-        </div>`;
+    let html = `<div class="main-task-header"><div class="main-task-top-row"><div class="main-task-title-area"><span style="font-size:1.2em;">📋</span><span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${escapeHtml(task.text)}</span><span class="task-badge" style="color:#7e22ce;background:#f3e8ff;border-color:#d8b4fe;">拖入学习/其他开始处理</span></div><div class="task-right-group"><div class="task-meta"><span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span></div></div></div></div>`;
     if (task.subTasks && task.subTasks.length > 0) {
         html += `<div class="todo-sub-list" style="margin-left:24px;margin-top:8px;padding-left:12px;border-left:2px solid var(--border-color);display:flex;flex-direction:column;gap:4px;">`;
-        task.subTasks.forEach(s => {
-            html += `<div class="todo-sub-item" style="display:flex;align-items:center;justify-content:space-between;padding:2px 6px;font-size:var(--font-hint);color:var(--text-main);border-radius:4px;">
-                <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
-                    <span style="color:var(--text-muted);font-size:10px;">◦</span>
-                    <span ondblclick="enableTaskEdit(this, '${task.id}', '${s.id}')" title="双击编辑" style="cursor:text;word-break:break-all;">${escapeHtml(s.text)}</span>
-                </div>
-                <span onclick="deleteSubTask('${task.id}', '${s.id}')" title="删除" style="cursor:pointer;color:var(--text-muted);padding:0 4px;opacity:.6;flex-shrink:0;">🗑️</span>
-            </div>`;
-        });
+        task.subTasks.forEach(s => { html += `<div class="todo-sub-item" style="display:flex;align-items:center;justify-content:space-between;padding:2px 6px;font-size:var(--font-hint);color:var(--text-main);border-radius:4px;"><div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;"><span style="color:var(--text-muted);font-size:10px;">◦</span><span ondblclick="enableTaskEdit(this, '${task.id}', '${s.id}')" title="双击编辑" style="cursor:text;word-break:break-all;">${escapeHtml(s.text)}</span></div><span onclick="deleteSubTask('${task.id}', '${s.id}')" title="删除" style="cursor:pointer;color:var(--text-muted);padding:0 4px;opacity:.6;flex-shrink:0;">🗑️</span></div>`; });
         html += `</div>`;
     }
-    html += `<input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')">`;
-    html += `<div style="margin-top:8px;"><span class="action-pill-btn" onclick="showSubInput('${task.id}', this)">➕ 步骤</span></div>`;
+    html += `<input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')"><div style="margin-top:8px;"><span class="action-pill-btn" onclick="showSubInput('${task.id}', this)">➕ 步骤</span></div>`;
     div.innerHTML = html;
     return div;
 }
@@ -3646,33 +3347,7 @@ function generateTaskDOM(task, ds, options = {}) {
     if (locks[task.id]) div.classList.add('locked-by-remote');
     if (task.countOnly) {
         div.innerHTML = `
-            <div class="main-task-header">
-                <div class="main-task-top-row">
-                    <div class="main-task-title-area">
-                        <span style="font-size:1.2em;">🔄</span>
-                        <span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${escapeHtml(task.text)}</span>
-                    </div>
-                    <div class="task-right-group">
-                        <div class="task-badges-inline">
-                            <span class="task-badge" style="color:#1976d2;background:#e3f2fd;border-color:#90caf9;">累计 ${task.countTotal || 0} 次</span>
-                        </div>
-                        <div class="task-meta">
-                            <button class="btn-count-minus" onclick="decrementCountTask('${task.id}')" title="撤销一次">-1</button>
-                            <button class="btn-count-plus" onclick="incrementCountTask('${task.id}')" title="累计一次">+1</button>
-                            <span class="btn-icon btn-count-end" title="结束此任务" onclick="endCountTask('${task.id}')" style="font-weight:bold;font-size:1em;">🏁</span>
-                            <span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span>
-                            <div class="more-menu-container">
-                                <span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span>
-                                <div class="more-menu">
-                                    <div class="more-menu-item" onclick="toggleCountOnly('${task.id}')">↩️ 转为普通任务</div>
-                                    <div class="more-menu-item" onclick="setTaskEnergyCost('${task.id}')">⚡ 精力消耗</div>
-                                    <div class="more-menu-item" onclick="deleteTask('${task.id}')">🗑️ 删除</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div class="main-task-header"><div class="main-task-top-row"><div class="main-task-title-area"><span style="font-size:1.2em;">🔄</span><span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${escapeHtml(task.text)}</span></div><div class="task-right-group"><div class="task-badges-inline"><span class="task-badge" style="color:#1976d2;background:#e3f2fd;border-color:#90caf9;">累计 ${task.countTotal || 0} 次</span></div><div class="task-meta"><button class="btn-count-minus" onclick="decrementCountTask('${task.id}')" title="撤销一次">-1</button><button class="btn-count-plus" onclick="incrementCountTask('${task.id}')" title="累计一次">+1</button><span class="btn-icon btn-count-end" title="结束此任务" onclick="endCountTask('${task.id}')" style="font-weight:bold;font-size:1em;">🏁</span><span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span><div class="more-menu-container"><span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span><div class="more-menu"><div class="more-menu-item" onclick="toggleCountOnly('${task.id}')">↩️ 转为普通任务</div><div class="more-menu-item" onclick="setTaskEnergyCost('${task.id}')">⚡ 精力消耗</div><div class="more-menu-item" onclick="deleteTask('${task.id}')">🗑️ 删除</div></div></div></div></div></div></div>
             <div class="task-note-area ${task.note ? 'has-note' : ''}" id="note-area-${task.id}" onclick="editTaskNote('${task.id}', this)">${task.note ? escapeHtml(task.note) : '📝 点击添加备注...'}</div>`;
         return div;
     }
@@ -3719,14 +3394,7 @@ function generateTaskDOM(task, ds, options = {}) {
     });
     let moreMenuHtml = '';
     if (moreBtnsHtml) moreMenuHtml = `<div class="more-menu-container"><span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span><div class="more-menu">${moreBtnsHtml}</div></div>`;
-    let headerHtml = `
-        <div class="main-task-top-row">
-            <div class="main-task-title-area">${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}</div>
-            <div class="task-right-group">
-                ${badgesHtml ? `<div class="task-badges-inline">${badgesHtml}</div>` : ''}
-                <div class="task-meta">${btnsHtml}${moreMenuHtml}</div>
-            </div>
-        </div>`;
+    let headerHtml = `<div class="main-task-top-row"><div class="main-task-title-area">${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}</div><div class="task-right-group">${badgesHtml ? `<div class="task-badges-inline">${badgesHtml}</div>` : ''}<div class="task-meta">${btnsHtml}${moreMenuHtml}</div></div></div>`;
     let progressRowHtml = '';
     if (task.target || hasSub || true) {
         const pct = Math.min(100, Math.round((mp.done / mp.total) * 100));
@@ -3734,15 +3402,7 @@ function generateTaskDOM(task, ds, options = {}) {
         let leftActionsHtml = '';
         if (hasSub && !showSubTasks) leftActionsHtml += `<span class="action-pill-btn" onclick="openTaskDetailModal('${task.id}')">📋 子计划 ${task.subTasks.length}</span>`;
         leftActionsHtml += `<span class="action-pill-btn" onclick="showSubInput('${task.id}', this)">➕ 步骤</span>`;
-        progressRowHtml = `
-            <div class="progress-row">
-                <div class="progress-actions-left">${leftActionsHtml}</div>
-                <div class="progress-right">
-                    <div class="progress-task-bar-bg"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div>
-                    <span class="progress-text">${mp.done}/${mp.total}</span>
-                    ${isCountOnly && !taskDone ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}
-                </div>
-            </div>`;
+        progressRowHtml = `<div class="progress-row"><div class="progress-actions-left">${leftActionsHtml}</div><div class="progress-right"><div class="progress-task-bar-bg"><div class="progress-task-bar-fill" style="width:${pct}%;"></div></div><span class="progress-text">${mp.done}/${mp.total}</span>${isCountOnly && !taskDone ? `<button class="btn-minus-one" onclick="decrementTaskProgress('${task.id}')">-1</button><button class="btn-plus-one" onclick="incrementTaskProgress('${task.id}')">+1</button>` : ''}</div></div>`;
     }
     let html = `<div class="main-task-header">${headerHtml}${progressRowHtml}</div>`;
     if (hasSub && showSubTasks) {
@@ -3764,8 +3424,7 @@ function generateTaskDOM(task, ds, options = {}) {
         }
         html += `</div>`;
     }
-    html += `<input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')">`;
-    html += `<div class="task-note-area ${task.note ? 'has-note' : ''}" id="note-area-${task.id}" onclick="editTaskNote('${task.id}', this)">${task.note ? escapeHtml(task.note) : '📝 点击添加备注...'}</div>`;
+    html += `<input type="text" class="add-sub-task-input" id="input-${task.id}" placeholder="步骤 (支持 *数字)..." onkeypress="addSubTask(event, '${task.id}')"><div class="task-note-area ${task.note ? 'has-note' : ''}" id="note-area-${task.id}" onclick="editTaskNote('${task.id}', this)">${task.note ? escapeHtml(task.note) : '📝 点击添加备注...'}</div>`;
     div.innerHTML = html;
     if (!showSubTasks) {
         div.classList.add('clickable-for-detail');
@@ -3958,6 +3617,8 @@ window.openTaskListModal = function(type) {
 window.closeTaskListModal = function() {
     currentTaskModalCategory = null;
     document.getElementById('task-list-modal').classList.remove('active');
+    const body = document.getElementById('task-list-modal-body');
+    if (body) body.innerHTML = '';
 };
 function renderTaskListModalContent(type) {
     const body = document.getElementById('task-list-modal-body');
@@ -3978,7 +3639,7 @@ function renderTaskListModalContent(type) {
 }
 function initTaskAndSubTaskDrag() {
     document.querySelectorAll('.task-drop-zone').forEach(zone => {
-        if (zone._sortable) zone._sortable.destroy();
+        if (zone._sortable) { try { zone._sortable.destroy(); } catch(e) {} zone._sortable = null; }
         const isCompletedZone = zone.dataset.completed === 'true';
         const groupConfig = isCompletedZone ? { name: 'shared-tasks', pull: true, put: false } : 'shared-tasks';
         zone._sortable = new Sortable(zone, {
@@ -4026,7 +3687,7 @@ function initTaskAndSubTaskDrag() {
         });
     });
     document.querySelectorAll('.sub-task-list').forEach(list => {
-        if (list._sortable) list._sortable.destroy();
+        if (list._sortable) { try { list._sortable.destroy(); } catch(e) {} list._sortable = null; }
         list._sortable = new Sortable(list, {
             group: 'subtasks', animation: 150, ghostClass: 'sortable-ghost', draggable: '.sub-task-item',
             onStart: function() { isDraggingActive = true; },
@@ -4053,32 +3714,22 @@ function isCategoryAllCheckedForDate(exId, ds) {
     if (!ex.subTasks || ex.subTasks.length === 0) return !!c[exId];
     return ex.subTasks.every(s => c[`${exId}_${s.id}`]);
 }
-function isCategoryAllChecked(exId) {
-    return isCategoryAllCheckedForDate(exId, appData.selectedDate);
-}
+function isCategoryAllChecked(exId) { return isCategoryAllCheckedForDate(exId, appData.selectedDate); }
 function setCategoryExerciseChecked(exId, ds, checked) {
     const ex = appData.exercises.find(e => e.id === exId);
     if (!ex) return { was: false, now: false, ex: null, cost: 0 };
     if (!appData.dailyExerciseChecks[ds]) appData.dailyExerciseChecks[ds] = {};
     const c = appData.dailyExerciseChecks[ds];
     const was = isCategoryAllCheckedForDate(exId, ds);
-    if (!ex.subTasks || ex.subTasks.length === 0) {
-        c[exId] = !!checked;
-    } else {
-        ex.subTasks.forEach(s => { c[`${exId}_${s.id}`] = !!checked; });
-    }
+    if (!ex.subTasks || ex.subTasks.length === 0) c[exId] = !!checked;
+    else ex.subTasks.forEach(s => { c[`${exId}_${s.id}`] = !!checked; });
     const now = isCategoryAllCheckedForDate(exId, ds);
     return { was, now, ex, cost: ex.energyCost || 15 };
 }
 function applyExerciseEffects(was, now, cost) {
     if (was === now) return;
-    if (now) {
-        adjustTodayEnergy(cost); adjustExp(cost);
-        adjustAttr('exercise', 1); updateStreak();
-    } else {
-        adjustTodayEnergy(-cost); adjustExp(-cost);
-        adjustAttr('exercise', -1);
-    }
+    if (now) { adjustTodayEnergy(cost); adjustExp(cost); adjustAttr('exercise', 1); updateStreak(); }
+    else { adjustTodayEnergy(-cost); adjustExp(-cost); adjustAttr('exercise', -1); }
 }
 function renderDayExercises() {
     ensureEnergyData();
@@ -4128,6 +3779,7 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
             const sh = localStorage.getItem('my_p2p_host_id');
             if (sh) document.getElementById('my-peer-id').innerText = sh;
         }
+        if (t !== 'methods') cleanupMethodsTimers();
         if (t !== 'week') {
             const panel = document.getElementById('week-drawer-panel');
             if (panel && panel.classList.contains('open')) toggleWeekDrawer(false);
@@ -4656,10 +4308,32 @@ function updateFixedProgressBars() {
     const dP = pct(dd, dt); document.getElementById('prog-day-text').innerText = dP + '%'; document.getElementById('prog-day-fill').style.width = dP + '%';
 }
 function getCleanedDataForBackup(data) { const copy = JSON.parse(JSON.stringify(data)); delete copy._lastModified; return JSON.stringify(copy); }
+function buildModulePayload(moduleKeys) {
+    const payload = { __format: 'workspace-modules-v1', __version: 1, __exportTime: new Date().toISOString(), __modules: moduleKeys.slice() };
+    moduleKeys.forEach(k => {
+        if (!BACKUP_MODULES[k]) return;
+        payload[k] = {};
+        BACKUP_MODULES[k].fields.forEach(f => { if (appData[f] !== undefined) payload[k][f] = JSON.parse(JSON.stringify(appData[f])); });
+    });
+    return payload;
+}
 window.exportData = function() {
     const s = "data:text/json;charset=utf-8," + encodeURIComponent(getCleanedDataForBackup(appData));
     const a = document.createElement('a');
     a.setAttribute("href", s); a.setAttribute("download", `backup_${getTodayString()}.json`);
+    document.body.appendChild(a); a.click(); a.remove();
+};
+window.exportSelectedModules = function() {
+    const checks = document.querySelectorAll('#export-module-checks input[type="checkbox"]:checked');
+    const keys = [...checks].map(c => c.value);
+    if (keys.length === 0) { alert('请至少勾选一个模块'); return; }
+    const payload = buildModulePayload(keys);
+    const names = keys.map(k => BACKUP_MODULES[k].name).join('+');
+    const dateStr = getTodayString().replace(/-/g, '');
+    const filename = `工作台备份-${names}_${dateStr}.json`;
+    const s = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload));
+    const a = document.createElement('a');
+    a.setAttribute("href", s); a.setAttribute("download", filename);
     document.body.appendChild(a); a.click(); a.remove();
 };
 window.importData = function(e) {
@@ -4668,23 +4342,59 @@ window.importData = function(e) {
     r.onload = function(ev) {
         try {
             const d = JSON.parse(ev.target.result);
-            if (d.tasks && d.exercises && confirm('导入数据？会覆盖当前数据！')) {
-                appData = d; ensureEnergyData();
-                if (!appData._lastModified) appData._lastModified = 1;
-                lastSavedSignature = ''; lastRpgState = null;
-                document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
-                if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
-                if (appData.fonts) ['title','content','hint','small'].forEach(k => document.documentElement.style.setProperty(`--font-${k}`, appData.fonts[k]));
-                if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
-                renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
-                renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool(); renderFixedBlockEnergyConfig();
-                renderMethodsFileList(); refreshMethodsEditorContent();
-                saveDataToFile(appData); resetSyncedBaseline(appData);
-                alert('导入成功！');
+            let availableModules = [];
+            if (d.__format === 'workspace-modules-v1' && Array.isArray(d.__modules)) {
+                availableModules = d.__modules.filter(k => BACKUP_MODULES[k] && d[k] && typeof d[k] === 'object');
+            } else if (d.tasks && d.exercises) {
+                availableModules = Object.keys(BACKUP_MODULES).filter(k => BACKUP_MODULES[k].fields.some(f => d[f] !== undefined));
+            } else {
+                alert('无法识别的文件格式');
+                return;
             }
+            if (availableModules.length === 0) { alert('文件中未找到可识别的数据模块'); return; }
+            _pendingImportData = d;
+            _pendingImportAvailableModules = availableModules;
+            const list = document.getElementById('import-module-list');
+            list.innerHTML = availableModules.map(k => {
+                const m = BACKUP_MODULES[k];
+                return `<label style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border-color);border-radius:6px;cursor:pointer;background:var(--bg-sidebar);"><input type="checkbox" value="${k}" checked><div style="flex:1;"><div style="font-weight:600;">${m.name}</div><div style="font-size:11px;color:var(--text-muted);">${m.fields.join('、')}</div></div></label>`;
+            }).join('');
+            document.getElementById('import-confirm-modal').classList.add('active');
         } catch (err) { alert('解析失败：' + err.message); }
     };
     r.readAsText(f); e.target.value = '';
+};
+let _pendingImportAvailableModules = [];
+window.closeImportModal = function() {
+    document.getElementById('import-confirm-modal').classList.remove('active');
+    _pendingImportData = null;
+    _pendingImportAvailableModules = [];
+};
+window.confirmImport = function() {
+    if (!_pendingImportData) return;
+    const checked = [...document.querySelectorAll('#import-module-list input[type="checkbox"]:checked')].map(c => c.value);
+    if (checked.length === 0) { alert('请至少勾选一个模块'); return; }
+    const d = _pendingImportData;
+    checked.forEach(modKey => {
+        if (!BACKUP_MODULES[modKey]) return;
+        const fields = BACKUP_MODULES[modKey].fields;
+        const source = (d[modKey] && typeof d[modKey] === 'object') ? d[modKey] : d;
+        fields.forEach(f => { if (source[f] !== undefined) appData[f] = JSON.parse(JSON.stringify(source[f])); });
+    });
+    ensureEnergyData();
+    lastSavedSignature = '';
+    lastRpgState = null;
+    document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
+    if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
+    if (appData.fonts) ['title','content','hint','small'].forEach(k => document.documentElement.style.setProperty(`--font-${k}`, appData.fonts[k]));
+    if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
+    renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
+    renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool(); renderFixedBlockEnergyConfig();
+    renderMethodsFileList(); refreshMethodsEditorContent();
+    saveDataToFile(appData);
+    resetSyncedBaseline(appData);
+    closeImportModal();
+    alert('✅ 已恢复选中的 ' + checked.length + ' 个模块');
 };
 window.resetAllData = function() {
     if (!confirm('⚠️ 清空所有数据？不可恢复！')) return;
@@ -4759,48 +4469,70 @@ window.performBackup = async function(silent) {
     try {
         let p = await backupDirHandle.queryPermission({ mode: 'readwrite' });
         if (p !== 'granted') { p = await backupDirHandle.requestPermission({ mode: 'readwrite' }); if (p !== 'granted') throw new Error('无写入权限'); }
-        const coreData = {
-            tasks: appData.tasks, exercises: appData.exercises, exerciseSchedule: appData.exerciseSchedule,
-            exerciseTimeSlotSchedule: appData.exerciseTimeSlotSchedule, dailyExerciseChecks: appData.dailyExerciseChecks,
-            dailyEnergy: appData.dailyEnergy, dailyLogs: appData.dailyLogs, dailyReflections: appData.dailyReflections,
-            weeklyReflections: appData.weeklyReflections, monthlyReflections: appData.monthlyReflections, rpg: appData.rpg,
-            fixedBlocks: appData.fixedBlocks, fixedBlockSchedule: appData.fixedBlockSchedule, timeSlots: appData.timeSlots
+        const fileMap = {
+            'tasks.json': buildModulePayload(['tasks']),
+            'exercises.json': buildModulePayload(['exercises']),
+            'rpg_energy.json': buildModulePayload(['rpg']),
+            'settings.json': buildModulePayload(['settings']),
+            'methods.json': buildModulePayload(['methods'])
         };
-        const fhCore = await backupDirHandle.getFileHandle('core_data.json', { create: true });
-        const wCore = await fhCore.createWritable(); await wCore.write(JSON.stringify(coreData, null, 2)); await wCore.close();
-        const settingsData = {
-            yearlyGoals: appData.yearlyGoals, themeColor: appData.themeColor, themeMode: appData.themeMode, fonts: appData.fonts,
-            radius: appData.radius, energyMax: appData.energyMax, energyWarnThreshold: appData.energyWarnThreshold, expRatio: appData.expRatio,
-            napEnergy: appData.napEnergy, breakEnergy: appData.breakEnergy, levelConfig: appData.levelConfig, commonBtns: appData.commonBtns,
-            maxVisible: appData.maxVisible, animationEnabled: appData.animationEnabled, panelLayout: appData.panelLayout,
-            selectedDate: appData.selectedDate, viewYear: appData.viewYear, viewMonth: appData.viewMonth, viewWeekBaseDate: appData.viewWeekBaseDate
-        };
-        const fhSet = await backupDirHandle.getFileHandle('app_settings.json', { create: true });
-        const wSet = await fhSet.createWritable(); await wSet.write(JSON.stringify(settingsData, null, 2)); await wSet.close();
-        const methodsData = { methodsFiles: appData.methodsFiles, activeMethodsFileId: appData.activeMethodsFileId, activeMethodsFileId2: appData.activeMethodsFileId2, splitScreenMode: appData.splitScreenMode };
-        const fhMeth = await backupDirHandle.getFileHandle('methods_data.json', { create: true });
-        const wMeth = await fhMeth.createWritable(); await wMeth.write(JSON.stringify(methodsData, null, 2)); await wMeth.close();
-        lastBackupTime = Date.now(); lastBackupModified = appData._lastModified || 0;
+        for (const [filename, payload] of Object.entries(fileMap)) {
+            const fh = await backupDirHandle.getFileHandle(filename, { create: true });
+            const w = await fh.createWritable();
+            await w.write(JSON.stringify(payload, null, 2));
+            await w.close();
+        }
+        try {
+            const coreData = {
+                tasks: appData.tasks, exercises: appData.exercises, exerciseSchedule: appData.exerciseSchedule,
+                exerciseTimeSlotSchedule: appData.exerciseTimeSlotSchedule, dailyExerciseChecks: appData.dailyExerciseChecks,
+                dailyEnergy: appData.dailyEnergy, dailyLogs: appData.dailyLogs, dailyReflections: appData.dailyReflections,
+                weeklyReflections: appData.weeklyReflections, monthlyReflections: appData.monthlyReflections, rpg: appData.rpg,
+                fixedBlocks: appData.fixedBlocks, fixedBlockSchedule: appData.fixedBlockSchedule, timeSlots: appData.timeSlots
+            };
+            const fhCore = await backupDirHandle.getFileHandle('core_data.json', { create: true });
+            const wCore = await fhCore.createWritable(); await wCore.write(JSON.stringify(coreData, null, 2)); await wCore.close();
+        } catch(e) { console.warn('旧版兼容文件写入失败', e); }
+        lastBackupTime = Date.now();
+        lastBackupModified = appData._lastModified || 0;
         localStorage.setItem('myWorkspaceLastBackupTime', String(lastBackupTime));
         updateBackupUI();
-        if (!silent) alert('✅ 已分文件备份');
+        if (!silent) alert('✅ 已分模块备份');
         return true;
     } catch (e) { if (!silent) alert('备份失败：' + e.message); return false; }
     finally { isBackingUp = false; }
 };
 window.restoreFromFolder = async function() {
     if (!backupDirHandle) { alert('请先选择备份文件夹'); return; }
-    const restoreCore = document.getElementById('restore-core').checked;
-    const restoreSettings = document.getElementById('restore-settings').checked;
-    const restoreMethods = document.getElementById('restore-methods').checked;
-    if (!restoreCore && !restoreSettings && !restoreMethods) { alert('请至少勾选一项要恢复的内容'); return; }
+    const checked = [...document.querySelectorAll('#restore-module-checks input[type="checkbox"]:checked')].map(c => c.value);
+    if (checked.length === 0) { alert('请至少勾选一项要恢复的内容'); return; }
     if (!confirm('恢复选中模块会覆盖当前对应数据，确定继续吗？')) return;
     let p = await backupDirHandle.queryPermission({ mode: 'readwrite' });
     if (p !== 'granted') { p = await backupDirHandle.requestPermission({ mode: 'readwrite' }); if (p !== 'granted') { alert('无权限读取文件夹'); return; } }
+    const fileMap = { tasks: 'tasks.json', exercises: 'exercises.json', rpg: 'rpg_energy.json', settings: 'settings.json', methods: 'methods.json' };
+    const legacyMap = { tasks: 'core_data.json', exercises: 'core_data.json', rpg: 'core_data.json', settings: 'app_settings.json', methods: 'methods_data.json' };
     try {
-        if (restoreCore) { try { const fileHandle = await backupDirHandle.getFileHandle('core_data.json'); const file = await fileHandle.getFile(); const text = await file.text(); Object.assign(appData, JSON.parse(text)); } catch (e) { console.warn('读取核心数据失败', e); } }
-        if (restoreSettings) { try { const fileHandle = await backupDirHandle.getFileHandle('app_settings.json'); const file = await fileHandle.getFile(); const text = await file.text(); Object.assign(appData, JSON.parse(text)); } catch (e) { console.warn('读取设置失败', e); } }
-        if (restoreMethods) { try { const fileHandle = await backupDirHandle.getFileHandle('methods_data.json'); const file = await fileHandle.getFile(); const text = await file.text(); Object.assign(appData, JSON.parse(text)); } catch (e) { console.warn('读取学习方法失败', e); } }
+        for (const modKey of checked) {
+            if (!BACKUP_MODULES[modKey]) continue;
+            let ok = false;
+            try {
+                const fh = await backupDirHandle.getFileHandle(fileMap[modKey]);
+                const file = await fh.getFile();
+                const data = JSON.parse(await file.text());
+                const source = (data[modKey] && typeof data[modKey] === 'object') ? data[modKey] : data;
+                BACKUP_MODULES[modKey].fields.forEach(f => { if (source[f] !== undefined) appData[f] = JSON.parse(JSON.stringify(source[f])); });
+                ok = true;
+            } catch(e) { console.warn('读取 ' + fileMap[modKey] + ' 失败，尝试旧版兼容', e); }
+            if (!ok) {
+                try {
+                    const legacyFile = legacyMap[modKey];
+                    const fh = await backupDirHandle.getFileHandle(legacyFile);
+                    const file = await fh.getFile();
+                    const data = JSON.parse(await file.text());
+                    BACKUP_MODULES[modKey].fields.forEach(f => { if (data[f] !== undefined) appData[f] = JSON.parse(JSON.stringify(data[f])); });
+                } catch(e2) { console.warn('旧版兼容读取 ' + legacyMap[modKey] + ' 失败', e2); }
+            }
+        }
         ensureEnergyData(); lastSavedSignature = ''; lastRpgState = null;
         document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
         if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
@@ -4809,8 +4541,9 @@ window.restoreFromFolder = async function() {
         renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
         renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool(); renderFixedBlockEnergyConfig();
         renderMethodsFileList(); refreshMethodsEditorContent();
-        saveDataToFile(appData); resetSyncedBaseline(appData);
-        alert('✅ 部分恢复成功！');
+        saveDataToFile(appData);
+        resetSyncedBaseline(appData);
+        alert('✅ 已恢复选中的 ' + checked.length + ' 个模块');
     } catch(e) { alert('恢复失败：' + e.message); }
 };
 function updateBackupUI() {
@@ -4893,7 +4626,7 @@ window.initPeer = function(isHost, isAutoConnect = false) {
     }
     if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
     if (conn) { try { conn.close(); } catch(e){} conn = null; }
-    isConnecting = false; handshakeDone = false; clearTimeout(connectTimer);
+    isConnecting = false; handshakeDone = false; if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
     let customId = null;
     if (isHost) {
         customId = localStorage.getItem('my_p2p_host_id');
@@ -4919,7 +4652,7 @@ window.initPeer = function(isHost, isAutoConnect = false) {
         if (err.type === 'unavailable-id') { if (isHost) { localStorage.removeItem('my_p2p_host_id'); setTimeout(() => initPeer(true), 500); } }
         else if (err.type === 'peer-unavailable') {
             if (!isHost) {
-                isConnecting = false; clearTimeout(connectTimer);
+                isConnecting = false; if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
                 document.getElementById('p2p-status').innerText = "⏳ 主机不在线";
                 document.getElementById('p2p-status').style.color = "var(--danger-color)";
                 p2pIndicator.className = 'p2p-dot';
@@ -4946,7 +4679,7 @@ function startAutoConnectLoop() {
     try { conn = peer.connect(lastPeer, { reliable: true }); }
     catch (e) { isConnecting = false; setTimeout(() => { if (isAutoReconnecting) startAutoConnectLoop(); }, 1000); return; }
     setupConnection(conn, false, lastPeer);
-    clearTimeout(connectTimer);
+    if (connectTimer) clearTimeout(connectTimer);
     connectTimer = setTimeout(() => {
         if (isConnecting && (!conn || !conn.open)) {
             isConnecting = false;
@@ -4957,7 +4690,7 @@ function startAutoConnectLoop() {
 }
 window.connectToPeer = function(targetId = null) {
     isAutoReconnecting = false; isConnecting = false; handshakeDone = false;
-    clearTimeout(connectTimer);
+    if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
     const id = targetId || document.getElementById('target-peer-id').value.trim();
     if (!id) { alert('请输入连接码'); return; }
     document.getElementById('p2p-status').innerText = "正在连接...";
@@ -4972,7 +4705,7 @@ window.connectToPeer = function(targetId = null) {
         try { conn = peer.connect(id, { reliable: true }); }
         catch (e) { document.getElementById('p2p-status').innerText = "❌ 连接失败"; return; }
         setupConnection(conn, false, id);
-        clearTimeout(connectTimer);
+        if (connectTimer) clearTimeout(connectTimer);
         connectTimer = setTimeout(() => {
             if (conn && !conn.open) {
                 document.getElementById('p2p-status').innerText = "❌ 连接超时";
@@ -5160,9 +4893,7 @@ function applyRemoteData(payload, oldData) {
         if (!editor || document.activeElement !== editor) refreshMethodsEditorContent();
     }
     if (diffs.levelConfig) renderLevelConfig();
-    if (diffs.commonBtns && appData.commonBtns) {
-        document.querySelectorAll('#common-btns-config input[type="checkbox"]').forEach(cb => { cb.checked = appData.commonBtns.includes(cb.value); });
-    }
+    if (diffs.commonBtns && appData.commonBtns) document.querySelectorAll('#common-btns-config input[type="checkbox"]').forEach(cb => { cb.checked = appData.commonBtns.includes(cb.value); });
     if (diffs.timeSlots) renderTimeSlotConfig();
     if (diffs.fixedBlocks) { renderFixedBlockPool(); renderFixedBlockEnergyConfig(); }
     if (diffs.maxVisible) { const el = document.getElementById('max-visible-val'); if (el) el.innerText = appData.maxVisible; }
@@ -5179,7 +4910,7 @@ function applyRemoteData(payload, oldData) {
             else if (activeView === 'view-year') renderYearHeatmap();
         }
     }
-    lastSavedSignature = getDataSignature(appData);
+    lastSavedSignature = '';
     saveLocalStorage();
     setTimeout(() => { isSyncing = false; }, 100);
 }
@@ -5187,7 +4918,7 @@ function setupConnection(connection, isHost, targetId) {
     connection.on('open', () => {
         if (conn !== connection) return;
         isAutoReconnecting = false; isConnecting = false;
-        clearTimeout(connectTimer);
+        if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
         document.getElementById('p2p-status').innerText = "🔗 已连接";
         document.getElementById('p2p-status').style.color = "#27ae60";
         p2pIndicator.className = 'p2p-dot connected';
@@ -5215,7 +4946,7 @@ function setupConnection(connection, isHost, targetId) {
     });
     connection.on('close', () => {
         if (conn !== connection) return;
-        isConnecting = false; clearTimeout(connectTimer);
+        isConnecting = false; if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
         p2pIndicator.className = 'p2p-dot';
         conn = null;
         syncStatus = 'offline'; updateSyncUI();
@@ -5259,6 +4990,26 @@ document.addEventListener('dragover', (e) => {
 });
 document.addEventListener('dragend', () => { stopAutoScroll(); isDraggingActive = false; });
 document.addEventListener('drop', () => { stopAutoScroll(); }, true);
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        document.body.classList.add('invisible-anim');
+    } else {
+        document.body.classList.remove('invisible-anim');
+    }
+});
+window.addEventListener('beforeunload', () => {
+    cleanupMethodsTimers();
+    if (_opDebounceTimer) clearTimeout(_opDebounceTimer);
+    if (_mainLoopInterval) clearInterval(_mainLoopInterval);
+    _clearBackupTimers();
+    if (resizeObserver) { try { resizeObserver.disconnect(); } catch(e) {} }
+    if (_panelSortable) { try { _panelSortable.destroy(); } catch(e) {} }
+    if (_tsSortable) { try { _tsSortable.destroy(); } catch(e) {} }
+    document.querySelectorAll('.task-drop-zone').forEach(zone => { if (zone._sortable) { try { zone._sortable.destroy(); } catch(e) {} zone._sortable = null; } });
+    document.querySelectorAll('.sub-task-list').forEach(list => { if (list._sortable) { try { list._sortable.destroy(); } catch(e) {} list._sortable = null; } });
+    if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+    if (conn) { try { conn.close(); } catch(e){} conn = null; }
+});
 (function() {
     const tab = document.getElementById('week-drawer-tab');
     if (!tab) return;
@@ -5288,7 +5039,7 @@ document.addEventListener('drop', () => { stopAutoScroll(); }, true);
     });
     appData.exercises.forEach(ex => { if (ex.energyCost === undefined) ex.energyCost = 15; });
     document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
-    lastSavedSignature = getDataSignature(appData);
+    lastSavedSignature = '';
     lastBackupModified = appData._lastModified || 0;
     const si = localStorage.getItem('myWorkspaceBackupInterval');
     if (si) autoBackupIntervalMin = parseInt(si) || 3;
@@ -5321,7 +5072,8 @@ document.addEventListener('drop', () => { stopAutoScroll(); }, true);
         document.getElementById('target-peer-id').value = localStorage.getItem('last_connected_peer');
         setTimeout(() => initPeer(false, true), 500);
     }
-    setInterval(() => {
+    if (_mainLoopInterval) clearInterval(_mainLoopInterval);
+    _mainLoopInterval = setInterval(() => {
         if (document.hidden) return;
         const today = getTodayString();
         if (!userPickedDate && appData.selectedDate !== today) {
