@@ -1215,7 +1215,6 @@ let lastSyncedExerciseTimeSlotSchedule = {};
 let lastSyncedReflections = {};
 let lastSyncedRpg = {};
 let lastSyncedEnergy = {};
-
 function getTodayString() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -2511,7 +2510,6 @@ window.resolveConflict = function(choice) {
     if (conflictQueue.length === 0) { syncStatus = 'connected'; updateSyncUI(); }
     else setTimeout(() => queueConflict(conflictQueue[0].op), 500);
 };
-/* ============ 锻炼数据合并辅助 ============ */
 function mergeExercisesList(localArr, remoteArr) {
     const merged = JSON.parse(JSON.stringify(localArr || []));
     const localMap = new Map(merged.map(x => [x.id, x]));
@@ -2797,7 +2795,13 @@ function calcProgress(dateStr, type) {
         const checks = appData.dailyExerciseChecks[dateStr] || {};
         names.forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
-            if (ex && ex.subTasks) ex.subTasks.forEach(s => { tot++; if (checks[`${ex.id}_${s.id}`]) d++; });
+            if (!ex) return;
+            if (!ex.subTasks || ex.subTasks.length === 0) {
+                tot++;
+                if (checks[ex.id]) d++;
+            } else {
+                ex.subTasks.forEach(s => { tot++; if (checks[`${ex.id}_${s.id}`]) d++; });
+            }
         });
         return { done: d, total: tot };
     }
@@ -2841,7 +2845,12 @@ window.openStatsModal = function(type) {
         const rec = appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, d)).map(ex => ex.name);
         [...new Set([...manual, ...allSlotExs, ...rec])].forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
-            if (ex && ex.subTasks) ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) ed++; });
+            if (!ex) return;
+            if (!ex.subTasks || ex.subTasks.length === 0) {
+                if (checks[ex.id]) ed++;
+            } else {
+                ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) ed++; });
+            }
         });
         const logs = (appData.dailyLogs && appData.dailyLogs[d]) ? appData.dailyLogs[d] : {};
         const logItems = [];
@@ -2881,7 +2890,12 @@ window.openStatsModal = function(type) {
         const rec = appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex => ex.name);
         [...new Set([...manual, ...allSlotExs, ...rec])].forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
-            if (ex && ex.subTasks) ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) dayTotal++; });
+            if (!ex) return;
+            if (!ex.subTasks || ex.subTasks.length === 0) {
+                if (checks[ex.id]) dayTotal++;
+            } else {
+                ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) dayTotal++; });
+            }
         });
         dayData.push({ label: `${d.getMonth()+1}/${d.getDate()}`, val: dayTotal });
         if (dayTotal > maxDayTotal) maxDayTotal = dayTotal;
@@ -2929,14 +2943,13 @@ function renderYearHeatmap() {
         if (learning.length > 0) tooltipArr.push(`\n📚 学习:\n - ${learning.join('\n - ')}`);
         if (other.length > 0) tooltipArr.push(`\n🧺 其他:\n - ${other.join('\n - ')}`);
         const exCompleted = [];
-        const exChecks = appData.dailyExerciseChecks[ds] || {};
         const manualEx = appData.exerciseSchedule[ds] || [];
         const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds]) || {};
         let allSlotExs = [];
         Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
         [...new Set([...manualEx, ...allSlotExs, ...appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex=>ex.name)])].forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
-            if (ex && ex.subTasks && ex.subTasks.every(s => exChecks[`${ex.id}_${s.id}`])) exCompleted.push(n);
+            if (ex && isCategoryAllCheckedForDate(ex.id, ds)) exCompleted.push(n);
         });
         if (exCompleted.length > 0) tooltipArr.push(`\n💪 锻炼:\n - ${exCompleted.join('\n - ')}`);
         if (tooltipArr.length === 1) tooltipArr.push('无已完成任务');
@@ -3000,14 +3013,13 @@ function renderCalendar() {
         if (learning.length > 0) tooltipArr.push(`📚 学习:\n - ${learning.join('\n - ')}`);
         if (other.length > 0) tooltipArr.push(`🧺 其他:\n - ${other.join('\n - ')}`);
         const exCompleted = [];
-        const exChecks = appData.dailyExerciseChecks[ds] || {};
         const manualEx = appData.exerciseSchedule[ds] || [];
         const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds]) || {};
         let allSlotExs = [];
         Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
         [...new Set([...manualEx, ...allSlotExs, ...appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex=>ex.name)])].forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
-            if (ex && ex.subTasks && ex.subTasks.every(s => exChecks[`${ex.id}_${s.id}`])) exCompleted.push(n);
+            if (ex && isCategoryAllCheckedForDate(ex.id, ds)) exCompleted.push(n);
         });
         if (exCompleted.length > 0) tooltipArr.push(`💪 锻炼:\n - ${exCompleted.join('\n - ')}`);
         if (countLogs.length > 0) tooltipArr.push(`\n🔄 计数记录:\n - ${countLogs.join('\n - ')}`);
@@ -3078,9 +3090,8 @@ function removeExerciseFromDate(name, ds) {
     if (appData.exerciseSchedule[ds].length === 0) delete appData.exerciseSchedule[ds];
 }
 function isExerciseAllChecked(ds, ex) {
-    if (!ex || !ex.subTasks || ex.subTasks.length === 0) return false;
-    const c = appData.dailyExerciseChecks[ds] || {};
-    return ex.subTasks.every(s => c[`${ex.id}_${s.id}`]);
+    if (!ex) return false;
+    return isCategoryAllCheckedForDate(ex.id, ds);
 }
 function renderWeekBoard() {
     ensureEnergyData();
@@ -3127,23 +3138,20 @@ function renderWeekBoard() {
             Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
             const rec = appData.exercises.filter(e => isRecurringMatch(e.recurringType, ds)).map(e => e.name);
             const names = [...new Set([...manual.filter(n => !allSlotExs.includes(n)), ...rec.filter(n => !allSlotExs.includes(n))])];
-            const checks = appData.dailyExerciseChecks[ds] || {};
             names.forEach(n => {
                 const ex = appData.exercises.find(e => e.name === n);
-                let ad = false;
-                if (ex && ex.subTasks.length > 0) ad = ex.subTasks.every(s => checks[`${ex.id}_${s.id}`]);
-                const exDiv = document.createElement('div'); exDiv.className = 'exercise-capsule'; exDiv.draggable = true;
+                if (!ex) return;
+                const ad = isCategoryAllCheckedForDate(ex.id, ds);
+                const exDiv = document.createElement('div');
+                exDiv.className = 'exercise-capsule';
+                exDiv.draggable = true;
                 exDiv.ondragstart = (e) => { isDraggingActive = true; dragExercise(e, n, 'date:' + ds); };
-                const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = ad;
+                const cb = document.createElement('input');
+                cb.type = 'checkbox'; cb.checked = ad;
                 cb.onchange = (e) => {
-                    const was = isExerciseAllChecked(ds, ex);
-                    if (!appData.dailyExerciseChecks[ds]) appData.dailyExerciseChecks[ds] = {};
-                    const ns = e.target.checked;
-                    if (ex && ex.subTasks) ex.subTasks.forEach(s => { appData.dailyExerciseChecks[ds][`${ex.id}_${s.id}`] = ns; });
-                    if (ex && was !== ns) {
-                        if (ns) { adjustTodayEnergy(ex.energyCost || 15); adjustExp(ex.energyCost || 15); adjustAttr('exercise', 1); updateStreak(); }
-                        else { adjustTodayEnergy(-(ex.energyCost || 15)); adjustExp(-(ex.energyCost || 15)); adjustAttr('exercise', -1); }
-                    }
+                    const target = e.target.checked;
+                    const result = setCategoryExerciseChecked(ex.id, ds, target);
+                    applyExerciseEffects(result.was, result.now, result.cost);
                     renderWeekBoard(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
                 };
                 const lbl = document.createElement('span'); lbl.innerText = '💪 ' + n;
@@ -3196,20 +3204,19 @@ function renderWeekBoard() {
             const exSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds] && appData.exerciseTimeSlotSchedule[ds][ts.id]) || [];
             exSched.forEach(exName => {
                 const ex = appData.exercises.find(e => e.name === exName);
-                let ad = false;
-                if (ex && ex.subTasks.length > 0) ad = ex.subTasks.every(s => (appData.dailyExerciseChecks[ds] || {})[`${ex.id}_${s.id}`]);
-                const exDiv = document.createElement('div'); exDiv.className = 'exercise-capsule'; exDiv.style.margin = '0'; exDiv.draggable = true;
+                if (!ex) return;
+                const ad = isCategoryAllCheckedForDate(ex.id, ds);
+                const exDiv = document.createElement('div');
+                exDiv.className = 'exercise-capsule';
+                exDiv.style.margin = '0';
+                exDiv.draggable = true;
                 exDiv.ondragstart = (e) => { isDraggingActive = true; dragExercise(e, exName, 'slot:' + ds + ':' + ts.id); };
-                const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = ad;
+                const cb = document.createElement('input');
+                cb.type = 'checkbox'; cb.checked = ad;
                 cb.onchange = (e) => {
-                    const was = isExerciseAllChecked(ds, ex);
-                    if (!appData.dailyExerciseChecks[ds]) appData.dailyExerciseChecks[ds] = {};
-                    const ns = e.target.checked;
-                    if (ex && ex.subTasks) ex.subTasks.forEach(s => { appData.dailyExerciseChecks[ds][`${ex.id}_${s.id}`] = ns; });
-                    if (ex && was !== ns) {
-                        if (ns) { adjustTodayEnergy(ex.energyCost || 15); adjustExp(ex.energyCost || 15); adjustAttr('exercise', 1); updateStreak(); }
-                        else { adjustTodayEnergy(-(ex.energyCost || 15)); adjustExp(-(ex.energyCost || 15)); adjustAttr('exercise', -1); }
-                    }
+                    const target = e.target.checked;
+                    const result = setCategoryExerciseChecked(ex.id, ds, target);
+                    applyExerciseEffects(result.was, result.now, result.cost);
                     renderWeekBoard(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
                 };
                 const lbl = document.createElement('span'); lbl.innerText = '💪 ' + exName; lbl.style.fontSize = '12px';
@@ -4039,11 +4046,39 @@ function initTaskAndSubTaskDrag() {
         });
     });
 }
-function isCategoryAllChecked(exId) {
+function isCategoryAllCheckedForDate(exId, ds) {
     const ex = appData.exercises.find(e => e.id === exId);
-    if (!ex || ex.subTasks.length === 0) return false;
-    const c = appData.dailyExerciseChecks[appData.selectedDate] || {};
-    return ex.subTasks.every(s => c[`${ex.id}_${s.id}`]);
+    if (!ex) return false;
+    const c = appData.dailyExerciseChecks[ds] || {};
+    if (!ex.subTasks || ex.subTasks.length === 0) return !!c[exId];
+    return ex.subTasks.every(s => c[`${exId}_${s.id}`]);
+}
+function isCategoryAllChecked(exId) {
+    return isCategoryAllCheckedForDate(exId, appData.selectedDate);
+}
+function setCategoryExerciseChecked(exId, ds, checked) {
+    const ex = appData.exercises.find(e => e.id === exId);
+    if (!ex) return { was: false, now: false, ex: null, cost: 0 };
+    if (!appData.dailyExerciseChecks[ds]) appData.dailyExerciseChecks[ds] = {};
+    const c = appData.dailyExerciseChecks[ds];
+    const was = isCategoryAllCheckedForDate(exId, ds);
+    if (!ex.subTasks || ex.subTasks.length === 0) {
+        c[exId] = !!checked;
+    } else {
+        ex.subTasks.forEach(s => { c[`${exId}_${s.id}`] = !!checked; });
+    }
+    const now = isCategoryAllCheckedForDate(exId, ds);
+    return { was, now, ex, cost: ex.energyCost || 15 };
+}
+function applyExerciseEffects(was, now, cost) {
+    if (was === now) return;
+    if (now) {
+        adjustTodayEnergy(cost); adjustExp(cost);
+        adjustAttr('exercise', 1); updateStreak();
+    } else {
+        adjustTodayEnergy(-cost); adjustExp(-cost);
+        adjustAttr('exercise', -1);
+    }
 }
 function renderDayExercises() {
     ensureEnergyData();
@@ -4489,35 +4524,24 @@ window.deleteExerciseAction = function(exId, sid) {
     if (ex) { ex.subTasks = ex.subTasks.filter(s => s.id !== sid); ex._lastModified = Date.now(); renderDayExercises(); saveDataToFile(appData); }
 };
 window.toggleExerciseCategory = function(exId) {
-    const ds = appData.selectedDate;
     ensureEnergyData();
-    if (!appData.dailyExerciseChecks[ds]) appData.dailyExerciseChecks[ds] = {};
-    const ex = appData.exercises.find(e => e.id === exId);
-    if (!ex) return;
-    const was = isCategoryAllChecked(exId);
-    const ns = !was;
-    ex.subTasks.forEach(s => { appData.dailyExerciseChecks[ds][`${ex.id}_${s.id}`] = ns; });
-    if (was !== ns && ex.subTasks.length > 0) {
-        if (ns) { adjustTodayEnergy(ex.energyCost || 15); adjustExp(ex.energyCost || 15); adjustAttr('exercise', 1); updateStreak(); }
-        else { adjustTodayEnergy(-(ex.energyCost || 15)); adjustExp(-(ex.energyCost || 15)); adjustAttr('exercise', -1); }
-    }
+    const ds = appData.selectedDate;
+    const was = isCategoryAllCheckedForDate(exId, ds);
+    const result = setCategoryExerciseChecked(exId, ds, !was);
+    if (!result.ex) return;
+    applyExerciseEffects(result.was, result.now, result.cost);
     renderDayExercises(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.toggleExerciseTask = function(exId, sid) {
-    const ds = appData.selectedDate;
     ensureEnergyData();
+    const ds = appData.selectedDate;
     if (!appData.dailyExerciseChecks[ds]) appData.dailyExerciseChecks[ds] = {};
     const k = `${exId}_${sid}`;
-    const was = isCategoryAllChecked(exId);
+    const was = isCategoryAllCheckedForDate(exId, ds);
     appData.dailyExerciseChecks[ds][k] = !appData.dailyExerciseChecks[ds][k];
-    const now = isCategoryAllChecked(exId);
-    if (was !== now) {
-        const ex = appData.exercises.find(e => e.id === exId);
-        if (ex && ex.subTasks.length > 0) {
-            if (now) { adjustTodayEnergy(ex.energyCost || 15); adjustExp(ex.energyCost || 15); adjustAttr('exercise', 1); updateStreak(); }
-            else { adjustTodayEnergy(-(ex.energyCost || 15)); adjustExp(-(ex.energyCost || 15)); adjustAttr('exercise', -1); }
-        }
-    }
+    const now = isCategoryAllCheckedForDate(exId, ds);
+    const ex = appData.exercises.find(e => e.id === exId);
+    if (ex && was !== now) applyExerciseEffects(was, now, ex.energyCost || 15);
     renderDayExercises(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG(); saveDataToFile(appData);
 };
 window.toggleMainTask = function(id) {
@@ -5029,12 +5053,10 @@ function mergeData(local, remote) {
             }
         }
     });
-    /* 锻炼三类数据：按 ID/键合并，不整段覆盖 */
     merged.exercises = mergeExercisesList(merged.exercises || [], remote.exercises || []);
     merged.exerciseSchedule = mergeExerciseScheduleDict(merged.exerciseSchedule || {}, remote.exerciseSchedule || {});
     merged.exerciseTimeSlotSchedule = mergeExerciseTimeSlotDict(merged.exerciseTimeSlotSchedule || {}, remote.exerciseTimeSlotSchedule || {});
     merged.dailyExerciseChecks = mergeDailyExerciseChecksDict(merged.dailyExerciseChecks || {}, remote.dailyExerciseChecks || {});
-    /* 其余字典保持原逻辑 */
     const dictKeys = ['dailyReflections', 'weeklyReflections', 'dailyLogs', 'fixedBlockSchedule', 'monthlyReflections'];
     dictKeys.forEach(key => {
         if (!remote[key]) return;
@@ -5188,7 +5210,6 @@ function setupConnection(connection, isHost, targetId) {
             const oldData = JSON.parse(JSON.stringify(appData));
             const merged = mergeData(appData, data.payload);
             applyRemoteData(merged, oldData);
-            /* 全量合并完成后，用合并后的最终数据刷新同步基线 */
             resetSyncedBaseline(appData);
         }
     });
