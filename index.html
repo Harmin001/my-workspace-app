@@ -9,8 +9,12 @@
 <meta name="theme-color" content="#2383e2">
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<!-- 引入 KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
 <style>
-/* 样式保留你原本的，没有任何删减 */
 :root {
     --bg-main: #ffffff; --bg-sidebar: #f7f7f5; --bg-card: #ffffff; --bg-panel-header: #fafafa; --bg-input: #ffffff;
     --text-main: #37352f; --text-muted: #9b9a97; --border-color: #e9e9e7; --hover-bg: #efefed;
@@ -805,6 +809,17 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
     max-width: 200px;
 }
 
+/* 搜索高亮 */
+mark.search-hl { background-color: #fef08a; color: #000; border-radius: 2px; padding: 0 2px;}
+body.dark-mode mark.search-hl { background-color: #854d0e; color: #fff; }
+mark.search-hl.active { background-color: #f59e0b; color: #fff; box-shadow: 0 0 2px 2px rgba(245,158,11,0.5);}
+
+/* KaTeX 覆盖 */
+.katex { font-size: 1.1em; }
+body.dark-mode .katex { color: var(--text-main); }
+body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex .mrel, body.dark-mode .katex .mopen, body.dark-mode .katex .mclose, body.dark-mode .katex .mpunct, body.dark-mode .katex .mop { color: #e0e0e0 !important; }
+.katex-block { display: block; text-align: center; margin: 1em 0; overflow-x: auto; overflow-y: hidden; }
+
 @media(max-width: 900px) { .settings-grid { grid-template-columns: 1fr; gap: 12px; } .rpg-edit-grid { grid-template-columns: repeat(2, 1fr); } }
 @media(max-width: 768px) {
     body { flex-direction: column; }
@@ -863,6 +878,14 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
     .common-btns-grid { grid-template-columns: repeat(2, 1fr); }
     .week-drawer-panel { width: 88vw; max-width: 88vw; }
     #view-week.drawer-open { padding-left: 12px; }
+    
+    /* 移动端任务详情弹窗子项优化 */
+    .sub-task-item { flex-direction: column; align-items: stretch; padding: 8px; gap: 8px; }
+    .sub-task-left { width: 100%; }
+    .sub-task-left .task-text { word-break: break-word; }
+    .sub-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+    .sub-prog-container { flex: 1; min-width: 100px; }
+    .sub-prog-bar-bg { width: 100%; }
 }
 </style>
 </head>
@@ -1033,7 +1056,17 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 <div class="view-container" id="view-methods">
 <div class="year-header">
     <h1>📚 学习方法</h1>
-    <div style="font-size:var(--font-hint);color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+    <div style="font-size:var(--font-hint);color:var(--text-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:4px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:4px;padding:2px 6px;">
+            <input type="text" id="methods-search-input" placeholder="检索文本..." style="border:none;padding:2px;background:transparent;font-size:var(--font-hint);outline:none;width:80px;">
+            <span id="search-count" style="font-size:10px;color:var(--text-muted);min-width:24px;text-align:center;">0/0</span>
+            <span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="prevSearch()" title="上一处">↑</span>
+            <span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="nextSearch()" title="下一处">↓</span>
+            <span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="clearSearch()" title="清除">✕</span>
+        </div>
+        <label style="display:flex;align-items:center;gap:2px;font-size:11px;cursor:pointer;">
+            <input type="checkbox" id="search-both-sides" onchange="performSearch()"> 双栏均搜
+        </label>
         <button class="btn btn-sm" id="btn-toggle-split" onclick="toggleSplitScreen()">🖥️ 双栏模式</button>
         <span id="methods-save-status">💾 自动保存</span>
     </div>
@@ -1124,7 +1157,7 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
             <label>右侧: <select id="split-right-select" onchange="switchMethodsFile2(this.value)"></select></label>
         </div>
         <div class="methods-paper" id="methods-paper-container">
-            <div class="methods-content" id="methods-content" contenteditable="true" data-placeholder="在这里记录你的学习方法… 可以像 Word 一样调整字体、大小、颜色、加粗、列表等。"></div>
+            <div class="methods-content" id="methods-content" contenteditable="true" data-placeholder="在这里记录你的学习方法… 支持 $公式$ 和 $$公式$$。"></div>
             <div class="methods-content" id="methods-content-2" contenteditable="true" style="display:none;" data-placeholder="第二篇文档对比区..."></div>
         </div>
     </div>
@@ -1215,6 +1248,13 @@ body.dark-mode .methods-content hr { border-top-color: #444; }
 <div id="timeslot-config-list" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:280px;overflow-y:auto;"></div>
 <button class="btn btn-sm" onclick="addTimeSlot()" style="margin-top:6px;color:#303f9f;border-color:#c5cae9;">➕ 添加时间段</button>
 <button class="btn btn-sm" onclick="resetTimeSlots()" style="margin-top:6px;margin-left:6px;">🔄 恢复默认</button>
+</div>
+</div>
+<div class="section-box" style="border-color:#c5cae9;">
+<div class="panel-content">
+<h2 style="color:#303f9f;">📌 固定块精力设置</h2>
+<p style="font-size:var(--font-hint);color:var(--text-muted);">分配固定块到时间池时，会自动扣除这些精力。</p>
+<div id="fixed-block-energy-config-list" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:280px;overflow-y:auto;"></div>
 </div>
 </div>
 <div class="section-box" style="border-color:#a5d6a7;">
@@ -1400,7 +1440,7 @@ const DEFAULT_TIMESLOTS = [
     { id: 'ts13', label: '19:30-20:10' }
 ];
 const DEFAULT_FIXED_BLOCKS = [
-    { id: 'fb_class', name: '上课' }, { id: 'fb_meal', name: '吃饭' }, { id: 'fb_rest', name: '休息' }, { id: 'fb_commute', name: '通勤' }
+    { id: 'fb_class', name: '上课', energyCost: 20 }, { id: 'fb_meal', name: '吃饭', energyCost: 5 }, { id: 'fb_rest', name: '休息', energyCost: 0 }, { id: 'fb_commute', name: '通勤', energyCost: 10 }
 ];
 
 let appData = {
@@ -1450,13 +1490,11 @@ const expandedSubTasks = new Set();
 const expandedMethodFolders = new Set();
 let isDraggingActive = false;
 
-/* ================== 同步核心变量 ================== */
 const CLIENT_ID = Math.random().toString(36).substring(2, 11);
 let syncStatus = 'offline';
 let locks = {}; 
 let conflictQueue = [];
 let offlineQueue = [];
-
 let lastSyncedTasks = []; 
 let lastSyncedExercises = [];
 let lastSyncedMethods = [];
@@ -1467,7 +1505,6 @@ let lastSyncedExerciseTimeSlotSchedule = {};
 let lastSyncedReflections = {};
 let lastSyncedRpg = {};
 let lastSyncedEnergy = {};
-/* ================================================== */
 
 function getTodayString() {
     const d = new Date();
@@ -1696,6 +1733,18 @@ function ensureEnergyData() {
     if (!appData.fonts) appData.fonts = { title: "18px", content: "14px", hint: "12px", small: "10px" };
     if (!appData.timeSlots) appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
     if (!Array.isArray(appData.fixedBlocks)) appData.fixedBlocks = JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS));
+    
+    // 兼容旧数据的精力默认值
+    appData.fixedBlocks.forEach(fb => {
+        if (fb.energyCost === undefined) {
+            if (fb.name.includes('上课')) fb.energyCost = 20;
+            else if (fb.name.includes('通勤')) fb.energyCost = 10;
+            else if (fb.name.includes('吃饭')) fb.energyCost = 5;
+            else if (fb.name.includes('休息')) fb.energyCost = 0;
+            else fb.energyCost = 0;
+        }
+    });
+
     if (appData.maxVisible === undefined) appData.maxVisible = 5;
     if (appData.animationEnabled === undefined) appData.animationEnabled = true;
     if (appData.learningMethods === undefined) appData.learningMethods = "";
@@ -1772,8 +1821,32 @@ function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
     }
 }
 
-function getTodayEnergySpent() { ensureEnergyData(); return appData.dailyEnergy[getTodayString()] || 0; }
+// ★ 核心：计算某一天的总精力消耗 (包含手动扣减 + 固定块 + 排期未完成任务)
+function getDateEnergySpent(dateStr) {
+    ensureEnergyData();
+    let total = appData.dailyEnergy[dateStr] || 0;
+    
+    // 1. 固定块消耗
+    const fbSched = appData.fixedBlockSchedule[dateStr] || {};
+    Object.values(fbSched).forEach(arr => {
+        arr.forEach(fbi => {
+            const template = appData.fixedBlocks.find(b => b.id === fbi.blockId);
+            if (template) total += (template.energyCost || 0);
+        });
+    });
+
+    // 2. 排期未完成任务消耗
+    appData.tasks.forEach(t => {
+        if (t.date === dateStr && t.timeSlot && !isTaskDone(t, dateStr)) {
+            total += (t.energyCost || 10);
+        }
+    });
+    return total;
+}
+
+function getTodayEnergySpent() { return getDateEnergySpent(getTodayString()); }
 function getTodayEnergyRemaining() { ensureEnergyData(); return Math.max(-20, appData.energyMax - getTodayEnergySpent()); }
+
 function adjustTodayEnergy(delta) {
     ensureEnergyData();
     const today = getTodayString();
@@ -2063,12 +2136,15 @@ window.openRPGModal = function() {
 };
 window.closeRPGModal = function() { document.getElementById('rpg-modal').classList.remove('active'); };
 
-/* ============ 学习方法富文本编辑器 ============ */
+/* ============ 学习方法富文本编辑器 (支持双开与文件夹、KaTeX、全文检索) ============ */
 let methodsEditorInitialized = false;
 let methodsSavedRange = null;
 let methodsSaveTimer = null;
 let methodsStatusTimer = null;
 let activeEditorId = 'methods-content';
+
+let searchMatches = [];
+let searchIndex = -1;
 
 function methodsGetEditor() { return document.getElementById(activeEditorId); }
 
@@ -2125,12 +2201,49 @@ function getCurrentMethodsFile(idStr) {
     return (f && f.type === 'file') ? f : appData.methodsFiles.find(f => f.type === 'file');
 }
 
+// 渲染公式 (KaTeX)
+function renderKaTeX(el) {
+    if (!el || typeof renderMathInElement === 'undefined') return;
+    try {
+        renderMathInElement(el, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false}
+            ],
+            throwOnError: false,
+            ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+        });
+    } catch (e) { console.warn("KaTeX render error", e); }
+}
+
+// 清除搜索高亮
+function clearSearchHighlight() {
+    document.querySelectorAll('.methods-content').forEach(editor => {
+        const marks = editor.querySelectorAll('mark.search-hl');
+        marks.forEach(m => {
+            const parent = m.parentNode;
+            parent.replaceChild(document.createTextNode(m.textContent), m);
+            parent.normalize();
+        });
+        if (editor.innerHTML.trim() === '') editor.innerHTML = ''; // 清理空标签
+    });
+    searchMatches = [];
+    searchIndex = -1;
+    document.getElementById('search-count').innerText = '0/0';
+}
+
 function commitMethodsEditorToFile() {
     let changed = false;
+    
+    const cleanHTML = (html) => {
+        // 移除搜索高亮标签
+        return html.replace(/<mark class="search-hl[^"]*">/g, '').replace(/<\/mark>/g, '');
+    };
+
     const editor1 = document.getElementById('methods-content');
     const f1 = getCurrentMethodsFile(appData.activeMethodsFileId);
     if (editor1 && f1) {
-        const newHtml = editor1.innerHTML;
+        const newHtml = cleanHTML(editor1.innerHTML);
         const newText = editor1.innerText || '';
         if (f1.contentHtml !== newHtml || f1.contentText !== newText) {
             f1.contentHtml = newHtml; f1.contentText = newText; f1.updatedAt = Date.now();
@@ -2141,7 +2254,7 @@ function commitMethodsEditorToFile() {
         const editor2 = document.getElementById('methods-content-2');
         const f2 = getCurrentMethodsFile(appData.activeMethodsFileId2);
         if (editor2 && f2) {
-            const newHtml = editor2.innerHTML;
+            const newHtml = cleanHTML(editor2.innerHTML);
             const newText = editor2.innerText || '';
             if (f2.contentHtml !== newHtml || f2.contentText !== newText) {
                 f2.contentHtml = newHtml; f2.contentText = newText; f2.updatedAt = Date.now();
@@ -2162,11 +2275,97 @@ function methodsTriggerSave() {
     if (!editor) return;
     clearTimeout(methodsSaveTimer);
     methodsSaveTimer = setTimeout(() => {
+        // 在保存前可以先触发一次渲染（如果用户没在输入）
+        if (document.activeElement !== editor) {
+            renderKaTeX(editor);
+            if (appData.splitScreenMode) renderKaTeX(document.getElementById('methods-content-2'));
+        }
+        
         const changed = commitMethodsEditorToFile();
         if (changed) saveDataToFile(appData);
         methodsSetStatus('✅ 已保存', '#2e7d32');
     }, 500);
 }
+
+// 全文检索
+function performSearch() {
+    clearSearchHighlight();
+    const kw = document.getElementById('methods-search-input').value.trim();
+    if (!kw) return;
+    
+    let editors = [];
+    if (appData.splitScreenMode && document.getElementById('search-both-sides').checked) {
+        editors = [document.getElementById('methods-content'), document.getElementById('methods-content-2')];
+    } else {
+        editors = [methodsGetEditor()];
+    }
+    
+    editors.forEach(editor => {
+        if (!editor) return;
+        const walk = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        const textNodes = [];
+        while(node = walk.nextNode()) {
+            textNodes.push(node);
+        }
+        
+        textNodes.forEach(node => {
+            const text = node.nodeValue;
+            const lowerText = text.toLowerCase();
+            const lowerKw = kw.toLowerCase();
+            let idx = lowerText.indexOf(lowerKw);
+            if (idx === -1) return;
+            
+            const frag = document.createDocumentFragment();
+            let lastIdx = 0;
+            while (idx !== -1) {
+                frag.appendChild(document.createTextNode(text.substring(lastIdx, idx)));
+                const mark = document.createElement('mark');
+                mark.className = 'search-hl';
+                mark.textContent = text.substring(idx, idx + kw.length);
+                frag.appendChild(mark);
+                searchMatches.push(mark);
+                lastIdx = idx + kw.length;
+                idx = lowerText.indexOf(lowerKw, lastIdx);
+            }
+            frag.appendChild(document.createTextNode(text.substring(lastIdx)));
+            node.parentNode.replaceChild(frag, node);
+        });
+    });
+    
+    if (searchMatches.length > 0) {
+        searchIndex = 0;
+        highlightMatch();
+    } else {
+        document.getElementById('search-count').innerText = '无结果';
+    }
+}
+
+function highlightMatch() {
+    if (searchMatches.length === 0) return;
+    searchMatches.forEach(m => m.classList.remove('active'));
+    const match = searchMatches[searchIndex];
+    match.classList.add('active');
+    match.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('search-count').innerText = `${searchIndex + 1}/${searchMatches.length}`;
+}
+
+window.prevSearch = function() {
+    if (searchMatches.length === 0) return;
+    searchIndex = (searchIndex - 1 + searchMatches.length) % searchMatches.length;
+    highlightMatch();
+};
+
+window.nextSearch = function() {
+    if (searchMatches.length === 0) return;
+    searchIndex = (searchIndex + 1) % searchMatches.length;
+    highlightMatch();
+};
+
+window.clearSearch = function() {
+    document.getElementById('methods-search-input').value = '';
+    clearSearchHighlight();
+};
 
 function methodsUpdateToolbarState() {
     const editor = methodsGetEditor();
@@ -2337,8 +2536,6 @@ window.switchMethodsFile2 = function(id) {
 window.createMethodsFolder = function() {
     const name = prompt('新文件夹名称：', '新建文件夹');
     if (name === null || !name.trim()) return;
-    
-    // 找到当前选中文件的父级，或者放在根目录
     let parentId = null;
     const activeFile = appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId);
     if (activeFile && activeFile.parentId) {
@@ -2346,7 +2543,6 @@ window.createMethodsFolder = function() {
     } else if (activeFile && activeFile.type === 'folder') {
         parentId = activeFile.id;
     }
-    
     const newFolder = {
         id: 'folder_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         name: name.trim(),
@@ -2364,8 +2560,6 @@ window.createMethodsFile = function() {
     const name = prompt('新文件名：', '新学习方法');
     if (name === null || !name.trim()) return;
     commitMethodsEditorToFile();
-    
-    // 找到当前选中文件的父级
     let parentId = null;
     const activeFile = appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId);
     if (activeFile && activeFile.parentId) {
@@ -2373,7 +2567,6 @@ window.createMethodsFile = function() {
     } else if (activeFile && activeFile.type === 'folder') {
         parentId = activeFile.id;
     }
-    
     const newFile = {
         id: 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         name: name.trim(),
@@ -2386,7 +2579,6 @@ window.createMethodsFile = function() {
     appData.methodsFiles.push(newFile);
     appData.activeMethodsFileId = newFile.id;
     if (parentId) expandedMethodFolders.add(parentId);
-    
     renderMethodsFileList();
     refreshMethodsEditorContent();
     saveDataToFile(appData);
@@ -2410,8 +2602,6 @@ function renameMethodsFile(id) {
 function deleteMethodsFile(id) {
     const f = appData.methodsFiles.find(x => x.id === id);
     if (!f) return;
-    
-    // 如果是文件夹，检查是否为空
     if (f.type === 'folder') {
         const children = appData.methodsFiles.filter(x => x.parentId === id);
         if (children.length > 0) {
@@ -2419,20 +2609,16 @@ function deleteMethodsFile(id) {
             return;
         }
     }
-    
     if (appData.methodsFiles.filter(x => x.type === 'file').length <= 1 && f.type === 'file') {
         alert('至少保留一个文件'); return;
     }
-    
     if (!confirm(`删除「${f.name}」？内容将永久丢失。`)) return;
-    
     const deleteRecursive = (delId) => {
         const children = appData.methodsFiles.filter(x => x.parentId === delId);
         children.forEach(c => deleteRecursive(c.id));
         appData.methodsFiles = appData.methodsFiles.filter(x => x.id !== delId);
     };
     deleteRecursive(id);
-    
     if (appData.activeMethodsFileId === id) {
         const firstFile = appData.methodsFiles.find(x => x.type === 'file');
         appData.activeMethodsFileId = firstFile ? firstFile.id : null;
@@ -2441,7 +2627,6 @@ function deleteMethodsFile(id) {
         const secondFile = appData.methodsFiles.filter(x => x.type === 'file')[1] || appData.methodsFiles.find(x => x.type === 'file');
         appData.activeMethodsFileId2 = secondFile ? secondFile.id : null;
     }
-    
     renderMethodsFileList();
     refreshMethodsEditorContent();
     saveDataToFile(appData);
@@ -2492,16 +2677,51 @@ function initMethodsEditor() {
 
     [editor1, editor2].forEach(ed => {
         if (!ed) return;
-        ed.addEventListener('input', methodsTriggerSave);
+        ed.addEventListener('input', () => {
+            // 用户输入时不立刻渲染公式，而是保存时/失焦时渲染
+            methodsTriggerSave();
+        });
         ed.addEventListener('mouseup', methodsSaveSelection);
         ed.addEventListener('keyup', methodsSaveSelection);
-        ed.addEventListener('focus', () => { activeEditorId = ed.id; });
+        ed.addEventListener('focus', () => { 
+            activeEditorId = ed.id; 
+            // 编辑时，把 KaTeX 变回源码
+            const katexs = ed.querySelectorAll('.katex');
+            if (katexs.length > 0) {
+                katexs.forEach(k => {
+                    let tex = '';
+                    if (k.classList.contains('katex-display')) {
+                        const mathml = k.querySelector('math');
+                        // 简单方式：由于我们没存 tex，只能靠 KaTeX 自动生成，但在我们的逻辑里，每次离开时都会重新渲染
+                        // 实际上较好的方式是用 data-tex 存储，这里为了简单，如果找不到就跳过。
+                        // 为了防止破坏，我们使用最安全的方式：不双态切换，只依靠失焦渲染。
+                    }
+                });
+            }
+        });
         ed.addEventListener('blur', () => {
             clearTimeout(methodsSaveTimer);
             const changed = commitMethodsEditorToFile();
             if (changed) saveDataToFile(appData);
+            // 失焦时渲染公式
+            renderKaTeX(ed);
         });
     });
+
+    // 搜索框回车事件
+    const searchInput = document.getElementById('methods-search-input');
+    if (searchInput) {
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (searchMatches.length > 0 && searchMatches[searchIndex].textContent.toLowerCase() === searchInput.value.trim().toLowerCase()) {
+                    nextSearch();
+                } else {
+                    performSearch();
+                }
+            }
+        });
+    }
 
     toolbar.addEventListener('mousedown', (e) => {
         if (e.target.closest('button')) e.preventDefault();
@@ -2554,11 +2774,17 @@ function refreshMethodsEditorContent() {
     const editor2 = document.getElementById('methods-content-2');
     const f1 = getCurrentMethodsFile(appData.activeMethodsFileId);
     if (editor1 && f1) {
-        if (editor1.innerHTML !== (f1.contentHtml || '')) editor1.innerHTML = f1.contentHtml || '';
+        if (editor1.innerHTML !== (f1.contentHtml || '')) {
+            editor1.innerHTML = f1.contentHtml || '';
+            renderKaTeX(editor1); // 切换文档时渲染
+        }
     }
     if (editor2 && appData.splitScreenMode) {
         const f2 = getCurrentMethodsFile(appData.activeMethodsFileId2);
-        if (f2 && editor2.innerHTML !== (f2.contentHtml || '')) editor2.innerHTML = f2.contentHtml || '';
+        if (f2 && editor2.innerHTML !== (f2.contentHtml || '')) {
+            editor2.innerHTML = f2.contentHtml || '';
+            renderKaTeX(editor2);
+        }
     }
     if (appData.splitScreenMode) {
         const container = document.getElementById('methods-paper-container');
@@ -2661,13 +2887,34 @@ window.resetTimeSlots = function() {
     renderTimeSlotConfig(); saveDataToFile(appData); renderWeekBoard(); renderTaskPool();
 };
 
+function renderFixedBlockEnergyConfig() {
+    const list = document.getElementById('fixed-block-energy-config-list');
+    if (!list) return;
+    list.innerHTML = appData.fixedBlocks.map(fb => `
+        <div class="level-config-row" style="display:flex;gap:6px;align-items:center;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:4px 6px;">
+            <span style="font-size:var(--font-hint);font-weight:bold;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📌 ${escapeHtml(fb.name)}</span>
+            <input type="number" value="${fb.energyCost || 0}" onchange="updateFixedBlockEnergy('${fb.id}', this.value)" style="width:70px;padding:4px;font-size:var(--font-hint);">
+            <span style="font-size:10px;color:var(--text-muted);">点</span>
+        </div>
+    `).join('');
+}
+window.updateFixedBlockEnergy = function(id, val) {
+    const fb = appData.fixedBlocks.find(b => b.id === id);
+    if (!fb) return;
+    const num = parseInt(val);
+    if (!isNaN(num) && num >= 0) {
+        fb.energyCost = num;
+        saveDataToFile(appData);
+        renderEnergyAndRPG();
+    }
+};
+
 function getDataSignature(data) {
     const copy = JSON.parse(JSON.stringify(data));
     delete copy.selectedDate; delete copy.viewYear; delete copy.viewMonth; delete copy.viewWeekBaseDate; delete copy._lastModified;
     return JSON.stringify(copy);
 }
 
-/* ================= 增量同步与锁的底层逻辑 ================= */
 let opDebounceTimer = null;
 
 function getSettingsObj() {
@@ -2780,14 +3027,12 @@ function broadcastDiffs(data) {
     if (!conn || !conn.open) return;
     const jstr = (v) => JSON.stringify(v);
     
-    // 1. 设置对比
     const curSettings = getSettingsObj();
     if (jstr(lastSyncedSettings) !== jstr(curSettings)) {
         conn.send({ type: 'OP', data: { action: 'UPDATE_SETTINGS', settings: curSettings, clientId: CLIENT_ID, time: Date.now() } });
         lastSyncedSettings = JSON.parse(jstr(curSettings));
     }
 
-    // 2. 每日/周期数据对比
     const checkObj = data.dailyExerciseChecks || {};
     if (jstr(lastSyncedDailyChecks) !== jstr(checkObj)) {
         conn.send({ type: 'OP', data: { action: 'UPDATE_DAILY_CHECKS', checks: checkObj, clientId: CLIENT_ID, time: Date.now() } });
@@ -2818,7 +3063,6 @@ function broadcastDiffs(data) {
         lastSyncedEnergy = JSON.parse(jstr(data.dailyEnergy));
     }
 
-    // 3. 任务
     const currentTasks = data.tasks || [];
     currentTasks.forEach(ct => {
         const lt = lastSyncedTasks.find(x => x.id === ct.id);
@@ -2833,7 +3077,6 @@ function broadcastDiffs(data) {
     });
     lastSyncedTasks = JSON.parse(jstr(currentTasks));
 
-    // 4. 锻炼大类
     const currentExercises = data.exercises || [];
     currentExercises.forEach(ce => {
         const le = lastSyncedExercises.find(x => x.id === ce.id);
@@ -2848,7 +3091,6 @@ function broadcastDiffs(data) {
     });
     lastSyncedExercises = JSON.parse(jstr(currentExercises));
 
-    // 5. 学习方法
     const currentMethods = data.methodsFiles || [];
     currentMethods.forEach(cm => {
         const lm = lastSyncedMethods.find(x => x.id === cm.id);
@@ -2919,6 +3161,7 @@ function handleIncomingOp(op) {
         renderLevelConfig();
         renderTimeSlotConfig();
         renderFixedBlockPool();
+        renderFixedBlockEnergyConfig();
         renderDayPlan();
         renderWeekBoard();
     } else if (op.action === 'UPDATE_DAILY_CHECKS') {
@@ -2963,7 +3206,10 @@ function handleIncomingOp(op) {
         else appData.methodsFiles.push(op.method);
         renderMethodsFileList();
         const editor = methodsGetEditor();
-        if (!editor || document.activeElement !== editor) refreshMethodsEditorContent();
+        if (!editor || document.activeElement !== editor) {
+            refreshMethodsEditorContent();
+            renderKaTeX(editor);
+        }
     } else if (op.action === 'DELETE_METHODS') {
         appData.methodsFiles = appData.methodsFiles.filter(x => x.id !== op.id);
         renderMethodsFileList();
@@ -2991,7 +3237,6 @@ function setupConnection(connection, isHost, targetId) {
             renderP2PHistory();
         }
         
-        // 初始同步使用全量作为基线，以防历史版本数据丢失
         try { connection.send({ type: 'SYNC_MERGE', payload: appData, lastModified: appData._lastModified || 1 }); } catch(e){}
         resetSyncedBaseline(appData);
     });
@@ -3023,7 +3268,6 @@ function setupConnection(connection, isHost, targetId) {
     });
     connection.on('error', (err) => { if (conn !== connection) return; console.log("Err:", err); });
 }
-/* ================================================== */
 
 function applyPanelLayout() {
     ensureEnergyData();
@@ -3790,8 +4034,8 @@ window.addFixedBlock = function() {
     ensureEnergyData();
     const n = prompt('固定块名称（如：上课、吃饭）：');
     if (!n || !n.trim()) return;
-    appData.fixedBlocks.push({ id: 'fb_' + Date.now(), name: n.trim() });
-    renderFixedBlockPool(); saveDataToFile(appData);
+    appData.fixedBlocks.push({ id: 'fb_' + Date.now(), name: n.trim(), energyCost: 0 });
+    renderFixedBlockPool(); renderFixedBlockEnergyConfig(); saveDataToFile(appData);
 };
 window.renameFixedBlock = function(id) {
     const fb = appData.fixedBlocks.find(b => b.id === id);
@@ -3802,7 +4046,7 @@ window.renameFixedBlock = function(id) {
     if (appData.fixedBlockSchedule) {
         Object.keys(appData.fixedBlockSchedule).forEach(d => Object.keys(appData.fixedBlockSchedule[d]).forEach(ts => appData.fixedBlockSchedule[d][ts].forEach(fbi => { if (fbi.blockId === id) fbi.name = fb.name; })));
     }
-    renderFixedBlockPool(); renderWeekBoard(); saveDataToFile(appData);
+    renderFixedBlockPool(); renderWeekBoard(); renderFixedBlockEnergyConfig(); saveDataToFile(appData);
 };
 window.deleteFixedBlock = function(id) {
     const fb = appData.fixedBlocks.find(b => b.id === id);
@@ -3818,14 +4062,14 @@ window.deleteFixedBlock = function(id) {
             if (Object.keys(appData.fixedBlockSchedule[d]).length === 0) delete appData.fixedBlockSchedule[d];
         });
     }
-    renderFixedBlockPool(); renderWeekBoard(); saveDataToFile(appData);
+    renderFixedBlockPool(); renderWeekBoard(); renderFixedBlockEnergyConfig(); saveDataToFile(appData);
 };
 window.removeFixedBlockInstance = function(ds, tsId, instId) {
     if (!appData.fixedBlockSchedule?.[ds]?.[tsId]) return;
     appData.fixedBlockSchedule[ds][tsId] = appData.fixedBlockSchedule[ds][tsId].filter(x => x.id !== instId);
     if (appData.fixedBlockSchedule[ds][tsId].length === 0) delete appData.fixedBlockSchedule[ds][tsId];
     if (Object.keys(appData.fixedBlockSchedule[ds]).length === 0) delete appData.fixedBlockSchedule[ds];
-    saveDataToFile(appData); renderWeekBoard();
+    saveDataToFile(appData); renderWeekBoard(); renderEnergyAndRPG();
 };
 
 function renderTaskPool() {
@@ -3875,7 +4119,6 @@ function renderTaskPool() {
     ovdWrapper.style.display = hasOverdue ? 'block' : 'none';
 }
 
-/* ============ 行级编辑锁 + 防抖 ============ */
 window.enableTaskEdit = function(span, taskId, subId) {
     if (locks[taskId]) return showMiniToast('对方正在编辑该任务', '#eb5757');
     acquireLock(taskId);
@@ -4756,7 +4999,7 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
         else if (t === 'day') { renderDayPlan(); applyPanelLayout(); }
         else if (t === 'methods') { initMethodsEditor(); renderMethodsFileList(); refreshMethodsEditorContent(); }
         else if (t === 'settings') {
-            renderP2PHistory(); updateBackupUI(); renderLevelConfig(); renderEnergyAndRPG(); renderTimeSlotConfig();
+            renderP2PHistory(); updateBackupUI(); renderLevelConfig(); renderEnergyAndRPG(); renderTimeSlotConfig(); renderFixedBlockEnergyConfig();
             const sh = localStorage.getItem('my_p2p_host_id');
             if (sh) document.getElementById('my-peer-id').innerText = sh;
         }
@@ -4796,7 +5039,7 @@ window.unscheduleTask = function(taskId) {
     if (t.timeSlots) t.timeSlots = [];
     saveDataToFile(appData);
     renderWeekBoard(); renderTaskPool(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
-    renderDayPlan();
+    renderDayPlan(); renderEnergyAndRPG();
 };
 
 function handleDrop(ev, td, timeslot, poolKind) {
@@ -4820,7 +5063,7 @@ function handleDrop(ev, td, timeslot, poolKind) {
         }
         draggedFixedBlockId = null;
         isDraggingActive = false;
-        renderWeekBoard(); renderTaskPool(); renderExercisePool(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
+        renderWeekBoard(); renderTaskPool(); renderExercisePool(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars(); renderEnergyAndRPG();
         return;
     }
 
@@ -4910,7 +5153,7 @@ function handleDrop(ev, td, timeslot, poolKind) {
     }
     saveDataToFile(appData);
     renderWeekBoard(); renderTaskPool(); renderExercisePool(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
-    renderDayPlan();
+    renderDayPlan(); renderEnergyAndRPG();
     draggedTaskId = null; draggedExerciseName = null; draggedExerciseSource = null; isDraggingActive = false;
 }
 
@@ -5438,7 +5681,7 @@ window.importData = function(e) {
                 if (appData.fonts) ['title','content','hint','small'].forEach(k => document.documentElement.style.setProperty(`--font-${k}`, appData.fonts[k]));
                 if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
                 renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
-                renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
+                renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool(); renderFixedBlockEnergyConfig();
                 renderMethodsFileList();
                 refreshMethodsEditorContent();
                 saveDataToFile(appData);
@@ -5641,7 +5884,7 @@ window.restoreFromFolder = async function() {
         if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
         
         renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
-        renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool();
+        renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool(); renderFixedBlockEnergyConfig();
         renderMethodsFileList(); refreshMethodsEditorContent();
         saveDataToFile(appData);
         resetSyncedBaseline(appData);
@@ -6102,7 +6345,7 @@ function applyRemoteData(payload, oldData) {
         document.querySelectorAll('#common-btns-config input[type="checkbox"]').forEach(cb => { cb.checked = appData.commonBtns.includes(cb.value); });
     }
     if (diffs.timeSlots) renderTimeSlotConfig();
-    if (diffs.fixedBlocks) renderFixedBlockPool();
+    if (diffs.fixedBlocks) { renderFixedBlockPool(); renderFixedBlockEnergyConfig(); }
     if (diffs.maxVisible) {
         const el = document.getElementById('max-visible-val');
         if (el) el.innerText = appData.maxVisible;
@@ -6264,7 +6507,7 @@ document.addEventListener('drop', () => { stopAutoScroll(); }, true);
     applyPanelLayout();
     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars();
     initDragAndDrop(); renderTimeSlotConfig(); updateBackupUI(); renderEnergyAndRPG();
-    renderLevelConfig();
+    renderLevelConfig(); renderFixedBlockEnergyConfig();
     renderP2PHistory(); renderFixedBlockPool();
     initMethodsEditor();
     const sh = localStorage.getItem('my_p2p_host_id');
