@@ -957,7 +957,7 @@ const BACKUP_MODULES = {
     tasks:     { name: '核心任务',  fields: ['tasks','dailyLogs','dailyReflections','weeklyReflections','monthlyReflections','yearlyGoals','fixedBlockSchedule'] },
     exercises: { name: '锻炼数据',  fields: ['exercises','exerciseSchedule','exerciseTimeSlotSchedule','dailyExerciseChecks'] },
     rpg:       { name: 'RPG与精力', fields: ['rpg','dailyEnergy','panelLayout'] },
-    settings:  { name: '系统设置',  fields: ['themeColor','themeMode','fonts','radius','energyMax','energyWarnThreshold','expRatio','napEnergy','breakEnergy','levelConfig','commonBtns','timeSlots','fixedBlocks','maxVisible','animationEnabled'] },
+    settings:  { name: '系统设置',  fields: ['themeColor','themeMode','fonts','radius','energyMax','energyWarnThreshold','expRatio','napEnergy','breakEnergy','levelConfig','commonBtns','timeSlots','timeSlotsLastModified','fixedBlocks','maxVisible','animationEnabled'] },
     methods:   { name: '学习方法',  fields: ['methodsFiles','learningMethods','learningMethodsHtml','activeMethodsFileId','activeMethodsFileId2','splitScreenMode'] }
 };
 let appData = {
@@ -984,6 +984,7 @@ let appData = {
     levelConfig: { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) },
     commonBtns: ['skip', 'target', 'loop', 'deadline', 'delete'],
     timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS)),
+    timeSlotsLastModified: 0,
     fixedBlocks: JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS)),
     fixedBlockSchedule: {}, maxVisible: 5, animationEnabled: true
 };
@@ -1010,6 +1011,7 @@ let lastSyncedTasks = [];
 let lastSyncedExercises = [];
 let lastSyncedMethods = [];
 let lastSyncedSettings = {};
+let lastSyncedTimeSlots = { timeSlots: [], mod: 0 };
 let lastSyncedDailyChecks = {};
 let lastSyncedExerciseSchedule = {};
 let lastSyncedExerciseTimeSlotSchedule = {};
@@ -1022,11 +1024,6 @@ let _pendingImportData = null;
 let _backupTimerRegistry = [];
 function _registerBackupTimer(id) { _backupTimerRegistry.push(id); return id; }
 function _clearBackupTimers() { _backupTimerRegistry.forEach(id => { clearInterval(id); clearTimeout(id); }); _backupTimerRegistry = []; }
-function _cleanupFloatNodes() {
-    document.querySelectorAll('div').forEach(el => {
-        if (el.style && el.style.animation && el.style.animation.indexOf('rpgFloatUp') !== -1 && !el.parentNode) return;
-    });
-}
 function getTodayString() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1252,6 +1249,7 @@ function ensureEnergyData() {
     if (!appData.commonBtns) appData.commonBtns = ['skip', 'target', 'loop', 'deadline', 'delete'];
     if (!appData.fonts) appData.fonts = { title: "18px", content: "14px", hint: "12px", small: "10px" };
     if (!appData.timeSlots) appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
+    if (appData.timeSlotsLastModified === undefined) appData.timeSlotsLastModified = 0;
     if (!Array.isArray(appData.fixedBlocks)) appData.fixedBlocks = JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS));
     appData.fixedBlocks.forEach(fb => {
         if (fb.energyCost === undefined) {
@@ -2105,17 +2103,30 @@ function initTimeSlotSortable() {
             const newSlots = newIds.map(id => appData.timeSlots.find(t => t.id === id)).filter(Boolean);
             if (newSlots.length === appData.timeSlots.length) {
                 appData.timeSlots = newSlots;
+                appData.timeSlotsLastModified = Date.now();
                 rows.forEach((r, i) => { const numSpan = r.children[1]; if (numSpan) numSpan.textContent = i + 1; });
                 saveDataToFile(appData); renderWeekBoard();
             }
         }
     });
 }
-window.updateTimeSlot = function(id, val) { const ts = appData.timeSlots.find(t => t.id === id); if (ts) { ts.label = val.trim() || '00:00'; saveDataToFile(appData); renderWeekBoard(); } };
-window.addTimeSlot = function() { appData.timeSlots.push({ id: 'ts_' + Date.now(), label: '00:00-00:00' }); renderTimeSlotConfig(); saveDataToFile(appData); renderWeekBoard(); };
+window.updateTimeSlot = function(id, val) {
+    const ts = appData.timeSlots.find(t => t.id === id);
+    if (ts) {
+        ts.label = val.trim() || '00:00';
+        appData.timeSlotsLastModified = Date.now();
+        saveDataToFile(appData); renderWeekBoard();
+    }
+};
+window.addTimeSlot = function() {
+    appData.timeSlots.push({ id: 'ts_' + Date.now(), label: '00:00-00:00' });
+    appData.timeSlotsLastModified = Date.now();
+    renderTimeSlotConfig(); saveDataToFile(appData); renderWeekBoard();
+};
 window.deleteTimeSlot = function(id) {
     if (!confirm('确定删除该时间段？分配到该时间的任务将变为"未安排"。')) return;
     appData.timeSlots = appData.timeSlots.filter(t => t.id !== id);
+    appData.timeSlotsLastModified = Date.now();
     appData.tasks.forEach(t => { if (t.timeSlot === id) delete t.timeSlot; });
     if (appData.fixedBlockSchedule) {
         Object.keys(appData.fixedBlockSchedule).forEach(d => {
@@ -2128,6 +2139,7 @@ window.deleteTimeSlot = function(id) {
 window.resetTimeSlots = function() {
     if (!confirm('恢复默认时间段？已分配的任务可能受影响。')) return;
     appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
+    appData.timeSlotsLastModified = Date.now();
     renderTimeSlotConfig(); saveDataToFile(appData); renderWeekBoard(); renderTaskPool();
 };
 function renderFixedBlockEnergyConfig() {
@@ -2152,7 +2164,8 @@ function getSettingsObj() {
         energyMax: appData.energyMax, energyWarnThreshold: appData.energyWarnThreshold, expRatio: appData.expRatio,
         napEnergy: appData.napEnergy, breakEnergy: appData.breakEnergy, themeColor: appData.themeColor, themeMode: appData.themeMode,
         fonts: appData.fonts, radius: appData.radius, levelConfig: appData.levelConfig, commonBtns: appData.commonBtns,
-        timeSlots: appData.timeSlots, fixedBlocks: appData.fixedBlocks, maxVisible: appData.maxVisible,
+        timeSlots: appData.timeSlots, timeSlotsLastModified: appData.timeSlotsLastModified || 0,
+        fixedBlocks: appData.fixedBlocks, maxVisible: appData.maxVisible,
         animationEnabled: appData.animationEnabled, yearlyGoals: appData.yearlyGoals, panelLayout: appData.panelLayout
     };
 }
@@ -2216,6 +2229,7 @@ function removeRemoteLock(targetId) {
 }
 function resetSyncedBaseline(data) {
     lastSyncedSettings = JSON.parse(JSON.stringify(getSettingsObj()));
+    lastSyncedTimeSlots = JSON.parse(JSON.stringify({ timeSlots: data.timeSlots || [], mod: data.timeSlotsLastModified || 0 }));
     lastSyncedDailyChecks = JSON.parse(JSON.stringify(data.dailyExerciseChecks || {}));
     lastSyncedExerciseSchedule = JSON.parse(JSON.stringify(data.exerciseSchedule || {}));
     lastSyncedExerciseTimeSlotSchedule = JSON.parse(JSON.stringify(data.exerciseTimeSlotSchedule || {}));
@@ -2233,6 +2247,10 @@ function broadcastDiffs(data) {
     if (jstr(lastSyncedSettings) !== jstr(curSettings)) {
         conn.send({ type: 'OP', data: { action: 'UPDATE_SETTINGS', settings: curSettings, clientId: CLIENT_ID, time: Date.now() } });
         lastSyncedSettings = JSON.parse(jstr(curSettings));
+    }
+    const curTS = { timeSlots: data.timeSlots || [], mod: data.timeSlotsLastModified || 0 };
+    if (jstr(lastSyncedTimeSlots) !== jstr(curTS)) {
+        lastSyncedTimeSlots = JSON.parse(jstr(curTS));
     }
     const checkObj = data.dailyExerciseChecks || {};
     if (jstr(lastSyncedDailyChecks) !== jstr(checkObj)) {
@@ -2265,7 +2283,6 @@ function broadcastDiffs(data) {
         if (!lt || jstr(lt) !== jstr(ct)) conn.send({ type: 'OP', data: { action: 'UPDATE_TASK', task: ct, clientId: CLIENT_ID, time: Date.now() } });
     });
     lastSyncedTasks.forEach(lt => { if (!currentTasks.find(x => x.id === lt.id)) conn.send({ type: 'OP', data: { action: 'DELETE_TASK', id: lt.id, clientId: CLIENT_ID, time: Date.now() } }); });
-    lastSyncedTasks = currentTasks.map(t => ({ id: t.id, _v: JSON.stringify(t) }));
     lastSyncedTasks = currentTasks.map(t => t);
     const currentExercises = data.exercises || [];
     currentExercises.forEach(ce => {
@@ -2402,12 +2419,19 @@ function handleIncomingOp(op) {
     if (op.action === 'UPDATE_TASK' && locks[op.task.id]) { queueConflict(op); return; }
     isSyncing = true;
     if (op.action === 'UPDATE_SETTINGS') {
-        Object.assign(appData, op.settings);
+        const incoming = Object.assign({}, op.settings);
+        const localTSMod = appData.timeSlotsLastModified || 0;
+        const incomingTSMod = incoming.timeSlotsLastModified || 0;
+        if (incoming.timeSlots !== undefined && localTSMod > 0 && incomingTSMod <= localTSMod) {
+            delete incoming.timeSlots;
+            delete incoming.timeSlotsLastModified;
+        }
+        Object.assign(appData, incoming);
         document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
         if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
         if (appData.fonts) ['title','content','hint','small'].forEach(k => document.documentElement.style.setProperty(`--font-${k}`, appData.fonts[k]));
         if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
-        renderEnergyAndRPG(); renderLevelConfig(); renderTimeSlotConfig(); renderFixedBlockPool(); renderFixedBlockEnergyConfig(); renderDayPlan(); renderWeekBoard();
+        renderEnergyAndRPG(); renderLevelConfig(); renderTimeSlotConfig(); renderFixedBlockPool(); renderFixedBlockEnergyConfig(); renderDayPlan(); renderWeekBoard(); renderTaskPool();
     } else if (op.action === 'UPDATE_DAILY_CHECKS') {
         appData.dailyExerciseChecks = mergeDailyExerciseChecksDict(appData.dailyExerciseChecks || {}, op.checks || {});
         renderDayExercises(); renderCalendar(); renderYearHeatmap(); updateFixedProgressBars();
@@ -4488,7 +4512,8 @@ window.performBackup = async function(silent) {
                 exerciseTimeSlotSchedule: appData.exerciseTimeSlotSchedule, dailyExerciseChecks: appData.dailyExerciseChecks,
                 dailyEnergy: appData.dailyEnergy, dailyLogs: appData.dailyLogs, dailyReflections: appData.dailyReflections,
                 weeklyReflections: appData.weeklyReflections, monthlyReflections: appData.monthlyReflections, rpg: appData.rpg,
-                fixedBlocks: appData.fixedBlocks, fixedBlockSchedule: appData.fixedBlockSchedule, timeSlots: appData.timeSlots
+                fixedBlocks: appData.fixedBlocks, fixedBlockSchedule: appData.fixedBlockSchedule, timeSlots: appData.timeSlots,
+                timeSlotsLastModified: appData.timeSlotsLastModified
             };
             const fhCore = await backupDirHandle.getFileHandle('core_data.json', { create: true });
             const wCore = await fhCore.createWritable(); await wCore.write(JSON.stringify(coreData, null, 2)); await wCore.close();
@@ -4823,19 +4848,29 @@ function mergeData(local, remote) {
         ['exp', 'int', 'vit', 'cre', 'foc', 'wil', 'streak'].forEach(k => { merged.rpg[k] = Math.max(merged.rpg[k] || 0, remote.rpg[k] || 0); });
         if (remote.rpg.lastDate && (!merged.rpg.lastDate || remote.rpg.lastDate > merged.rpg.lastDate)) merged.rpg.lastDate = remote.rpg.lastDate;
     }
-    ['fixedBlocks', 'timeSlots'].forEach(key => {
-        if (!remote[key]) return;
-        if (!merged[key]) merged[key] = [];
-        const localMap = new Map(merged[key].map(x => [x.id, x]));
-        remote[key].forEach(x => {
-            if (!localMap.has(x.id)) merged[key].push(JSON.parse(JSON.stringify(x)));
+    if (remote.fixedBlocks) {
+        if (!merged.fixedBlocks) merged.fixedBlocks = [];
+        const localMap = new Map(merged.fixedBlocks.map(x => [x.id, x]));
+        remote.fixedBlocks.forEach(x => {
+            if (!localMap.has(x.id)) merged.fixedBlocks.push(JSON.parse(JSON.stringify(x)));
             else Object.assign(localMap.get(x.id), x);
         });
-    });
+    }
+    const localTSMod = merged.timeSlotsLastModified || 0;
+    const remoteTSMod = remote.timeSlotsLastModified || 0;
+    if (remote.timeSlots && Array.isArray(remote.timeSlots)) {
+        if (remoteTSMod > localTSMod) {
+            merged.timeSlots = JSON.parse(JSON.stringify(remote.timeSlots));
+            merged.timeSlotsLastModified = remoteTSMod;
+        } else if (remoteTSMod === localTSMod && !merged.timeSlots) {
+            merged.timeSlots = JSON.parse(JSON.stringify(remote.timeSlots));
+            merged.timeSlotsLastModified = remoteTSMod;
+        }
+    }
     merged.tasks.sort((a, b) => String(a.id).localeCompare(String(b.id)));
     merged.exercises.sort((a, b) => String(a.id).localeCompare(String(b.id)));
     merged.fixedBlocks.sort((a, b) => String(a.id).localeCompare(String(b.id)));
-    merged.timeSlots.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    if (Array.isArray(merged.timeSlots)) merged.timeSlots.sort((a, b) => String(a.id).localeCompare(String(b.id)));
     return merged;
 }
 function computeDiffs(oldData, newData) {
@@ -4850,6 +4885,7 @@ function computeDiffs(oldData, newData) {
     diffs.fixedBlocks = jstr(oldData.fixedBlocks) !== jstr(newData.fixedBlocks);
     diffs.fixedBlockSchedule = jstr(oldData.fixedBlockSchedule) !== jstr(newData.fixedBlockSchedule);
     diffs.timeSlots = jstr(oldData.timeSlots) !== jstr(newData.timeSlots);
+    diffs.timeSlotsLastModified = (oldData.timeSlotsLastModified || 0) !== (newData.timeSlotsLastModified || 0);
     diffs.methodsFiles = jstr(oldData.methodsFiles) !== jstr(newData.methodsFiles);
     diffs.rpg = jstr(oldData.rpg) !== jstr(newData.rpg);
     diffs.dailyEnergy = jstr(oldData.dailyEnergy) !== jstr(newData.dailyEnergy);
@@ -4894,12 +4930,12 @@ function applyRemoteData(payload, oldData) {
     }
     if (diffs.levelConfig) renderLevelConfig();
     if (diffs.commonBtns && appData.commonBtns) document.querySelectorAll('#common-btns-config input[type="checkbox"]').forEach(cb => { cb.checked = appData.commonBtns.includes(cb.value); });
-    if (diffs.timeSlots) renderTimeSlotConfig();
+    if (diffs.timeSlots || diffs.timeSlotsLastModified) { renderTimeSlotConfig(); renderWeekBoard(); renderTaskPool(); }
     if (diffs.fixedBlocks) { renderFixedBlockPool(); renderFixedBlockEnergyConfig(); }
     if (diffs.maxVisible) { const el = document.getElementById('max-visible-val'); if (el) el.innerText = appData.maxVisible; }
     const activeViewEl = document.querySelector('.view-container.active');
     const activeView = activeViewEl ? activeViewEl.id : '';
-    const viewNeedsUpdate = diffs.tasks || diffs.exercises || diffs.dailyExerciseChecks || diffs.exerciseSchedule || diffs.exerciseTimeSlotSchedule || diffs.fixedBlockSchedule || diffs.dailyReflections || diffs.weeklyReflections || diffs.monthlyReflections || diffs.timeSlots || diffs.fixedBlocks;
+    const viewNeedsUpdate = diffs.tasks || diffs.exercises || diffs.dailyExerciseChecks || diffs.exerciseSchedule || diffs.exerciseTimeSlotSchedule || diffs.fixedBlockSchedule || diffs.dailyReflections || diffs.weeklyReflections || diffs.monthlyReflections || diffs.timeSlots || diffs.timeSlotsLastModified || diffs.fixedBlocks;
     if (viewNeedsUpdate) {
         const activeEl = document.activeElement;
         const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
