@@ -530,9 +530,10 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 .tb-color-wrap::after { content: 'A'; position: absolute; bottom: 0; right: 1px; font-size: 9px; font-weight: 900; color: var(--text-main); pointer-events: none; }
 .tb-color-wrap .tb-color-swatch { width: 18px; height: 8px; border-radius: 2px; border: 1px solid rgba(0,0,0,.15); pointer-events: none; }
 .tb-color-wrap input[type="color"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; border: none; padding: 0; width: 100%; height: 100%; }
-.methods-paper { flex: 1; overflow-y: auto; background: #ececec; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 28px 20px; display: flex; justify-content: center; min-height: 0; }
+.methods-paper { flex: 1; overflow-y: auto; background: #ececec; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 28px 20px; display: flex; justify-content: center; align-items: flex-start; gap: 20px; min-height: 0; }
 body.dark-mode .methods-paper { background: #141414; }
-.methods-content { width: 100%; max-width: 900px; min-height: 100%; background: #ffffff; padding: 56px 64px; box-shadow: 0 4px 20px rgba(0,0,0,.08); border-radius: 4px; outline: none; font-size: 15px; line-height: 1.85; color: #333333; font-family: var(--font-family); word-break: break-word; transition: box-shadow .2s; }
+.methods-page-stack { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 900px; }
+.methods-content { width: 100%; min-height: 600px; background: #ffffff; padding: 56px 64px; box-shadow: 0 4px 20px rgba(0,0,0,.08); border-radius: 4px; outline: none; font-size: 15px; line-height: 1.85; color: #333333; font-family: var(--font-family); word-break: break-word; transition: box-shadow .2s; }
 .methods-content:focus { box-shadow: 0 4px 24px rgba(35,131,226,.15); }
 body.dark-mode .methods-content { background: #2a2a2a; color: #e0e0e0; box-shadow: 0 4px 20px rgba(0,0,0,.6); }
 .methods-content:empty:before { content: attr(data-placeholder); color: #aaa; pointer-events: none; display: block; }
@@ -549,7 +550,8 @@ body.dark-mode .methods-content h1, body.dark-mode .methods-content h2, body.dar
 body.dark-mode .methods-content blockquote { background: rgba(59,130,246,.12); color: #a0a0a0; }
 body.dark-mode .methods-content hr { border-top-color: #444; }
 .methods-paper.split-screen { gap: 20px; }
-.methods-paper.split-screen .methods-content { max-width: 50%; padding: 32px; }
+.methods-paper.split-screen .methods-page-stack { max-width: calc(50% - 10px); }
+.methods-paper.split-screen .methods-content { padding: 32px; }
 .methods-paper.split-screen .methods-content.mirror { display: block !important; }
 .methods-split-controls { display: flex; gap: 12px; margin-bottom: 8px; padding: 4px 0; }
 .methods-split-controls select { padding: 4px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: var(--font-hint); max-width: 200px; }
@@ -577,9 +579,10 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
     .methods-file-list { flex-direction: column; overflow-x: hidden; overflow-y: auto; padding: 6px; }
     .methods-file-item { flex-shrink: 0; padding: 6px 10px; }
     .methods-paper { padding: 12px 6px; }
-    .methods-content { padding: 24px 18px; font-size: 14px; }
+    .methods-content { padding: 24px 18px; font-size: 14px; min-height: 420px; }
     .methods-paper.split-screen { flex-direction: column; }
-    .methods-paper.split-screen .methods-content { max-width: 100%; padding: 24px 18px; }
+    .methods-paper.split-screen .methods-page-stack { max-width: 100%; }
+    .methods-paper.split-screen .methods-content { padding: 24px 18px; }
     .methods-toolbar { padding: 6px; gap: 3px; }
     .methods-toolbar .tb-group { padding: 0 3px; }
     .methods-toolbar button { min-width: 26px; height: 26px; padding: 0 5px; font-size: 12px; }
@@ -754,11 +757,16 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
             <div class="tb-group"><button type="button" data-cmd="justifyLeft" title="左对齐" style="text-align:left;justify-content:flex-start;">左</button><button type="button" data-cmd="justifyCenter" title="居中">中</button><button type="button" data-cmd="justifyRight" title="右对齐" style="justify-content:flex-end;">右</button><button type="button" data-cmd="justifyFull" title="两端对齐">均</button></div>
             <div class="tb-group"><button type="button" data-cmd="undo" title="撤销 (Ctrl+Z)">↶</button><button type="button" data-cmd="redo" title="重做 (Ctrl+Y)">↷</button></div>
             <div class="tb-group"><button type="button" data-cmd="removeFormat" title="清除格式" style="font-style:italic;">T<sub style="font-size:9px;">x</sub></button><button type="button" data-cmd="insertHorizontalRule" title="插入分隔线" style="font-weight:900;">—</button></div>
+            <div class="tb-group"><button type="button" onclick="addMethodsPage()" title="在当前栏末尾增加一张纸">📄+ 纸张</button><button type="button" onclick="removeLastMethodsPage()" title="删除当前栏最后一张纸">🗑 纸张</button></div>
         </div>
         <div id="methods-split-controls" class="methods-split-controls" style="display:none;"><label>左侧: <select id="split-left-select" onchange="switchMethodsFile(this.value)"></select></label><label>右侧: <select id="split-right-select" onchange="switchMethodsFile2(this.value)"></select></label></div>
         <div class="methods-paper" id="methods-paper-container">
-            <div class="methods-content" id="methods-content" contenteditable="true" data-placeholder="在这里记录你的学习方法… 支持 $公式$ 和 $$公式$$。"></div>
-            <div class="methods-content" id="methods-content-2" contenteditable="true" style="display:none;" data-placeholder="第二篇文档对比区..."></div>
+            <div class="methods-page-stack" id="methods-stack-1">
+                <div class="methods-content" id="methods-content" contenteditable="true" data-page-index="0" data-placeholder="在这里记录你的学习方法… 支持 $公式$ 和 $$公式$$。"></div>
+            </div>
+            <div class="methods-page-stack" id="methods-stack-2" style="display:none;">
+                <div class="methods-content" id="methods-content-2" contenteditable="true" data-page-index="0" data-placeholder="第二篇文档对比区..."></div>
+            </div>
         </div>
     </div>
 </div>
@@ -1258,11 +1266,6 @@ function ensureEnergyData() {
     ['title','content','hint','small'].forEach(k => { if (!appData.fonts[k]) appData.fonts[k] = ({ title: "18px", content: "14px", hint: "12px", small: "10px" })[k]; });
     if (!appData.timeSlots) appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
     if (appData.timeSlotsLastModified === undefined) appData.timeSlotsLastModified = 0;
-    // 时间段是全局配置（周一到周日共用一套）。若本地时间段与内置默认不同但时间戳为 0，
-    // 说明是本地改过但时间戳丢失，补上时间戳，避免同步时被远端旧数据覆盖。
-    if (!appData.timeSlotsLastModified && JSON.stringify(appData.timeSlots) !== JSON.stringify(DEFAULT_TIMESLOTS)) {
-        appData.timeSlotsLastModified = Date.now();
-    }
     if (!Array.isArray(appData.fixedBlocks)) appData.fixedBlocks = JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS));
     appData.fixedBlocks.forEach(fb => {
         if (fb.energyCost === undefined) {
@@ -1687,6 +1690,92 @@ function getCurrentMethodsFile(idStr) {
     const f = appData.methodsFiles.find(f => f.id === targetId);
     return (f && f.type === 'file') ? f : appData.methodsFiles.find(f => f.type === 'file');
 }
+/* ===== 学习方法多纸张支持 ===== */
+const METHODS_PAGE_BREAK_HTML = '<div class="methods-page-break" data-page-break="1"></div>';
+const METHODS_PAGE_BREAK_RE = /<div[^>]*data-page-break\s*=\s*["']1["'][^>]*>\s*<\/div>/gi;
+function splitMethodsHtml(html) {
+    if (!html) return [''];
+    const parts = String(html).split(METHODS_PAGE_BREAK_RE);
+    return parts.length > 0 ? parts : [''];
+}
+function getStackEditors(stackId) {
+    const stack = document.getElementById(stackId);
+    return stack ? Array.from(stack.querySelectorAll('.methods-content')) : [];
+}
+function getActiveStackId() {
+    const ed = document.getElementById(activeEditorId);
+    if (ed && ed.closest && ed.closest('#methods-stack-2')) return 'methods-stack-2';
+    return 'methods-stack-1';
+}
+function makeMethodsPageId(isSecond, stack, idx) {
+    let i = idx + 1;
+    let id = isSecond ? (i === 1 ? 'methods-content-2' : 'methods-content-2-p' + i) : (i === 1 ? 'methods-content' : 'methods-content-p' + i);
+    while (document.getElementById(id)) {
+        i++;
+        id = isSecond ? (i === 1 ? 'methods-content-2' : 'methods-content-2-p' + i) : (i === 1 ? 'methods-content' : 'methods-content-p' + i);
+    }
+    return id;
+}
+function createMethodsPageEl(isSecond, stack, idx) {
+    const div = document.createElement('div');
+    div.className = 'methods-content';
+    div.contentEditable = 'true';
+    div.id = makeMethodsPageId(isSecond, stack, idx);
+    div.dataset.pageIndex = idx;
+    div.setAttribute('data-placeholder', idx === 0 ? (isSecond ? '第二篇文档对比区...' : '在这里记录你的学习方法… 支持 $公式$ 和 $$公式$$。') : '续页…');
+    return div;
+}
+function renderMethodsStack(stackId, html, isSecond) {
+    const stack = document.getElementById(stackId);
+    if (!stack) return;
+    const pages = splitMethodsHtml(html || '');
+    const need = Math.max(pages.length, 1);
+    let editors = getStackEditors(stackId);
+    while (editors.length < need) {
+        const idx = editors.length;
+        const div = createMethodsPageEl(isSecond, stack, idx);
+        stack.appendChild(div);
+        editors.push(div);
+    }
+    while (editors.length > need && editors.length > 1) {
+        const last = editors.pop();
+        last.remove();
+    }
+    editors.forEach((ed, i) => {
+        const newHtml = pages[i] !== undefined ? pages[i] : '';
+        if (ed.innerHTML !== newHtml) {
+            ed.innerHTML = newHtml;
+            renderKaTeX(ed);
+        }
+    });
+}
+window.addMethodsPage = function() {
+    const stackId = getActiveStackId();
+    const stack = document.getElementById(stackId);
+    if (!stack) return;
+    const isSecond = stackId === 'methods-stack-2';
+    const idx = getStackEditors(stackId).length;
+    const div = createMethodsPageEl(isSecond, stack, idx);
+    stack.appendChild(div);
+    commitMethodsEditorToFile();
+    saveDataToFile(appData);
+    showMiniToast('📄 已增加一张纸');
+    setTimeout(() => { try { div.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }, 50);
+    div.focus();
+};
+window.removeLastMethodsPage = function() {
+    const stackId = getActiveStackId();
+    const stack = document.getElementById(stackId);
+    if (!stack) return;
+    const eds = getStackEditors(stackId);
+    if (eds.length <= 1) { showMiniToast('至少保留一张纸'); return; }
+    const last = eds[eds.length - 1];
+    if ((last.innerText || '').trim() && !confirm('最后一张纸还有内容，确定删除吗？')) return;
+    last.remove();
+    commitMethodsEditorToFile();
+    saveDataToFile(appData);
+    showMiniToast('🗑️ 已删除最后一张纸');
+};
 function renderKaTeX(el) {
     if (!el || typeof renderMathInElement === 'undefined') return;
     try {
@@ -1710,25 +1799,29 @@ function clearSearchHighlight() {
 function commitMethodsEditorToFile() {
     let changed = false;
     const cleanHTML = (html) => html.replace(/<mark class="search-hl[^"]*">/g, '').replace(/<\/mark>/g, '');
-    const editor1 = document.getElementById('methods-content');
     const f1 = getCurrentMethodsFile(appData.activeMethodsFileId);
-    if (editor1 && f1) {
-        const newHtml = cleanHTML(editor1.innerHTML);
-        const newText = editor1.innerText || '';
-        if (f1.contentHtml !== newHtml || f1.contentText !== newText) {
-            f1.contentHtml = newHtml; f1.contentText = newText; f1.updatedAt = Date.now();
-            changed = true;
+    if (f1) {
+        const eds1 = getStackEditors('methods-stack-1');
+        if (eds1.length > 0) {
+            const newHtml = eds1.map(ed => cleanHTML(ed.innerHTML)).join(METHODS_PAGE_BREAK_HTML);
+            const newText = eds1.map(ed => ed.innerText || '').join('\n\n');
+            if (f1.contentHtml !== newHtml || f1.contentText !== newText) {
+                f1.contentHtml = newHtml; f1.contentText = newText; f1.updatedAt = Date.now();
+                changed = true;
+            }
         }
     }
     if (appData.splitScreenMode) {
-        const editor2 = document.getElementById('methods-content-2');
         const f2 = getCurrentMethodsFile(appData.activeMethodsFileId2);
-        if (editor2 && f2) {
-            const newHtml = cleanHTML(editor2.innerHTML);
-            const newText = editor2.innerText || '';
-            if (f2.contentHtml !== newHtml || f2.contentText !== newText) {
-                f2.contentHtml = newHtml; f2.contentText = newText; f2.updatedAt = Date.now();
-                changed = true;
+        if (f2) {
+            const eds2 = getStackEditors('methods-stack-2');
+            if (eds2.length > 0) {
+                const newHtml = eds2.map(ed => cleanHTML(ed.innerHTML)).join(METHODS_PAGE_BREAK_HTML);
+                const newText = eds2.map(ed => ed.innerText || '').join('\n\n');
+                if (f2.contentHtml !== newHtml || f2.contentText !== newText) {
+                    f2.contentHtml = newHtml; f2.contentText = newText; f2.updatedAt = Date.now();
+                    changed = true;
+                }
             }
         }
     }
@@ -1740,14 +1833,11 @@ function commitMethodsEditorToFile() {
     return changed;
 }
 function methodsTriggerSave() {
-    const editor = methodsGetEditor();
-    if (!editor) return;
     clearTimeout(methodsSaveTimer);
     methodsSaveTimer = setTimeout(() => {
-        if (document.activeElement !== editor) {
-            renderKaTeX(editor);
-            if (appData.splitScreenMode) renderKaTeX(document.getElementById('methods-content-2'));
-        }
+        document.querySelectorAll('#methods-paper-container .methods-content').forEach(ed => {
+            if (document.activeElement !== ed) renderKaTeX(ed);
+        });
         const changed = commitMethodsEditorToFile();
         if (changed) saveDataToFile(appData);
         methodsSetStatus('✅ 已保存', '#2e7d32');
@@ -1758,8 +1848,13 @@ function performSearch() {
     const kw = document.getElementById('methods-search-input').value.trim();
     if (!kw) return;
     let editors = [];
-    if (appData.splitScreenMode && document.getElementById('search-both-sides').checked) editors = [document.getElementById('methods-content'), document.getElementById('methods-content-2')];
-    else editors = [methodsGetEditor()];
+    if (appData.splitScreenMode && document.getElementById('search-both-sides').checked) {
+        editors = [...document.querySelectorAll('#methods-stack-1 .methods-content'), ...document.querySelectorAll('#methods-stack-2 .methods-content')];
+    } else {
+        const activeEd = document.getElementById(activeEditorId);
+        const stack = activeEd && activeEd.closest ? activeEd.closest('.methods-page-stack') : null;
+        editors = stack ? [...stack.querySelectorAll('.methods-content')] : [methodsGetEditor()].filter(Boolean);
+    }
     editors.forEach(editor => {
         if (!editor) return;
         const walk = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null, false);
@@ -2007,46 +2102,47 @@ function deleteMethodsFile(id) {
 window.toggleSplitScreen = function() {
     commitMethodsEditorToFile();
     appData.splitScreenMode = !appData.splitScreenMode;
-    const container = document.getElementById('methods-paper-container');
-    const editor2 = document.getElementById('methods-content-2');
-    const btn = document.getElementById('btn-toggle-split');
-    const splitControls = document.getElementById('methods-split-controls');
-    if (appData.splitScreenMode) {
-        container.classList.add('split-screen'); editor2.classList.add('mirror');
-        btn.classList.add('btn-primary'); btn.innerText = '🖥️ 单栏模式';
-        if (splitControls) splitControls.style.display = 'flex';
-    } else {
-        container.classList.remove('split-screen'); editor2.classList.remove('mirror');
-        btn.classList.remove('btn-primary'); btn.innerText = '🖥️ 双栏模式';
-        if (splitControls) splitControls.style.display = 'none';
-    }
-    renderMethodsFileList(); refreshMethodsEditorContent(); saveDataToFile(appData);
+    renderMethodsFileList();
+    refreshMethodsEditorContent();
+    saveDataToFile(appData);
 };
 function initMethodsEditor() {
     if (methodsEditorInitialized) return;
     methodsEditorInitialized = true;
     const editor1 = document.getElementById('methods-content');
-    const editor2 = document.getElementById('methods-content-2');
     const toolbar = document.getElementById('methods-toolbar');
     if (!editor1 || !toolbar) return;
     renderMethodsFileList(); refreshMethodsEditorContent();
     document.addEventListener('selectionchange', () => {
-        if (document.activeElement === editor1) { activeEditorId = 'methods-content'; methodsSaveSelection(); methodsUpdateToolbarState(); }
-        else if (document.activeElement === editor2) { activeEditorId = 'methods-content-2'; methodsSaveSelection(); methodsUpdateToolbarState(); }
+        const ae = document.activeElement;
+        if (ae && ae.classList && ae.classList.contains('methods-content')) {
+            activeEditorId = ae.id;
+            methodsSaveSelection();
+            methodsUpdateToolbarState();
+        }
     });
-    [editor1, editor2].forEach(ed => {
-        if (!ed) return;
-        ed.addEventListener('input', () => methodsTriggerSave());
-        ed.addEventListener('mouseup', methodsSaveSelection);
-        ed.addEventListener('keyup', methodsSaveSelection);
-        ed.addEventListener('focus', () => { activeEditorId = ed.id; });
-        ed.addEventListener('blur', () => {
+    const paperContainer = document.getElementById('methods-paper-container');
+    if (paperContainer) {
+        paperContainer.addEventListener('input', (e) => {
+            if (e.target.classList && e.target.classList.contains('methods-content')) methodsTriggerSave();
+        });
+        paperContainer.addEventListener('mouseup', methodsSaveSelection);
+        paperContainer.addEventListener('keyup', methodsSaveSelection);
+        paperContainer.addEventListener('focusin', (e) => {
+            const ed = e.target.closest && e.target.closest('.methods-content');
+            if (ed) activeEditorId = ed.id;
+        });
+        paperContainer.addEventListener('focusout', (e) => {
+            const ed = e.target.closest && e.target.closest('.methods-content');
+            if (!ed) return;
+            const next = e.relatedTarget;
+            if (next && paperContainer.contains(next)) return;
             clearTimeout(methodsSaveTimer);
             const changed = commitMethodsEditorToFile();
             if (changed) saveDataToFile(appData);
             renderKaTeX(ed);
         });
-    });
+    }
     const searchInput = document.getElementById('methods-search-input');
     if (searchInput) {
         searchInput.addEventListener('keydown', (e) => {
@@ -2090,23 +2186,26 @@ function initMethodsEditor() {
     }
 }
 function refreshMethodsEditorContent() {
-    const editor1 = document.getElementById('methods-content');
-    const editor2 = document.getElementById('methods-content-2');
     const f1 = getCurrentMethodsFile(appData.activeMethodsFileId);
-    if (editor1 && f1) {
-        if (editor1.innerHTML !== (f1.contentHtml || '')) { editor1.innerHTML = f1.contentHtml || ''; renderKaTeX(editor1); }
-    }
-    if (editor2 && appData.splitScreenMode) {
-        const f2 = getCurrentMethodsFile(appData.activeMethodsFileId2);
-        if (f2 && editor2.innerHTML !== (f2.contentHtml || '')) { editor2.innerHTML = f2.contentHtml || ''; renderKaTeX(editor2); }
-    }
+    renderMethodsStack('methods-stack-1', f1 ? (f1.contentHtml || '') : '', false);
     if (appData.splitScreenMode) {
-        const container = document.getElementById('methods-paper-container');
-        container.classList.add('split-screen');
-        editor2.classList.add('mirror');
-        document.getElementById('btn-toggle-split').classList.add('btn-primary');
-        document.getElementById('btn-toggle-split').innerText = '🖥️ 单栏模式';
-        document.getElementById('methods-split-controls').style.display = 'flex';
+        const f2 = getCurrentMethodsFile(appData.activeMethodsFileId2);
+        renderMethodsStack('methods-stack-2', f2 ? (f2.contentHtml || '') : '', true);
+    }
+    const container = document.getElementById('methods-paper-container');
+    const stack2 = document.getElementById('methods-stack-2');
+    const btn = document.getElementById('btn-toggle-split');
+    const splitControls = document.getElementById('methods-split-controls');
+    if (appData.splitScreenMode) {
+        if (container) container.classList.add('split-screen');
+        if (stack2) stack2.style.display = 'flex';
+        if (btn) { btn.classList.add('btn-primary'); btn.innerText = '🖥️ 单栏模式'; }
+        if (splitControls) splitControls.style.display = 'flex';
+    } else {
+        if (container) container.classList.remove('split-screen');
+        if (stack2) stack2.style.display = 'none';
+        if (btn) { btn.classList.remove('btn-primary'); btn.innerText = '🖥️ 双栏模式'; }
+        if (splitControls) splitControls.style.display = 'none';
     }
 }
 function renderLevelConfig() {
@@ -2585,8 +2684,9 @@ function handleIncomingOp(op) {
         if (m) Object.assign(m, op.method);
         else appData.methodsFiles.push(op.method);
         renderMethodsFileList();
-        const editor = methodsGetEditor();
-        if (!editor || document.activeElement !== editor) { refreshMethodsEditorContent(); renderKaTeX(editor); }
+        const paperEl1 = document.getElementById('methods-paper-container');
+        const ae1 = document.activeElement;
+        if (!paperEl1 || !paperEl1.contains(ae1)) refreshMethodsEditorContent();
     } else if (op.action === 'DELETE_METHODS') {
         appData.methodsFiles = appData.methodsFiles.filter(x => x.id !== op.id);
         renderMethodsFileList(); refreshMethodsEditorContent();
@@ -5034,8 +5134,9 @@ function applyRemoteData(payload, oldData) {
     if (diffs.rpg || diffs.dailyEnergy || diffs.napEnergy || diffs.breakEnergy) { lastRpgState = null; renderEnergyAndRPG(); }
     if (diffs.methodsFiles) {
         renderMethodsFileList();
-        const editor = methodsGetEditor();
-        if (!editor || document.activeElement !== editor) refreshMethodsEditorContent();
+        const paperEl2 = document.getElementById('methods-paper-container');
+        const ae2 = document.activeElement;
+        if (!paperEl2 || !paperEl2.contains(ae2)) refreshMethodsEditorContent();
     }
     if (diffs.levelConfig) renderLevelConfig();
     if (diffs.commonBtns && appData.commonBtns) document.querySelectorAll('#common-btns-config input[type="checkbox"]').forEach(cb => { cb.checked = appData.commonBtns.includes(cb.value); });
