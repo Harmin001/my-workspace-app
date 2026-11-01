@@ -12,11 +12,13 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-<link rel="stylesheet" href="css/style.css">
+
+<!-- 注意这里：去掉了 css/ 文件夹 -->
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="sidebar">
-<div class="sidebar-title">🚀 我的工作台<div class="sync-controls"><div class="p2p-dot" id="p2p-indicator" title="未连接"></div><span class="sync-status-badge offline" id="sync-status-badge"><span id="sync-status-text">离线</span></span></div></div>
+<div class="sidebar-title">🚀 我的工作台<div class="sync-controls"><div class="p2p-dot" id="p2p-indicator" title="未连接"></div><span class="sync-status-badge offline" id="sync-status-badge"><span id="sync-status-text">离线</span></span><button class="btn btn-sm btn-sync-now" id="btn-sync-now" onclick="manualSyncNow()" title="立即同步">立即同步</button></div></div>
 <div class="nav-item" data-target="year">📊 全年</div>
 <div class="nav-item" data-target="month">📅 月计划</div>
 <div class="nav-item" data-target="week">🗓️ 周计划</div>
@@ -63,16 +65,19 @@
 </div>
 </div>
 <div class="mobile-rpg-fab" id="mobile-rpg-fab" onclick="openRPGModal()"><span id="mobile-rpg-lv">Lv.1</span><span id="mobile-rpg-energy">⚡200</span></div>
+
+<!-- 注入主内容区 -->
 <div id="main-content-placeholder"></div>
 
-<script src="js/1-core.js"></script>
-<script src="js/2-utils.js"></script>
-<script src="js/3-templates.js"></script>
-<script src="js/4-rpg.js"></script>
-<script src="js/5-methods.js"></script>
-<script src="js/6-render.js"></script>
-<script src="js/7-events.js"></script>
-<script src="js/8-sync.js"></script>
-<script src="js/9-init.js"></script>
+<!-- 注意这里：去掉了 js/ 文件夹 -->
+<script src="1-core.js"></script>
+<script src="2-utils.js"></script>
+<script src="3-templates.js"></script>
+<script src="4-rpg.js"></script>
+<script src="5-methods.js"></script>
+<script src="6-render.js"></script>
+<script src="7-events.js"></script>
+<script src="8-sync.js"></script>
+<script src="9-init.js"></script>
 </body>
 </html>
