@@ -188,3 +188,271 @@ function setSubCurrent(sub, dateStr, val) {
     sub.currents[dateStr] = val;
     sub.current = val;
 }
+
+/* ===== FIX-INJECT-BEGIN: utils-safe ===== */
+/* ------------------------------------------------------------------
+ * 修复注入：日期 / 任务数据工具函数安全化
+ * 背景：
+ *   1) formatDate(y, m, d) 若收到 undefined / NaN 会生成 "NaN-NaN-NaN"，
+ *      被 getDateLabel / getPrevRecurringDate 等使用后导致视图标题与
+ *      循环判断异常；
+ *   2) getTasksForDate() 内部直接 appData.tasks.filter(...)，
+ *      一旦 appData.tasks 不是数组（被存储损坏、被错误赋值），
+ *      渲染函数调用此函数立即抛错，日历 / 周板 / 年历全部空白 ——
+ *      这就是「周/月/全年计划视图空白」的直接触发点；
+ *   3) isTaskDone / getTaskCurrent 等若遇到 task 非对象或
+ *      task.completions / task.currents 被污染，同样会抛错中断渲染。
+ * 方案：
+ *   - 保留原函数体不变，仅在其外层加输入校验 + try/catch；
+ *   - 数据异常时返回安全的默认值（false / 0 / [] / null），
+ *     让渲染流程得以继续，不因单条异常数据而整体崩溃；
+ *   - 安装标记 window.__utilsSafeFixInstalled 防止重复包装形成递归。
+ * 影响面：
+ *   - 只影响上述函数的行为边界；
+ *   - 正常路径完全走原实现，性能几乎无影响。
+ * ------------------------------------------------------------------ */
+(function installUtilsSafeFix() {
+    if (window.__utilsSafeFixInstalled) return;
+    window.__utilsSafeFixInstalled = true;
+
+    /* ---------- 捕获原始实现（此时原函数已由文件主体定义好） ---------- */
+    var _orig = {
+        formatDate:           typeof formatDate           === 'function' ? formatDate           : null,
+        getTodayString:       typeof getTodayString       === 'function' ? getTodayString       : null,
+        getDateLabel:         typeof getDateLabel         === 'function' ? getDateLabel         : null,
+        isRecurringMatch:     typeof isRecurringMatch     === 'function' ? isRecurringMatch     : null,
+        getPrevRecurringDate: typeof getPrevRecurringDate === 'function' ? getPrevRecurringDate : null,
+        getTasksForDate:      typeof getTasksForDate      === 'function' ? getTasksForDate      : null,
+        isTaskDone:           typeof isTaskDone           === 'function' ? isTaskDone           : null,
+        setTaskDone:          typeof setTaskDone          === 'function' ? setTaskDone          : null,
+        getTaskCurrent:       typeof getTaskCurrent       === 'function' ? getTaskCurrent       : null,
+        setTaskCurrent:       typeof setTaskCurrent       === 'function' ? setTaskCurrent       : null,
+        isSubTaskDone:        typeof isSubTaskDone        === 'function' ? isSubTaskDone        : null,
+        setSubTaskDone:       typeof setSubTaskDone       === 'function' ? setSubTaskDone       : null,
+        getSubCurrent:        typeof getSubCurrent        === 'function' ? getSubCurrent        : null,
+        setSubCurrent:        typeof setSubCurrent        === 'function' ? setSubCurrent        : null
+    };
+
+    /* ---------- 通用工具 ---------- */
+    function todayParts() {
+        var d = new Date();
+        return { y: d.getFullYear(), m: d.getMonth(), d: d.getDate() };
+    }
+    function pad2(n) {
+        n = Math.floor(Number(n));
+        if (!isFinite(n) || n < 0) n = 0;
+        return n < 10 ? '0' + n : String(n);
+    }
+    function isValidDateStr(s) {
+        if (typeof s !== 'string') return false;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+        var d = new Date(s + 'T00:00:00');
+        return !isNaN(d.getTime());
+    }
+    function safeTodayStr() {
+        try {
+            if (_orig.getTodayString) {
+                var r = _orig.getTodayString();
+                if (isValidDateStr(r)) return r;
+            }
+        } catch (e) {}
+        var t = todayParts();
+        return t.y + '-' + pad2(t.m + 1) + '-' + pad2(t.d);
+    }
+    function ensureTasksArray() {
+        if (typeof appData !== 'undefined' && appData) {
+            if (!Array.isArray(appData.tasks)) {
+                appData.tasks = [];
+            }
+        }
+    }
+    function warn(name, e) {
+        if (window.console && console.warn) {
+            console.warn('[2-utils fix] ' + name + ' error', e);
+        }
+    }
+
+    /* ---------- 1) formatDate：输入校验 + 月份越界修正 ---------- */
+    window.formatDate = function (y, m, d) {
+        if (typeof y !== 'number' || !isFinite(y)) { y = todayParts().y; }
+        if (typeof m !== 'number' || !isFinite(m)) { m = 0; }
+        if (typeof d !== 'number' || !isFinite(d)) { d = 1; }
+        y = Math.floor(y);
+        m = Math.floor(m);
+        d = Math.floor(d);
+        while (m < 0)  { m += 12; y -= 1; }
+        while (m > 11) { m -= 12; y += 1; }
+        if (d < 1)  d = 1;
+        if (d > 31) d = 31;
+        try {
+            if (_orig.formatDate) {
+                var r = _orig.formatDate(y, m, d);
+                if (typeof r === 'string' && r.indexOf('NaN') === -1) return r;
+            }
+        } catch (e) { warn('formatDate', e); }
+        return y + '-' + pad2(m + 1) + '-' + pad2(d);
+    };
+
+    /* ---------- 2) getTodayString：始终返回合法日期字符串 ---------- */
+    window.getTodayString = function () {
+        try {
+            if (_orig.getTodayString) {
+                var r = _orig.getTodayString();
+                if (isValidDateStr(r)) return r;
+            }
+        } catch (e) { warn('getTodayString', e); }
+        return safeTodayStr();
+    };
+
+    /* ---------- 3) getDateLabel：无效 dateStr 自动回退到今天 ---------- */
+    window.getDateLabel = function (dateStr) {
+        if (!isValidDateStr(dateStr)) dateStr = safeTodayStr();
+        try {
+            if (_orig.getDateLabel) {
+                var r = _orig.getDateLabel(dateStr);
+                if (typeof r === 'string' && r.length > 0) return r;
+            }
+        } catch (e) { warn('getDateLabel', e); }
+        return dateStr;
+    };
+
+    /* ---------- 4) isRecurringMatch：无效日期返回 false ---------- */
+    window.isRecurringMatch = function (type, startDateStr, targetDateStr) {
+        if (!type) return false;
+        var startStr = startDateStr;
+        var targetStr = targetDateStr;
+        if (!targetStr) {
+            targetStr = startDateStr;
+            startStr = safeTodayStr();
+        }
+        if (!isValidDateStr(startStr) || !isValidDateStr(targetStr)) return false;
+        try {
+            if (_orig.isRecurringMatch) {
+                return !!_orig.isRecurringMatch(type, startStr, targetStr);
+            }
+        } catch (e) { warn('isRecurringMatch', e); }
+        return false;
+    };
+
+    /* ---------- 5) getPrevRecurringDate：无效 dateStr 返回 null ---------- */
+    window.getPrevRecurringDate = function (type, dateStr) {
+        if (!isValidDateStr(dateStr)) return null;
+        try {
+            if (_orig.getPrevRecurringDate) {
+                var r = _orig.getPrevRecurringDate(type, dateStr);
+                if (r === null) return null;
+                if (typeof r === 'string' && isValidDateStr(r)) return r;
+            }
+        } catch (e) { warn('getPrevRecurringDate', e); }
+        return null;
+    };
+
+    /* ---------- 6) getTasksForDate：核心兜底，永远返回数组 ---------- */
+    window.getTasksForDate = function (dateStr, options) {
+        try {
+            ensureTasksArray();
+            if (!isValidDateStr(dateStr)) dateStr = safeTodayStr();
+            if (_orig.getTasksForDate) {
+                var result = _orig.getTasksForDate(dateStr, options || {});
+                if (Array.isArray(result)) {
+                    /* 过滤掉非对象项，避免后续渲染读到 undefined 崩溃 */
+                    return result.filter(function (t) { return t && typeof t === 'object'; });
+                }
+            }
+        } catch (e) {
+            warn('getTasksForDate', e);
+        }
+        return [];
+    };
+
+    /* ---------- 7) isTaskDone ---------- */
+    window.isTaskDone = function (task, dateStr) {
+        if (!task || typeof task !== 'object') return false;
+        try {
+            if (_orig.isTaskDone) return !!_orig.isTaskDone(task, dateStr);
+        } catch (e) { warn('isTaskDone', e); }
+        return !!task.completed;
+    };
+
+    /* ---------- 8) setTaskDone ---------- */
+    window.setTaskDone = function (task, dateStr, val) {
+        if (!task || typeof task !== 'object') return;
+        if (!task.completions || typeof task.completions !== 'object' || Array.isArray(task.completions)) {
+            task.completions = {};
+        }
+        try {
+            if (_orig.setTaskDone) return _orig.setTaskDone(task, dateStr, val);
+        } catch (e) { warn('setTaskDone', e); }
+        task.completions[dateStr] = !!val;
+        if (task.date === dateStr) task.completed = !!val;
+    };
+
+    /* ---------- 9) getTaskCurrent / setTaskCurrent ---------- */
+    window.getTaskCurrent = function (task, dateStr) {
+        if (!task || typeof task !== 'object') return 0;
+        try {
+            if (_orig.getTaskCurrent) {
+                var v = _orig.getTaskCurrent(task, dateStr);
+                return (typeof v === 'number' && isFinite(v)) ? v : 0;
+            }
+        } catch (e) { warn('getTaskCurrent', e); }
+        return 0;
+    };
+
+    window.setTaskCurrent = function (task, dateStr, val) {
+        if (!task || typeof task !== 'object') return;
+        if (!task.currents || typeof task.currents !== 'object' || Array.isArray(task.currents)) {
+            task.currents = {};
+        }
+        try {
+            if (_orig.setTaskCurrent) return _orig.setTaskCurrent(task, dateStr, val);
+        } catch (e) { warn('setTaskCurrent', e); }
+        task.currents[dateStr] = val;
+        if (task.date === dateStr) task.current = val;
+    };
+
+    /* ---------- 10) 子任务四件套 ---------- */
+    window.isSubTaskDone = function (sub, dateStr) {
+        if (!sub || typeof sub !== 'object') return false;
+        try {
+            if (_orig.isSubTaskDone) return !!_orig.isSubTaskDone(sub, dateStr);
+        } catch (e) { warn('isSubTaskDone', e); }
+        return !!sub.completed;
+    };
+
+    window.setSubTaskDone = function (sub, dateStr, val) {
+        if (!sub || typeof sub !== 'object') return;
+        if (!sub.completions || typeof sub.completions !== 'object' || Array.isArray(sub.completions)) {
+            sub.completions = {};
+        }
+        try {
+            if (_orig.setSubTaskDone) return _orig.setSubTaskDone(sub, dateStr, val);
+        } catch (e) { warn('setSubTaskDone', e); }
+        sub.completions[dateStr] = !!val;
+        sub.completed = !!val;
+    };
+
+    window.getSubCurrent = function (sub, dateStr, parentTask) {
+        if (!sub || typeof sub !== 'object') return 0;
+        try {
+            if (_orig.getSubCurrent) {
+                var v = _orig.getSubCurrent(sub, dateStr, parentTask);
+                return (typeof v === 'number' && isFinite(v)) ? v : 0;
+            }
+        } catch (e) { warn('getSubCurrent', e); }
+        return 0;
+    };
+
+    window.setSubCurrent = function (sub, dateStr, val) {
+        if (!sub || typeof sub !== 'object') return;
+        if (!sub.currents || typeof sub.currents !== 'object' || Array.isArray(sub.currents)) {
+            sub.currents = {};
+        }
+        try {
+            if (_orig.setSubCurrent) return _orig.setSubCurrent(sub, dateStr, val);
+        } catch (e) { warn('setSubCurrent', e); }
+        sub.currents[dateStr] = val;
+        sub.current = val;
+    };
+})();
+/* ===== FIX-INJECT-END: utils-safe ===== */

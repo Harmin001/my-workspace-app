@@ -2415,3 +2415,194 @@ document.addEventListener('click', function (e) {
     setTimeout(run, 1500);
 })();
 /* ===== FIX-INJECT-END: events-settings ===== */
+
+/* ===== FIX-INJECT-BEGIN: events-plan-guard ===== */
+/* ------------------------------------------------------------------
+ * 修复注入：设置保存保护计划课表数据 + 修改设置后重渲染
+ * 背景：
+ *   1) 用户在设置面板修改任意设置时会触发 saveDataToFile(appData)，
+ *      若此前 appData.timeSlots / fixedBlocks 被某处写成空数组（例如
+ *      同步把远端空数据合进来、某按钮把变量清空），保存时就会把
+ *      空数组写入 localStorage，下次启动加载到的就是空课表 ——
+ *      表现即「课表时间段消失」；
+ *   2) 修改设置后原代码只在部分字段调用局部渲染（如仅
+ *      renderDayPlan 或 renderEnergyAndRPG），周 / 月 / 全年视图没有
+ *      重新绘制，看起来像「视图空白」。
+ * 方案：
+ *   - 包装 window.saveDataToFile：保存前调用 ensurePlanBaseData()
+ *     补全课表 / 计划结构；并对 timeSlots / fixedBlocks / tasks /
+ *     exercises 做「非空基线保护」——若当前变成空数组而上一次非空，
+ *     则恢复为上一次非空快照，禁止被误清空写入存储；
+ *   - 追加 document 级设置变更监听：任何带 data-setting 的控件发生
+ *     input / change / 按钮点击后，节流触发全视图重渲染；
+ *   - 全视图渲染函数均用 try/catch 包裹、幂等，可与原有设置监听叠加，
+ *     多渲染几次只会重绘，不会产生副作用。
+ * 说明：
+ *   - 之前的 events-top-guard、events-settings 注入段、原按钮事件、
+ *     拖拽、同步、任务勾选等逻辑全部保留不动；
+ *   - 本段仅做保护与重渲染，不改变任何业务字段语义。
+ * ------------------------------------------------------------------ */
+(function installSettingsPlanGuard() {
+    if (window.__settingsPlanGuardInstalled) return;
+    window.__settingsPlanGuardInstalled = true;
+
+    var PROTECT_KEYS = ['timeSlots', 'fixedBlocks', 'tasks', 'exercises'];
+    var lastValid = {};
+
+    function getAppData() {
+        return (typeof appData !== 'undefined' && appData) ? appData : null;
+    }
+
+    function deepSnap(v) {
+        try { return JSON.parse(JSON.stringify(v)); } catch (e) { return v; }
+    }
+
+    function captureBaseline() {
+        var a = getAppData();
+        if (!a) return;
+        PROTECT_KEYS.forEach(function (k) {
+            if (Array.isArray(a[k]) && a[k].length > 0) {
+                lastValid[k] = deepSnap(a[k]);
+            }
+        });
+    }
+
+    function ensurePlanData() {
+        var a = getAppData();
+        if (!a) return false;
+
+        /* 先走通用补全（1-core 注入的 ensurePlanBaseData） */
+        try {
+            if (typeof window.ensurePlanBaseData === 'function') {
+                window.ensurePlanBaseData(a);
+            }
+        } catch (e) {}
+
+        var changed = false;
+
+        /* 再做数组级「非空基线」保护：当前为空但上次非空 → 恢复 */
+        PROTECT_KEYS.forEach(function (k) {
+            if (!Array.isArray(a[k])) {
+                /* 非法结构：恢复上一次非空 / 空数组 */
+                if (lastValid[k] && lastValid[k].length > 0) {
+                    a[k] = deepSnap(lastValid[k]);
+                } else {
+                    a[k] = [];
+                }
+                changed = true;
+                return;
+            }
+            if (a[k].length === 0) {
+                if (lastValid[k] && lastValid[k].length > 0) {
+                    a[k] = deepSnap(lastValid[k]);
+                    changed = true;
+                }
+            } else {
+                lastValid[k] = deepSnap(a[k]);
+            }
+        });
+
+        return changed;
+    }
+
+    /* ---------- 包装 saveDataToFile：保存前保护计划数据 ---------- */
+    function wrapSaveDataToFile() {
+        var fn = window.saveDataToFile;
+        if (typeof fn !== 'function' || fn.__planGuardWrapped) return;
+
+        var wrapped = function () {
+            try { ensurePlanData(); } catch (e) {
+                if (window.console && console.warn) console.warn('[7-events fix] ensurePlanData before save error', e);
+            }
+            return fn.apply(this, arguments);
+        };
+        wrapped.__planGuardWrapped = true;
+        window.saveDataToFile = wrapped;
+    }
+
+    /* ---------- 全视图重渲染（幂等 + try/catch） ---------- */
+    function renderAll() {
+        var names = [
+            'applyPanelLayout',
+            'renderCalendar',
+            'renderYearHeatmap',
+            'renderWeekBoard',
+            'renderDayPlan',
+            'renderTaskPool',
+            'renderExercisePool',
+            'renderFixedBlockPool',
+            'updateFixedProgressBars',
+            'renderTimeSlotConfig',
+            'renderEnergyAndRPG'
+        ];
+        for (var i = 0; i < names.length; i++) {
+            try {
+                if (typeof window[names[i]] === 'function') window[names[i]]();
+            } catch (e) {
+                if (window.console && console.warn) {
+                    console.warn('[7-events fix] ' + names[i] + ' error', e);
+                }
+            }
+        }
+    }
+
+    var renderTimer = null;
+    function scheduleRender() {
+        if (renderTimer) clearTimeout(renderTimer);
+        renderTimer = setTimeout(function () {
+            renderTimer = null;
+            /* 重渲染前先补全一次计划数据，避免渲染函数读到空结构 */
+            try { ensurePlanData(); } catch (e) {}
+            renderAll();
+        }, 80);
+    }
+
+    /* ---------- 设置变更监听（与原有监听并存） ---------- */
+    document.addEventListener('input', function (e) {
+        var el = e.target;
+        if (!el || !el.getAttribute) return;
+        if (!el.getAttribute('data-setting')) return;
+        scheduleRender();
+    }, true);
+
+    document.addEventListener('change', function (e) {
+        var el = e.target;
+        if (!el || !el.getAttribute) return;
+        if (!el.getAttribute('data-setting')) return;
+        scheduleRender();
+    }, true);
+
+    document.addEventListener('click', function (e) {
+        var el = e.target;
+        if (!el || !el.closest) return;
+        var btn = el.closest('[data-setting][data-value]');
+        if (!btn) return;
+        scheduleRender();
+    }, true);
+
+    /* ---------- 启动：抓基线 + 补全 ---------- */
+    function bootstrap() {
+        try {
+            wrapSaveDataToFile();
+            ensurePlanData();
+            captureBaseline();
+        } catch (e) {
+            if (window.console && console.warn) console.warn('[7-events fix] bootstrap error', e);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootstrap, { once: true });
+    } else {
+        bootstrap();
+    }
+    setTimeout(bootstrap, 0);
+    setTimeout(bootstrap, 200);
+    setTimeout(bootstrap, 600);
+    setTimeout(bootstrap, 1500);
+
+    /* 暴露给调试 / 其它脚本调用 */
+    window.ensureSettingsPlanData = ensurePlanData;
+    window.captureSettingsPlanBaseline = captureBaseline;
+})();
+/* ===== FIX-INJECT-END: events-plan-guard ===== */

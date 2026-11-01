@@ -1078,3 +1078,192 @@ function renderTaskPool() {
     });
     ovdWrapper.style.display = hasOverdue ? 'block' : 'none';
 }
+
+/* ===== FIX-INJECT-BEGIN: render-data ===== */
+/* ------------------------------------------------------------------
+ * 修复注入：渲染数据兜底 + 视图重新渲染
+ * 目的：
+ *   1) 每次渲染前对 appData 做完整性校验，缺失或非法字段用默认值补全；
+ *      —— 修复「课表时间段消失」（timeSlots 空数组 / undefined）
+ *      —— 修复「日历 / 周板 / 热力图空白」（tasks / 映射字段缺失）
+ *   2) 初始化后自动重新渲染所有视图；定期检查数据完整性，异常时自动
+ *      修复并重渲染。
+ * 说明：
+ *   - 原有渲染函数（renderCalendar / renderWeekBoard / renderYearHeatmap /
+ *     renderDayPlan / renderTaskPool / renderExercisePool /
+ *     renderFixedBlockPool / updateFixedProgressBars / renderTimeSlotConfig）
+ *     全部保留不动，仅在启动阶段触发它们；
+ *   - 不改事件、同步、设置保存逻辑；
+ *   - 可重复执行，工具层面会剥离旧注入段。
+ * ------------------------------------------------------------------ */
+(function installRenderDataFix() {
+    if (window.__renderDataFixInstalled) return;
+    window.__renderDataFixInstalled = true;
+
+    /* ---------- 取默认值（优先 core 注入的 getDefaultSettings，回退全局常量） ---------- */
+    function getDefaultTimeSlots() {
+        try {
+            if (typeof window.getDefaultSettings === 'function') {
+                var d = window.getDefaultSettings();
+                if (d && Array.isArray(d.timeSlots) && d.timeSlots.length > 0) {
+                    return JSON.parse(JSON.stringify(d.timeSlots));
+                }
+            }
+        } catch (e) {}
+        try {
+            if (typeof DEFAULT_TIMESLOTS !== 'undefined' && Array.isArray(DEFAULT_TIMESLOTS)) {
+                return JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    function getDefaultFixedBlocks() {
+        try {
+            if (typeof window.getDefaultSettings === 'function') {
+                var d = window.getDefaultSettings();
+                if (d && Array.isArray(d.fixedBlocks) && d.fixedBlocks.length > 0) {
+                    return JSON.parse(JSON.stringify(d.fixedBlocks));
+                }
+            }
+        } catch (e) {}
+        try {
+            if (typeof DEFAULT_FIXED_BLOCKS !== 'undefined' && Array.isArray(DEFAULT_FIXED_BLOCKS)) {
+                return JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS));
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    /* ---------- 数据兜底：保证渲染函数读到的结构一定合法 ---------- */
+    function sanitizeRenderData() {
+        if (typeof appData === 'undefined' || !appData) return false;
+        var a = appData;
+        var changed = false;
+
+        /* 对象映射字段（渲染时大量使用，缺失会抛错） */
+        var objKeys = [
+            'dailyReflections', 'weeklyReflections', 'monthlyReflections', 'dailyLogs',
+            'dailyEnergy', 'dailyExerciseChecks', 'exerciseSchedule',
+            'exerciseTimeSlotSchedule', 'fixedBlockSchedule'
+        ];
+        for (var i = 0; i < objKeys.length; i++) {
+            var k = objKeys[i];
+            if (!a[k] || typeof a[k] !== 'object' || Array.isArray(a[k])) {
+                a[k] = {};
+                changed = true;
+            }
+        }
+        if (typeof a.yearlyGoals !== 'string') { a.yearlyGoals = ''; changed = true; }
+
+        /* 数组字段 */
+        if (!Array.isArray(a.tasks)) { a.tasks = []; changed = true; }
+        if (!Array.isArray(a.exercises)) { a.exercises = []; changed = true; }
+
+        /* timeSlots：空数组或缺失 → 恢复默认（课表依赖它显示行） */
+        if (!Array.isArray(a.timeSlots) || a.timeSlots.length === 0) {
+            var dts = getDefaultTimeSlots();
+            if (dts && dts.length > 0) {
+                a.timeSlots = dts;
+                a.timeSlotsLastModified = Date.now();
+                changed = true;
+                if (window.console && console.warn) {
+                    console.warn('[6-render fix] appData.timeSlots 为空，已恢复为默认时间段');
+                }
+            }
+        }
+
+        /* fixedBlocks：仅在缺失 / 非法时恢复默认；空数组合法（用户可清空） */
+        if (a.fixedBlocks === undefined || a.fixedBlocks === null) {
+            var dfb = getDefaultFixedBlocks();
+            if (dfb) { a.fixedBlocks = dfb; changed = true; }
+        } else if (!Array.isArray(a.fixedBlocks)) {
+            a.fixedBlocks = [];
+            changed = true;
+        }
+
+        /* panelLayout */
+        if (!a.panelLayout || typeof a.panelLayout !== 'object') {
+            a.panelLayout = { order: ['todo', 'learning', 'other', 'exercise'], spans: {}, sizes: {} };
+            changed = true;
+        } else {
+            if (!Array.isArray(a.panelLayout.order) || a.panelLayout.order.length === 0) {
+                a.panelLayout.order = ['todo', 'learning', 'other', 'exercise'];
+                changed = true;
+            }
+            if (!a.panelLayout.spans) { a.panelLayout.spans = {}; changed = true; }
+            if (!a.panelLayout.sizes) { a.panelLayout.sizes = {}; changed = true; }
+        }
+
+        return changed;
+    }
+
+    /* ---------- 安全调用渲染函数（单个失败不影响其余） ---------- */
+    function safeCall(fnName) {
+        try {
+            var fn = window[fnName];
+            if (typeof fn === 'function') fn();
+        } catch (e) {
+            if (window.console && console.warn) console.warn('[6-render fix] ' + fnName + ' error', e);
+        }
+    }
+
+    function renderAllViews() {
+        safeCall('applyPanelLayout');
+        safeCall('renderCalendar');
+        safeCall('renderYearHeatmap');
+        safeCall('renderWeekBoard');
+        safeCall('renderDayPlan');
+        safeCall('renderTaskPool');
+        safeCall('renderExercisePool');
+        safeCall('renderFixedBlockPool');
+        safeCall('updateFixedProgressBars');
+        safeCall('renderTimeSlotConfig');
+        safeCall('renderEnergyAndRPG');
+    }
+
+    /* ---------- 修复 + 重渲染 ---------- */
+    function fixAndRender() {
+        try {
+            var changed = sanitizeRenderData();
+            if (changed) {
+                try {
+                    if (typeof saveDataToFile === 'function') saveDataToFile(appData);
+                    else localStorage.setItem('myWorkspaceAppData', JSON.stringify(appData));
+                } catch (e) {}
+            }
+            renderAllViews();
+        } catch (e) {
+            if (window.console && console.warn) console.warn('[6-render fix] fixAndRender error', e);
+        }
+    }
+
+    /* ---------- 启动：多轮兜底，兼容模板延迟注入 ---------- */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fixAndRender, { once: true });
+    } else {
+        fixAndRender();
+    }
+    setTimeout(fixAndRender, 100);
+    setTimeout(fixAndRender, 400);
+    setTimeout(fixAndRender, 1000);
+    setTimeout(fixAndRender, 2000);
+
+    /* ---------- 定期巡检：数据被意外清空时自动恢复并重渲染 ---------- */
+    setInterval(function () {
+        if (typeof appData === 'undefined' || !appData) return;
+        var changed = sanitizeRenderData();
+        if (changed) {
+            try {
+                if (typeof saveDataToFile === 'function') saveDataToFile(appData);
+            } catch (e) {}
+            renderAllViews();
+        }
+    }, 2000);
+
+    /* ---------- 对外暴露（便于调试 / 其它脚本调用） ---------- */
+    window.sanitizeRenderData = sanitizeRenderData;
+    window.renderAllViews = renderAllViews;
+    window.fixAndRenderAll = fixAndRender;
+})();
+/* ===== FIX-INJECT-END: render-data ===== */

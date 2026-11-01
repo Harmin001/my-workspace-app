@@ -1,3 +1,100 @@
+/* ===== FIX-INJECT-BEGIN: init-storage-guard ===== */
+/* ------------------------------------------------------------------
+ * 修复注入①：appData 存储读取合并保护
+ * 背景：
+ *   原 9-init.js 的 IIFE 中有：
+ *       const saved = localStorage.getItem('myWorkspaceAppData');
+ *       if (saved) { appData = JSON.parse(saved); }
+ *   这会把 appData 整体替换为存储内容。一旦存储里
+ *   timeSlots / fixedBlocks / levelConfig / panelLayout 为空数组或
+ *   缺失，1-core.js 里补全的默认课表与基础计划数据就被覆盖清空，
+ *   导致「课表时间段消失、周/月/全年计划视图空白」。
+ * 方案：
+ *   在 IIFE 执行前，包装 Storage.prototype.getItem，
+ *   仅对 myWorkspaceAppData 这个 key 生效：
+ *     - 存储中不存在该 key → 原样返回 null，让原 else 分支跑首次初始化；
+ *     - 存储存在 → 用「当前 appData 基底 + 存储中非空字段」做字段级合并，
+ *       返回合并后的 JSON 字符串给原代码 JSON.parse，
+ *       从而空 timeSlots / 空 levelConfig 等不再覆盖默认值。
+ * 影响：
+ *   - 只影响读取这一个 key 的行为，写入流程完全不变；
+ *   - 包装常驻（开销极小），保证任何时机读取都不会拿到残缺数据；
+ *   - 之前的 init-settings 注入段读取存储时也能拿到合并后的完整数据，
+ *     不会再用残缺数据覆盖 appData。
+ * ------------------------------------------------------------------ */
+(function installInitStorageGuard() {
+    if (window.__initStorageGuardInstalled) return;
+    window.__initStorageGuardInstalled = true;
+
+    if (typeof Storage === 'undefined' || !Storage.prototype || typeof Storage.prototype.getItem !== 'function') return;
+
+    var STORAGE_KEY = 'myWorkspaceAppData';
+    var origGet = Storage.prototype.getItem;
+    if (origGet.__initStorageGuardWrapped) return;
+
+    function deepClone(o) {
+        try { return JSON.parse(JSON.stringify(o)); } catch (e) { return o; }
+    }
+
+    /* 空值时绝不覆盖基底默认值的数组字段 */
+    var PROTECTED_ARRAYS = ['timeSlots', 'fixedBlocks'];
+
+    function mergeStoredIntoBase(base, stored) {
+        var merged = deepClone(base || {});
+        if (!stored || typeof stored !== 'object') return merged;
+
+        Object.keys(stored).forEach(function (k) {
+            var sv = stored[k];
+            if (sv === null || sv === undefined) return;
+
+            /* 数组字段 */
+            if (Array.isArray(sv)) {
+                if (PROTECTED_ARRAYS.indexOf(k) >= 0 && sv.length === 0) return; /* 保留默认课表 / 固定块 */
+                merged[k] = deepClone(sv);
+                return;
+            }
+
+            /* 对象字段：保护关键结构不被空值覆盖 */
+            if (typeof sv === 'object') {
+                if (k === 'levelConfig') {
+                    if (!sv.levels || !Array.isArray(sv.levels) || sv.levels.length === 0) return;
+                }
+                if (k === 'panelLayout') {
+                    if (!sv.order || !Array.isArray(sv.order) || sv.order.length === 0) return;
+                }
+                if (k === 'fonts') {
+                    if (!sv.title && !sv.content && !sv.hint && !sv.small) return;
+                }
+                merged[k] = deepClone(sv);
+                return;
+            }
+
+            /* 基本类型：存储值优先（用户可能是故意设置为空串等） */
+            merged[k] = sv;
+        });
+
+        return merged;
+    }
+
+    var wrapped = function (key) {
+        if (key !== STORAGE_KEY) return origGet.call(this, key);
+        var raw = origGet.call(this, key);
+        if (raw === null || raw === undefined) return raw;
+
+        var stored;
+        try { stored = JSON.parse(raw); } catch (e) { return raw; }
+
+        var base = (typeof appData !== 'undefined' && appData) ? appData : {};
+        var merged = mergeStoredIntoBase(base, stored);
+
+        try { return JSON.stringify(merged); } catch (e) { return raw; }
+    };
+    wrapped.__initStorageGuardWrapped = true;
+
+    Storage.prototype.getItem = wrapped;
+})();
+/* ===== FIX-INJECT-END: init-storage-guard ===== */
+
 /* ===== FIX-INJECT-BEGIN: init-settings ===== */
 /* ------------------------------------------------------------------
  * 修复注入：页面初始化时读取本地配置，并回填设置面板
@@ -169,3 +266,104 @@
     setTimeout(apply, 2500);
 })();
 /* ===== FIX-INJECT-END: init-settings ===== */
+
+/* ===== FIX-INJECT-BEGIN: init-plan-render ===== */
+/* ------------------------------------------------------------------
+ * 修复注入②：初始化后数据补全 + 全视图渲染触发
+ * 目的：
+ *   1) 原 IIFE 初始化后，再执行一次 ensurePlanBaseData()，
+ *      保证 timeSlots / fixedBlocks / tasks / exercises / 各类映射字典
+ *      / 视图日期字段 / 面板布局全部合法（幂等）；
+ *   2) 依次触发所有视图渲染：renderCalendar / renderYearHeatmap /
+ *      renderWeekBoard / renderDayPlan / renderTaskPool /
+ *      renderExercisePool / renderFixedBlockPool /
+ *      updateFixedProgressBars / renderTimeSlotConfig / renderEnergyAndRPG，
+ *      修复「周/月/全年计划视图空白」；
+ *   3) 多轮延时兜底，兼容 3-templates 模板延迟注入；
+ *   4) 定期巡检：数据被意外清空时自动修复并重渲染，
+ *      防止运行过程中课表 / 计划数据再次丢失。
+ * 说明：
+ *   - 原 IIFE、定时器、同步初始化、之前的 init-settings 段全部保留不动；
+ *   - 渲染函数幂等，重复调用只会重绘，不会产生副作用。
+ * ------------------------------------------------------------------ */
+(function triggerPlanRenderAfterInit() {
+    if (window.__initPlanRenderInstalled) return;
+    window.__initPlanRenderInstalled = true;
+
+    function safeCall(name) {
+        try {
+            if (typeof window[name] === 'function') window[name]();
+        } catch (e) {
+            if (window.console && console.warn) console.warn('[9-init fix] ' + name + ' error', e);
+        }
+    }
+
+    function ensureData() {
+        var changed = false;
+        try {
+            if (typeof window.ensurePlanBaseData === 'function' &&
+                typeof appData !== 'undefined' && appData) {
+                changed = !!window.ensurePlanBaseData(appData);
+            }
+        } catch (e) {
+            if (window.console && console.warn) console.warn('[9-init fix] ensurePlanBaseData error', e);
+        }
+        if (changed) {
+            try {
+                if (typeof saveDataToFile === 'function') saveDataToFile(appData);
+                else localStorage.setItem('myWorkspaceAppData', JSON.stringify(appData));
+            } catch (e) {}
+        }
+        return changed;
+    }
+
+    function renderAll() {
+        safeCall('applyPanelLayout');
+        safeCall('renderCalendar');
+        safeCall('renderYearHeatmap');
+        safeCall('renderWeekBoard');
+        safeCall('renderDayPlan');
+        safeCall('renderTaskPool');
+        safeCall('renderExercisePool');
+        safeCall('renderFixedBlockPool');
+        safeCall('updateFixedProgressBars');
+        safeCall('renderTimeSlotConfig');
+        safeCall('renderEnergyAndRPG');
+    }
+
+    function run() {
+        ensureData();
+        renderAll();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', run, { once: true });
+    } else {
+        run();
+    }
+    setTimeout(run, 0);
+    setTimeout(run, 100);
+    setTimeout(run, 300);
+    setTimeout(run, 800);
+    setTimeout(run, 1500);
+    setTimeout(run, 2500);
+
+    /* 定期巡检：数据被意外清空时自动恢复并重渲染 */
+    setInterval(function () {
+        if (typeof appData === 'undefined' || !appData) return;
+        if (document.hidden) return;
+        var changed = false;
+        try {
+            if (typeof window.ensurePlanBaseData === 'function') {
+                changed = !!window.ensurePlanBaseData(appData);
+            }
+        } catch (e) { return; }
+        if (changed) {
+            try {
+                if (typeof saveDataToFile === 'function') saveDataToFile(appData);
+            } catch (e) {}
+            renderAll();
+        }
+    }, 2500);
+})();
+/* ===== FIX-INJECT-END: init-plan-render ===== */
