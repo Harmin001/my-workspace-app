@@ -12,11 +12,11 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="sidebar">
-<div class="sidebar-title">🚀 我的工作台<div class="sync-controls"><div class="p2p-dot" id="p2p-indicator" title="未连接"></div><span class="sync-status-badge offline" id="sync-status-badge"><span id="sync-status-text">离线</span></span><button class="btn btn-sm btn-sync-now" id="btn-sync-now" onclick="manualSyncNow()" title="立即同步">立即同步</button></div></div>
+<div class="sidebar-title">🚀 我的工作台<div class="sync-controls"><div class="p2p-dot" id="p2p-indicator" title="未连接"></div><span class="sync-status-badge offline" id="sync-status-badge"><span id="sync-status-text">离线</span></span></div></div>
 <div class="nav-item" data-target="year">📊 全年</div>
 <div class="nav-item" data-target="month">📅 月计划</div>
 <div class="nav-item" data-target="week">🗓️ 周计划</div>
@@ -331,6 +331,15 @@
         <div class="conflict-actions" style="margin-top:16px;"><button class="btn btn-sm" onclick="closeImportModal()">取消</button><button class="btn btn-sm btn-primary" onclick="confirmImport()">✅ 确认恢复选中模块</button></div>
     </div>
 </div>
-<script src="app.js"></script>
+
+<script src="js/1-core.js"></script>
+<script src="js/2-utils.js"></script>
+<script src="js/3-rpg.js"></script>
+<script src="js/4-methods.js"></script>
+<script src="js/5-render.js"></script>
+<script src="js/6-events.js"></script>
+<script src="js/7-sync.js"></script>
+<script src="js/8-init.js"></script>
+
 </body>
 </html>
