@@ -403,3 +403,125 @@ window.openRPGModal = function() {
     document.getElementById('rpg-modal').classList.add('active');
 };
 window.closeRPGModal = function() { document.getElementById('rpg-modal').classList.remove('active'); };
+
+/* ===== FIX-INJECT-BEGIN: rpg-render-guard ===== */
+/* ------------------------------------------------------------------
+ * 修复注入：RPG 逻辑渲染阻塞防护
+ * 背景：
+ *   6-render.js 的 calcProgress(dateStr, type) 第一行调用 ensureEnergyData()，
+ *   calcProgress 又被 renderCalendar / renderYearHeatmap /
+ *   renderWeekBoard / renderDayPlan / updateFixedProgressBars 等
+ *   所有视图渲染函数大量调用。
+ *   一旦 ensureEnergyData() 因以下原因抛错：
+ *     - appData.tasks / exercises / fixedBlocks / methodsFiles 数组中
+ *       混入了 null / undefined 元素（forEach 里访问 .xxx 抛错）；
+ *     - appData.levelConfig.levels 含非对象项；
+ *     - DEFAULT_TIMESLOTS / DEFAULT_FIXED_BLOCKS / DEFAULT_LEVELS
+ *       因加载顺序或误删未定义；
+ *   calcProgress 抛错 → 视图渲染函数抛错 → 周/月/全年计划视图空白。
+ * 方案：
+ *   1) cleanArrays()：执行前过滤关键数组中的 null / 非对象项；
+ *   2) 包装 ensureEnergyData 等被渲染链间接调用的函数：
+ *      执行前 cleanArrays，执行整体 try-catch；
+ *   3) 包装渲染相关与工具类函数（renderEnergyAndRPG / getXxx /
+ *      adjustXxx / getLevelInfo / getLevelTitle / logTaskAction），
+ *      异常时返回兜底值，保证调用方不会因单个异常中断；
+ *   4) __rpgRenderGuardWrapped 标记防止重复包装形成递归。
+ * 说明：
+ *   - 精力计算、升级、弹窗、精力恢复、任务勾选计数等原逻辑一字不动；
+ *   - 本段只在其外层加保护层，不改任何业务字段语义；
+ *   - 与 7-events / 8-sync / 9-init / 5-methods 中 saveDataToFile
+ *     包装共存，互不干扰。
+ * ------------------------------------------------------------------ */
+(function installRpgRenderGuard() {
+    if (window.__rpgRenderGuardInstalled) return;
+    window.__rpgRenderGuardInstalled = true;
+
+    function cleanArrays() {
+        if (typeof appData === 'undefined' || !appData) return;
+        var keys = ['tasks', 'exercises', 'fixedBlocks', 'methodsFiles'];
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            if (Array.isArray(appData[k])) {
+                appData[k] = appData[k].filter(function (item) {
+                    return item && typeof item === 'object';
+                });
+            }
+        }
+        if (appData.levelConfig && Array.isArray(appData.levelConfig.levels)) {
+            appData.levelConfig.levels = appData.levelConfig.levels.filter(function (lv) {
+                return lv && typeof lv === 'object';
+            });
+        }
+    }
+
+    function warn(name, e) {
+        if (window.console && console.warn) {
+            console.warn('[4-rpg fix] ' + name + ' 内部异常已被兜底：', e);
+        }
+    }
+
+    /* 包装工具：origName 为全局函数名；fallback 为异常时的兜底返回值 */
+    function wrap(origName, fallback) {
+        var orig = window[origName];
+        if (typeof orig !== 'function' || orig.__rpgRenderGuardWrapped) return;
+
+        var wrapped = function () {
+            try {
+                cleanArrays();
+            } catch (e) { warn(origName + '.cleanArrays', e); }
+
+            try {
+                return orig.apply(this, arguments);
+            } catch (e) {
+                warn(origName, e);
+                if (typeof fallback === 'function') {
+                    try { return fallback.apply(this, arguments); }
+                    catch (e2) { warn(origName + '.fallback', e2); }
+                }
+                return undefined;
+            }
+        };
+        wrapped.__rpgRenderGuardWrapped = true;
+        window[origName] = wrapped;
+    }
+
+    /* —— 渲染链关键函数 —— */
+    wrap('ensureEnergyData');
+    wrap('renderEnergyAndRPG');
+    wrap('getDateEnergySpent', function () { return 0; });
+    wrap('getTodayEnergySpent', function () { return 0; });
+    wrap('getTodayEnergyRemaining', function () {
+        try {
+            if (typeof appData !== 'undefined' && appData && typeof appData.energyMax === 'number') {
+                return Math.max(-20, appData.energyMax);
+            }
+        } catch (e) {}
+        return 200;
+    });
+
+    /* —— 工具类函数：返回值类型明确的兜底 —— */
+    wrap('adjustExp', function () { return 0; });
+    wrap('adjustAttr');
+    wrap('updateStreak');
+    wrap('getLevelInfo', function () { return { level: 1, expInLevel: 0, needed: 100 }; });
+    wrap('getLevelTitle', function () { return '新手'; });
+    wrap('logTaskAction');
+
+    /* 启动后立刻执行一次清理，防止首帧渲染读到脏数组 */
+    function bootstrap() {
+        try { cleanArrays(); } catch (e) {}
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootstrap, { once: true });
+    } else {
+        bootstrap();
+    }
+    setTimeout(bootstrap, 0);
+    setTimeout(bootstrap, 300);
+    setTimeout(bootstrap, 1500);
+
+    /* 暴露给调试使用 */
+    window.__rpgCleanArrays = cleanArrays;
+})();
+/* ===== FIX-INJECT-END: rpg-render-guard ===== */

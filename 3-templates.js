@@ -107,3 +107,183 @@ function enhanceSettingsTemplate() {
 
 window.enhanceSettingsTemplate = enhanceSettingsTemplate;
 /* ===== FIX-INJECT-END: templates-settings ===== */
+
+/* ===== FIX-INJECT-BEGIN: templates-plan-containers ===== */
+/* ------------------------------------------------------------------
+ * 修复注入：模板注入兜底 + 渲染容器校验与自愈
+ * 背景：
+ *   1) 原 3-templates.js 只在 DOMContentLoaded 时注入 mainContentHTML；
+ *      若某个脚本在注入完成前就渲染，或 placeholder 被提前消费而注入失败，
+ *      view-year / view-month / view-week / view-day 就不存在，
+ *      6-render.js 里的 renderCalendar / renderWeekBoard / renderYearHeatmap
+ *      找不到挂载点，视图自然空白 —— 这就是「周/月/全年计划视图空白」的
+ *      常见诱因；
+ *   2) 模板内部若某个容器 id 缺失或写错，对应渲染函数拿不到元素也会空白。
+ * 方案：
+ *   - 注入兜底：无论 DOMContentLoaded 时机，只要 placeholder 存在就注入；
+ *     若 placeholder 已被消费但 view-year 不存在，则补占位符再注入；
+ *   - 容器自愈：逐一校验计划/课表/日计划/设置面板的 30+ 关键容器 id，
+ *     缺失时按正确 id + class 补占位容器挂到对应视图；
+ *   - 校验结果挂 window.__templatesContainerReport 方便排查。
+ * 说明：
+ *   - mainContentHTML 模板字符串与所有页面弹窗、设置面板原样保留；
+ *   - 之前修好的 templates-inject、templates-settings 段不受影响；
+ *   - 本段只做注入兜底和容器自愈，不改动任何业务逻辑。
+ * ------------------------------------------------------------------ */
+
+/* ========== 1) 模板注入兜底 ========== */
+(function injectTemplateRobustly() {
+    if (window.__templateInjectedOnce) return;
+    window.__templateInjectedOnce = true;
+
+    function tryInject() {
+        var placeholder = document.getElementById('main-content-placeholder');
+        if (placeholder) {
+            try {
+                placeholder.outerHTML = mainContentHTML;
+                window.__templateInjected = true;
+                return true;
+            } catch (e) {
+                if (window.console && console.warn) console.warn('[3-templates fix] 注入模板失败', e);
+            }
+        }
+        if (document.getElementById('view-year')) {
+            window.__templateInjected = true;
+            return true;
+        }
+        return false;
+    }
+
+    if (tryInject()) return;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryInject, { once: true });
+    }
+    setTimeout(tryInject, 0);
+    setTimeout(tryInject, 100);
+    setTimeout(function () {
+        if (tryInject()) return;
+        /* 兜底：.main-content 存在但 placeholder 缺失且视图未注入 → 补占位符再注入 */
+        var mc = document.querySelector('.main-content');
+        if (mc && !document.getElementById('main-content-placeholder')) {
+            var ph = document.createElement('div');
+            ph.id = 'main-content-placeholder';
+            mc.appendChild(ph);
+            tryInject();
+        }
+    }, 300);
+})();
+
+/* ========== 2) 渲染容器校验与自愈 ========== */
+(function verifyPlanContainers() {
+    if (window.__planContainersVerified) return;
+    window.__planContainersVerified = true;
+
+    var CONTAINER_SPECS = [
+        /* 全年计划 */
+        { id: 'year-heatmap',                view: 'view-year',     tag: 'div',      cls: 'year-heatmap' },
+        { id: 'year-display',                view: 'view-year',     tag: 'span' },
+        { id: 'yearly-goals-bottom',         view: 'view-year',     tag: 'textarea' },
+
+        /* 月计划 */
+        { id: 'calendar-wrapper',            view: 'view-month',    tag: 'div',      cls: 'calendar-wrapper' },
+        { id: 'calendar-grid',               view: 'view-month',    tag: 'div',      cls: 'calendar-grid' },
+        { id: 'month-display',               view: 'view-month',    tag: 'span' },
+        { id: 'month-summary-details',       view: 'view-month',    tag: 'details' },
+        { id: 'month-summary-textarea',      view: 'view-month',    tag: 'textarea' },
+
+        /* 周计划 / 课表 */
+        { id: 'week-board',                  view: 'view-week',     tag: 'div',      cls: 'week-board' },
+        { id: 'week-display',                view: 'view-week',     tag: 'span' },
+        { id: 'week-summary-details',        view: 'view-week',     tag: 'details' },
+        { id: 'week-summary-textarea',       view: 'view-week',     tag: 'textarea' },
+        { id: 'week-drawer-panel',           view: 'view-week',     tag: 'div',      cls: 'week-drawer-panel' },
+        { id: 'week-drawer-tab',             view: 'view-week',     tag: 'div',      cls: 'week-drawer-tab' },
+        { id: 'task-pool-learning',          view: 'view-week',     tag: 'div',      cls: 'task-pool-list' },
+        { id: 'task-pool-other',             view: 'view-week',     tag: 'div',      cls: 'task-pool-list' },
+        { id: 'task-pool-overdue',           view: 'view-week',     tag: 'div',      cls: 'task-pool-list' },
+        { id: 'overdue-wrapper',             view: 'view-week',     tag: 'div',      cls: 'overdue-wrapper' },
+        { id: 'exercise-pool',               view: 'view-week',     tag: 'div',      cls: 'exercise-pool' },
+        { id: 'fixed-block-pool',            view: 'view-week',     tag: 'div',      cls: 'exercise-pool' },
+
+        /* 日计划 */
+        { id: 'day-title',                   view: 'view-day',      tag: 'h1' },
+        { id: 'day-panels-grid',             view: 'view-day',      tag: 'div',      cls: 'day-panels-grid' },
+        { id: 'todo-list',                   view: 'view-day',      tag: 'div',      cls: 'task-drop-zone' },
+        { id: 'learning-list',               view: 'view-day',      tag: 'div',      cls: 'task-drop-zone' },
+        { id: 'other-list',                  view: 'view-day',      tag: 'div',      cls: 'task-drop-zone' },
+        { id: 'learning-completed',          view: 'view-day',      tag: 'div',      cls: 'task-drop-zone' },
+        { id: 'other-completed',             view: 'view-day',      tag: 'div',      cls: 'task-drop-zone' },
+        { id: 'exercise-grid',               view: 'view-day',      tag: 'div',      cls: 'exercise-grid' },
+        { id: 'daily-reflection-textarea',   view: 'view-day',      tag: 'textarea' },
+        { id: 'day-summary-details',         view: 'view-day',      tag: 'details' },
+
+        /* 设置面板容器 */
+        { id: 'level-config-list',           view: 'view-settings', tag: 'div',      cls: 'level-config-list' },
+        { id: 'timeslot-config-list',        view: 'view-settings', tag: 'div' },
+        { id: 'fixed-block-energy-config-list', view: 'view-settings', tag: 'div' },
+        { id: 'common-btns-config',          view: 'view-settings', tag: 'div',      cls: 'common-btns-grid' }
+    ];
+
+    var report = { ok: true, missing: [], created: [], checkTime: '' };
+
+    function ensureContainer(spec) {
+        if (document.getElementById(spec.id)) return true;
+
+        var parent = null;
+        if (spec.view) {
+            parent = document.getElementById(spec.view);
+            if (!parent) {
+                report.missing.push(spec.id + '（视图 ' + spec.view + ' 未注入）');
+                report.ok = false;
+                return false;
+            }
+        } else {
+            parent = document.body;
+        }
+
+        var el = document.createElement(spec.tag || 'div');
+        el.id = spec.id;
+        if (spec.cls) el.className = spec.cls;
+        if (spec.tag === 'textarea') el.value = '';
+
+        /* 兜底容器打标，方便识别 */
+        el.setAttribute('data-placement-fallback', '1');
+        parent.appendChild(el);
+        report.created.push(spec.id);
+        return true;
+    }
+
+    function checkOnce() {
+        /* 视图容器本身 */
+        ['view-year', 'view-month', 'view-week', 'view-day', 'view-methods', 'view-settings'].forEach(function (vid) {
+            if (!document.getElementById(vid)) {
+                if (report.missing.indexOf(vid) === -1) {
+                    report.missing.push(vid + '（视图容器未注入）');
+                }
+                report.ok = false;
+            }
+        });
+        /* 内部容器 */
+        CONTAINER_SPECS.forEach(ensureContainer);
+
+        report.checkTime = new Date().toLocaleTimeString();
+        window.__templatesContainerReport = report;
+
+        if (report.missing.length > 0 && window.console && console.warn) {
+            console.warn('[3-templates fix] 渲染容器缺失清单：', report.missing);
+            console.warn('[3-templates fix] 已自愈补建容器：', report.created);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkOnce, { once: true });
+    } else {
+        checkOnce();
+    }
+    setTimeout(checkOnce, 100);
+    setTimeout(checkOnce, 400);
+    setTimeout(checkOnce, 1000);
+    setTimeout(checkOnce, 2500);
+    setTimeout(checkOnce, 5000);
+})();
+/* ===== FIX-INJECT-END: templates-plan-containers ===== */

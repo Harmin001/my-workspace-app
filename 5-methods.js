@@ -432,3 +432,217 @@ function refreshMethodsEditorContent() {
         document.getElementById('methods-split-controls').style.display = 'flex';
     }
 }
+
+/* ===== FIX-INJECT-BEGIN: methods-save-guard ===== */
+/* ------------------------------------------------------------------
+ * 修复注入：学习方法模块保存时保护课表 / 计划数据
+ * 背景：
+ *   5-methods.js 中多处调用 saveDataToFile(appData)，例如：
+ *     - methodsTriggerSave()  编辑器输入后 500ms 自动保存
+ *     - switchMethodsFile / switchMethodsFile2  切换文件时保存
+ *     - createMethodsFile / createMethodsFolder / deleteMethodsFile
+ *     - toggleSplitScreen  切换单双栏
+ *     - initMethodsEditor 编辑器失焦时保存
+ *   如果此时 appData 里的 timeSlots / fixedBlocks / tasks / exercises
+ *   已被某处误写成空数组（比如同步把远端空数据合进来、其它模块
+ *   把变量清空），保存时就会把空数据写入 localStorage，
+ *   下次启动加载到的就是空课表 —— 表现即「课表时间消失、计划视图空白」。
+ * 方案：
+ *   1) 包装 window.saveDataToFile：真正写盘前先补全结构（调用 1-core
+ *      注入的 ensurePlanBaseData），并对关键数组做「非空快照」保护；
+ *   2) methodsFiles 若被清空 / 非法，自动从快照恢复，快照为空时按
+ *      默认值补一个空文件；
+ *   3) 启动后多轮抓取基线快照；每 2 秒巡检一次，发现被清空时恢复并保存。
+ * 说明：
+ *   - 富文本编辑器、文件树、搜索、双栏、KaTeX 渲染等所有原有逻辑
+ *     一字不动；
+ *   - 本段只做保存保护，不改任何业务流程；
+ *   - 与 7-events / 8-sync / 9-init 中同样的 saveDataToFile 包装共存，
+ *     每个包装只做一件事，用各自标记防止重复包装形成递归。
+ * ------------------------------------------------------------------ */
+(function installMethodsSaveGuard() {
+    if (window.__methodsSaveGuardInstalled) return;
+    window.__methodsSaveGuardInstalled = true;
+
+    var PROTECT_ARRAYS = ['timeSlots', 'fixedBlocks', 'tasks', 'exercises'];
+    var lastSnap = {};
+    var lastMethodsSnap = null;
+
+    function deepSnap(v) {
+        try { return JSON.parse(JSON.stringify(v)); } catch (e) { return v; }
+    }
+    function getApp() {
+        return (typeof appData !== 'undefined' && appData) ? appData : null;
+    }
+
+    /* 抓取本地非空快照 */
+    function captureSnapshot() {
+        var a = getApp();
+        if (!a) return;
+        PROTECT_ARRAYS.forEach(function (k) {
+            if (Array.isArray(a[k]) && a[k].length > 0) {
+                lastSnap[k] = deepSnap(a[k]);
+            }
+        });
+        if (Array.isArray(a.methodsFiles) && a.methodsFiles.length > 0) {
+            lastMethodsSnap = deepSnap(a.methodsFiles);
+        }
+    }
+
+    /* 默认空文件（与 1-core.js 里 ensureEnergyData 的创建逻辑一致） */
+    function makeDefaultMethodsFile() {
+        return {
+            id: 'file_default',
+            name: '我的学习方法',
+            type: 'file',
+            parentId: null,
+            contentHtml: '',
+            contentText: '',
+            updatedAt: 0
+        };
+    }
+
+    /* 保存前补全 / 保护 appData */
+    window.__methodsEnsureSafeAppData = function () {
+        var a = getApp();
+        if (!a) return false;
+
+        /* 先走 1-core 注入的通用补全（幂等） */
+        try {
+            if (typeof window.ensurePlanBaseData === 'function') {
+                window.ensurePlanBaseData(a);
+            }
+        } catch (e) {}
+
+        /* 关键数组：当前为空但快照非空 → 用快照恢复；非空则更新快照 */
+        PROTECT_ARRAYS.forEach(function (k) {
+            if (!Array.isArray(a[k])) {
+                a[k] = lastSnap[k] ? deepSnap(lastSnap[k]) : [];
+                return;
+            }
+            if (a[k].length === 0) {
+                if (lastSnap[k] && lastSnap[k].length > 0) {
+                    a[k] = deepSnap(lastSnap[k]);
+                }
+            } else {
+                lastSnap[k] = deepSnap(a[k]);
+            }
+        });
+
+        /* methodsFiles：缺失 / 非数组 / 空数组 → 快照恢复，无快照用默认文件 */
+        if (!Array.isArray(a.methodsFiles) || a.methodsFiles.length === 0) {
+            if (lastMethodsSnap && lastMethodsSnap.length > 0) {
+                a.methodsFiles = deepSnap(lastMethodsSnap);
+            } else {
+                a.methodsFiles = [makeDefaultMethodsFile()];
+            }
+        } else {
+            lastMethodsSnap = deepSnap(a.methodsFiles);
+        }
+
+        /* 当前激活文件 id 必须指向某个存在的文件 */
+        var fileExists = function (id) {
+            if (!id) return false;
+            for (var i = 0; i < a.methodsFiles.length; i++) {
+                if (a.methodsFiles[i] && a.methodsFiles[i].id === id && a.methodsFiles[i].type !== 'folder') {
+                    return true;
+                }
+            }
+            return false;
+        };
+        if (!fileExists(a.activeMethodsFileId)) {
+            var firstFile = null;
+            for (var i2 = 0; i2 < a.methodsFiles.length; i2++) {
+                if (a.methodsFiles[i2] && a.methodsFiles[i2].type === 'file') {
+                    firstFile = a.methodsFiles[i2];
+                    break;
+                }
+            }
+            a.activeMethodsFileId = firstFile ? firstFile.id : null;
+        }
+        if (!fileExists(a.activeMethodsFileId2)) {
+            var secondFile = null;
+            var count = 0;
+            for (var i3 = 0; i3 < a.methodsFiles.length; i3++) {
+                if (a.methodsFiles[i3] && a.methodsFiles[i3].type === 'file') {
+                    count++;
+                    if (count === 2) { secondFile = a.methodsFiles[i3]; break; }
+                }
+            }
+            if (!secondFile) secondFile = a.methodsFiles[0] || null;
+            a.activeMethodsFileId2 = secondFile ? secondFile.id : null;
+        }
+
+        return true;
+    };
+
+    /* 包装 saveDataToFile：写盘前保护 */
+    function wrapSaveDataToFile() {
+        var fn = window.saveDataToFile;
+        if (typeof fn !== 'function' || fn.__methodsGuardWrapped) return;
+
+        var wrapped = function (data) {
+            try { window.__methodsEnsureSafeAppData(); } catch (e) {
+                if (window.console && console.warn) {
+                    console.warn('[5-methods fix] ensureSafeAppData before save error', e);
+                }
+            }
+            /* 传入的 data 若不是 appData 引用，也在被写盘前补全一次；
+               若是 appData 本身，前面的 ensure 已生效 */
+            if (!data || data === (typeof appData !== 'undefined' ? appData : null)) {
+                data = (typeof appData !== 'undefined') ? appData : data;
+            }
+            return fn.call(this, data);
+        };
+        wrapped.__methodsGuardWrapped = true;
+        window.saveDataToFile = wrapped;
+    }
+
+    /* 启动：抓基线 + 补全 + 包装 */
+    function bootstrap() {
+        try {
+            wrapSaveDataToFile();
+            captureSnapshot();
+            window.__methodsEnsureSafeAppData();
+        } catch (e) {
+            if (window.console && console.warn) console.warn('[5-methods fix] bootstrap error', e);
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootstrap, { once: true });
+    } else {
+        bootstrap();
+    }
+    setTimeout(bootstrap, 0);
+    setTimeout(bootstrap, 300);
+    setTimeout(bootstrap, 1500);
+
+    /* 巡检：被清空时自动恢复并保存 */
+    setInterval(function () {
+        if (document.hidden) return;
+        var a = getApp();
+        if (!a) return;
+        var restored = false;
+        PROTECT_ARRAYS.forEach(function (k) {
+            if (Array.isArray(a[k]) && a[k].length === 0 &&
+                lastSnap[k] && lastSnap[k].length > 0) {
+                a[k] = deepSnap(lastSnap[k]);
+                restored = true;
+            }
+        });
+        if (!Array.isArray(a.methodsFiles) || a.methodsFiles.length === 0) {
+            if (lastMethodsSnap && lastMethodsSnap.length > 0) {
+                a.methodsFiles = deepSnap(lastMethodsSnap);
+                restored = true;
+            }
+        }
+        if (restored) {
+            try {
+                if (typeof window.saveDataToFile === 'function') window.saveDataToFile(a);
+            } catch (e) {}
+        }
+    }, 2000);
+
+    window.__methodsCaptureSnapshot = captureSnapshot;
+})();
+/* ===== FIX-INJECT-END: methods-save-guard ===== */

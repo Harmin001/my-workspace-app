@@ -649,3 +649,126 @@ body.dark-mode .btn-manual-sync {
     }
     .btn-manual-sync:active { transform: scale(.94); }
 }
+
+/* ===== FIX-INJECT-BEGIN: css-view-visible ===== */
+/* ------------------------------------------------------------------
+ * 视图可见性安全网
+ * 目的：
+ *   保证课表、周/月/全年计划视图容器渲染后一定可见、有尺寸，
+ *   防止因 display / visibility / opacity / 宽高塌陷 / z-index 遮挡
+ *   导致「数据已经渲染出来但肉眼看不见」。
+ * 说明：
+ *   - 不覆盖原有任何组件、主题、字体规则；
+ *   - 只针对视图容器与核心渲染容器，使用 !important 兜底；
+ *   - 放在文件末尾，同选择器同权重时后者胜出，可修复「原规则被误改」的情况。
+ * ------------------------------------------------------------------ */
+
+/* 1) 视图容器 .active 状态强制可见、可铺满 */
+html body .view-container.active,
+html body #view-year.active,
+html body #view-month.active,
+html body #view-week.active,
+html body #view-day.active,
+html body #view-methods.active,
+html body #view-settings.active {
+    display: flex !important;
+    flex-direction: column !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    z-index: auto;
+}
+
+/* 2) 主内容区 / 视图容器父级高度兜底 */
+html body .main-content {
+    min-height: 0;
+    min-width: 0;
+}
+html body .view-container {
+    min-height: 0;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* 3) 全年视图：热力图容器避免空 grid 塌陷成 0 高 */
+html body .year-heatmap {
+    min-height: 60px;
+    visibility: visible;
+    opacity: 1;
+}
+html body #year-display,
+html body #yearly-goals-bottom {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 4) 月视图：日历外壳与网格保证最小高度 */
+html body .calendar-wrapper { min-height: 180px; }
+html body .calendar-grid    { min-height: 160px; }
+html body .day-box          { min-height: 100px; }
+html body #month-display    { visibility: visible; opacity: 1; }
+
+/* 5) 周视图 / 课表：整板与各单元格保证尺寸 */
+html body .week-board {
+    min-height: 160px;
+    visibility: visible;
+    opacity: 1;
+}
+html body .week-grid-header,
+html body .week-time-cell,
+html body .week-grid-cell {
+    min-height: 36px;
+    visibility: visible;
+}
+html body .week-column {
+    min-height: 80px;
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 6) 日计划：面板网格与卡片保证最小高度 */
+html body .day-panels-grid { min-height: 200px; }
+html body .section-box     { min-height: 200px; }
+html body #day-panels-grid,
+html body #todo-list,
+html body #learning-list,
+html body #other-list,
+html body #exercise-grid   { visibility: visible; opacity: 1; }
+
+/* 7) 移动端再次兜底：周板列式布局下各列必须可见 */
+@media (max-width: 768px) {
+    html body .week-board {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px;
+        min-height: 100px;
+    }
+    html body .week-column {
+        display: flex !important;
+        flex-direction: column !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-height: 100px;
+    }
+    /* 桌面端表格型表头 / 时间列 / 单元格在移动端隐藏，避免重复占位 */
+    html body .week-grid-header,
+    html body .week-time-cell,
+    html body .week-grid-cell { display: none !important; }
+
+    html body .calendar-grid  { min-height: 120px; }
+    html body .day-panels-grid { min-height: 160px; }
+}
+
+/* 8) 移动端日计划面板：避免固定高度导致内容被裁切 */
+@media (max-width: 768px) {
+    html body .section-box {
+        height: auto !important;
+        min-height: 200px !important;
+        resize: none !important;
+        overflow: visible;
+    }
+}
+/* ===== FIX-INJECT-END: css-view-visible ===== */
