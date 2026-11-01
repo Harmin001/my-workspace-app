@@ -517,6 +517,8 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 .methods-file-item.active .methods-file-del:hover { color: #ffcece !important; }
 .methods-file-item.folder-drag-over { background: var(--accent-color) !important; color: #fff !important; outline: 2px dashed #fff; outline-offset: -4px; transform: scale(1.02); }
 .methods-file-item.folder-drag-over .methods-file-del, .methods-file-item.folder-drag-over .folder-toggle, .methods-file-item.folder-drag-over .file-icon { color: #fff !important; }
+.methods-file-item[draggable="true"] { cursor: grab; }
+.methods-file-item[draggable="true"]:active { cursor: grabbing; }
 .methods-editor-area { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; min-height: 0; }
 .methods-toolbar { flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 10px; background: var(--bg-panel-header); border: 1px solid var(--border-color); border-radius: var(--radius); align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
 .methods-toolbar .tb-group { display: flex; gap: 2px; align-items: center; padding: 0 6px; border-right: 1px solid var(--border-color); flex-wrap: nowrap; }
@@ -630,7 +632,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 </head>
 <body>
 <div class="sidebar">
-<div class="sync-controls"><div class="p2p-dot" id="p2p-indicator" title="未连接"></div><span class="sync-status-badge offline" id="sync-status-badge"><span id="sync-status-text">离线</span></span><button class="btn btn-sm btn-sync-now" id="btn-sync-now" onclick="manualSyncNow()" title="立即同步">立即同步</button></div>
+<div class="sidebar-title">🚀 我的工作台<div class="sync-controls"><div class="p2p-dot" id="p2p-indicator" title="未连接"></div><span class="sync-status-badge offline" id="sync-status-badge"><span id="sync-status-text">离线</span></span><button class="btn btn-sm btn-sync-now" id="btn-sync-now" onclick="manualSyncNow()" title="立即同步">立即同步</button></div></div>
 <div class="nav-item" data-target="year">📊 全年</div>
 <div class="nav-item" data-target="month">📅 月计划</div>
 <div class="nav-item" data-target="week">🗓️ 周计划</div>
@@ -1233,11 +1235,11 @@ function ensureEnergyData() {
     if (!appData.dailyLogs) appData.dailyLogs = {};
     if (!appData.dailyEnergy) appData.dailyEnergy = {};
     if (!appData.fixedBlockSchedule) appData.fixedBlockSchedule = {};
-    if (!appData.energyMax || appData.energyMax === 100) appData.energyMax = 200;
-    if (appData.energyWarnThreshold === undefined) appData.energyWarnThreshold = 30;
-    if (appData.expRatio === undefined) appData.expRatio = 0.6;
-    if (appData.napEnergy === undefined || appData.napEnergy === 40) appData.napEnergy = 50;
-    if (appData.breakEnergy === undefined || appData.breakEnergy === 15) appData.breakEnergy = 20;
+    if (appData.energyMax === undefined || appData.energyMax === null || isNaN(Number(appData.energyMax))) appData.energyMax = 200;
+    if (appData.energyWarnThreshold === undefined || appData.energyWarnThreshold === null) appData.energyWarnThreshold = 30;
+    if (appData.expRatio === undefined || appData.expRatio === null) appData.expRatio = 0.6;
+    if (appData.napEnergy === undefined || appData.napEnergy === null) appData.napEnergy = 50;
+    if (appData.breakEnergy === undefined || appData.breakEnergy === null) appData.breakEnergy = 20;
     const def = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
     if (!appData.rpg) appData.rpg = { ...def };
     else Object.keys(def).forEach(k => { if (appData.rpg[k] === undefined) appData.rpg[k] = def[k]; });
@@ -1830,6 +1832,30 @@ function getFileFullPath(fileId) {
     return path.join('/');
 }
 function buildFileTree(parentId = null) { return appData.methodsFiles.filter(f => (f.parentId || null) === parentId); }
+async function importFileToFolder(file, folderId) {
+    const rawName = file.name || '未命名文件';
+    const dotIdx = rawName.lastIndexOf('.');
+    const ext = dotIdx > 0 ? rawName.substring(dotIdx + 1).toLowerCase() : '';
+    const name = dotIdx > 0 ? rawName.substring(0, dotIdx) : rawName;
+    let contentHtml = '', contentText = '';
+    const textExts = ['txt','md','markdown','html','htm','log','csv','json','xml','yaml','yml','ini','js','ts','css','py','java','c','cpp','h','sh'];
+    if (textExts.includes(ext)) { try { const text = await file.text(); contentText = text; contentHtml = escapeHtml(text).replace(/\r\n/g,'\n').replace(/\n/g,'<br>'); } catch(err) {} }
+    const newFile = { id: 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2,8), name: name || '未命名', type: 'file', parentId: folderId, contentHtml, contentText, updatedAt: Date.now() };
+    if (!Array.isArray(appData.methodsFiles)) appData.methodsFiles = [];
+    appData.methodsFiles.push(newFile);
+    return newFile;
+}
+function moveMethodsFileToFolder(fileId, targetFolderId) {
+    const f = appData.methodsFiles.find(x => x.id === fileId);
+    const target = appData.methodsFiles.find(x => x.id === targetFolderId);
+    if (!f || !target || target.type !== 'folder' || f.id === targetFolderId) return false;
+    let cur = target;
+    while (cur) { if (cur.id === fileId) return false; cur = appData.methodsFiles.find(x => x.id === cur.parentId); }
+    if (f.parentId === targetFolderId) return false;
+    f.parentId = targetFolderId;
+    if (f.type === 'file') f.updatedAt = Date.now();
+    return true;
+}
 function renderMethodsFileTree(node, listElement, depth = 0) {
     node.forEach(f => {
         const isFolder = f.type === 'folder';
@@ -1838,29 +1864,40 @@ function renderMethodsFileTree(node, listElement, depth = 0) {
         item.className = 'methods-file-item' + (f.id === appData.activeMethodsFileId && !isFolder ? ' active' : '');
         item.style.paddingLeft = (10 + depth * 12) + 'px';
         item.title = f.name + '\n双击重命名';
-        const icon = document.createElement('span');
-        icon.className = 'file-icon';
-        icon.textContent = isFolder ? (isExpanded ? '📂' : '📁') : '📄';
-        const toggle = document.createElement('span');
-        toggle.className = 'folder-toggle';
-        toggle.textContent = isFolder ? (isExpanded ? '▼' : '▶') : '';
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'methods-file-name';
-        nameSpan.textContent = f.name;
-        const delSpan = document.createElement('span');
-        delSpan.className = 'methods-file-del';
-        delSpan.textContent = '✕';
-        delSpan.title = '删除';
+        item.setAttribute('draggable', 'true');
+        item.addEventListener('dragstart', (e) => { try { e.dataTransfer.setData('text/methods-file-id', f.id); e.dataTransfer.effectAllowed = 'move'; } catch(err) {} });
+        const icon = document.createElement('span'); icon.className = 'file-icon'; icon.textContent = isFolder ? (isExpanded ? '📂' : '📁') : '📄';
+        const toggle = document.createElement('span'); toggle.className = 'folder-toggle'; toggle.textContent = isFolder ? (isExpanded ? '▼' : '▶') : '';
+        const nameSpan = document.createElement('span'); nameSpan.className = 'methods-file-name'; nameSpan.textContent = f.name;
+        const delSpan = document.createElement('span'); delSpan.className = 'methods-file-del'; delSpan.textContent = '✕'; delSpan.title = '删除';
         if (isFolder) toggle.onclick = (e) => { e.stopPropagation(); if (isExpanded) expandedMethodFolders.delete(f.id); else expandedMethodFolders.add(f.id); renderMethodsFileList(); };
         item.appendChild(toggle); item.appendChild(icon); item.appendChild(nameSpan); item.appendChild(delSpan);
         item.onclick = (e) => { if (e.target === delSpan || e.target === toggle) return; if (isFolder) { if (isExpanded) expandedMethodFolders.delete(f.id); else expandedMethodFolders.add(f.id); renderMethodsFileList(); } else switchMethodsFile(f.id); };
         item.ondblclick = (e) => { if (e.target === delSpan || e.target === toggle) return; renameMethodsFile(f.id); };
         delSpan.onclick = (e) => { e.stopPropagation(); deleteMethodsFile(f.id); };
-        listElement.appendChild(item);
-        if (isFolder && isExpanded) {
-            const children = buildFileTree(f.id);
-            if (children.length > 0) renderMethodsFileTree(children, listElement, depth + 1);
+        if (isFolder) {
+            item.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'move'; item.classList.add('folder-drag-over'); });
+            item.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation(); item.classList.add('folder-drag-over'); });
+            item.addEventListener('dragleave', (e) => { e.stopPropagation(); if (!item.contains(e.relatedTarget)) item.classList.remove('folder-drag-over'); });
+            item.addEventListener('drop', async (e) => {
+                e.preventDefault(); e.stopPropagation(); item.classList.remove('folder-drag-over');
+                try {
+                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        let okCount = 0;
+                        for (const file of Array.from(e.dataTransfer.files)) { try { await importFileToFolder(file, f.id); okCount++; } catch(err) { console.warn(err); } }
+                        expandedMethodFolders.add(f.id); renderMethodsFileList(); saveDataToFile(appData);
+                        showMiniToast(okCount > 0 ? '已导入 ' + okCount + ' 个文件到「' + f.name + '」' : '拖拽失败');
+                        return;
+                    }
+                    const dragFileId = e.dataTransfer.getData('text/methods-file-id');
+                    if (dragFileId && moveMethodsFileToFolder(dragFileId, f.id)) {
+                        expandedMethodFolders.add(f.id); renderMethodsFileList(); saveDataToFile(appData); showMiniToast('已移动到文件夹');
+                    }
+                } catch(err) { console.error('拖拽失败', err); showMiniToast('拖拽失败'); }
+            });
         }
+        listElement.appendChild(item);
+        if (isFolder && isExpanded) { const children = buildFileTree(f.id); if (children.length > 0) renderMethodsFileTree(children, listElement, depth + 1); }
     });
 }
 function renderMethodsFileList() {
@@ -2176,14 +2213,18 @@ function getSettingsObj() {
         animationEnabled: appData.animationEnabled, yearlyGoals: appData.yearlyGoals, panelLayout: appData.panelLayout
     };
 }
+let _lastSaveToastAt = 0;
+function _showSaveErrorToast(msg) { const now = Date.now(); if (now - _lastSaveToastAt < 2000) return; _lastSaveToastAt = now; showMiniToast(msg); }
 function saveDataToFile(data) {
     if (!isSyncing) data._lastModified = Date.now();
-    try { localStorage.setItem('myWorkspaceAppData', JSON.stringify(data)); } catch (e) { console.warn('localStorage 保存失败', e); }
+    let jsonStr;
+    try { jsonStr = JSON.stringify(data); } catch (e) { console.error('[存储] 序列化失败：', e); _showSaveErrorToast('保存失败，存储空间不足'); return; }
+    try { localStorage.setItem('myWorkspaceAppData', jsonStr); } catch (e) { console.error('[存储] 写入失败：', e); _showSaveErrorToast('保存失败，存储空间不足'); return; }
+    try { const check = localStorage.getItem('myWorkspaceAppData'); if (check !== jsonStr) { console.error('[存储] 校验失败'); _showSaveErrorToast('保存异常，请检查'); } } catch (e) { console.error('[存储] 读取校验异常：', e); }
     if (!isSyncing) {
+        try { lastSyncedSettings = JSON.parse(JSON.stringify(getSettingsObj())); lastSyncedRpg = JSON.parse(JSON.stringify(data.rpg || {})); lastSyncedEnergy = JSON.parse(JSON.stringify(data.dailyEnergy || {})); } catch(e) {}
         clearTimeout(_opDebounceTimer);
-        _opDebounceTimer = setTimeout(() => {
-            if (syncStatus === 'connected' || syncStatus === 'syncing') broadcastDiffs(data);
-        }, 300);
+        _opDebounceTimer = setTimeout(() => { if (syncStatus === 'connected' || syncStatus === 'syncing') broadcastDiffs(data); }, 300);
     }
 }
 function saveLocalStorage() { try { localStorage.setItem('myWorkspaceAppData', JSON.stringify(appData)); } catch(e) {} }
@@ -4957,6 +4998,24 @@ function applyRemoteData(payload, oldData) {
     saveLocalStorage();
     setTimeout(() => { isSyncing = false; }, 100);
 }
+window.manualSyncNow = function() {
+    if (!conn || !conn.open) { showMiniToast('暂无连接，无法同步'); return; }
+    const btn = document.getElementById('btn-sync-now');
+    if (btn && btn.disabled) return;
+    if (isSyncing) return;
+    if (btn) { btn.disabled = true; btn.classList.add('syncing'); btn.textContent = '同步中...'; }
+    let ok = false;
+    try {
+        resetSyncedBaseline({});
+        broadcastDiffs(appData);
+        conn.send({ type: 'SYNC_MERGE', payload: appData, lastModified: appData._lastModified || Date.now(), requestResponse: true, isManualSync: true });
+        ok = true;
+    } catch (err) { console.error('手动同步失败', err); }
+    finally {
+        setTimeout(() => { if (btn) { btn.disabled = false; btn.classList.remove('syncing'); btn.textContent = '立即同步'; } }, 800);
+    }
+    showMiniToast(ok ? '同步成功' : '同步失败');
+};
 function setupConnection(connection, isHost, targetId) {
     connection.on('open', () => {
         if (conn !== connection) return;
@@ -4985,6 +5044,10 @@ function setupConnection(connection, isHost, targetId) {
             const merged = mergeData(appData, data.payload);
             applyRemoteData(merged, oldData);
             resetSyncedBaseline(appData);
+            if (data.requestResponse) {
+                try { connection.send({ type: 'SYNC_MERGE', payload: appData, lastModified: appData._lastModified || Date.now() }); } catch(e) { console.warn('同步回传失败', e); }
+            }
+            if (data.isManualSync) showMiniToast('同步成功');
         }
     });
     connection.on('close', () => {
@@ -5036,10 +5099,12 @@ document.addEventListener('drop', () => { stopAutoScroll(); }, true);
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
         document.body.classList.add('invisible-anim');
+        try { saveDataToFile(appData); } catch(e) { console.error('切后台保存失败', e); }
     } else {
         document.body.classList.remove('invisible-anim');
     }
 });
+window.addEventListener('pagehide', () => { try { saveDataToFile(appData); } catch(e) { console.error('pagehide 保存失败', e); } });
 window.addEventListener('beforeunload', () => {
     cleanupMethodsTimers();
     if (_opDebounceTimer) clearTimeout(_opDebounceTimer);
