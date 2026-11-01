@@ -1,3 +1,73 @@
+/* ===== FIX-INJECT-BEGIN: events-top-guard ===== */
+/* ------------------------------------------------------------------
+ * 修复注入①：getElementById 空元素保护
+ * 背景：3-templates.js 的模板延迟注入，7-events.js 顶部存在
+ *       document.getElementById('month-summary-textarea').addEventListener(...)
+ *       之类直接调用，元素不存在 → 抛错 → 后续所有 window 函数、拖拽、
+ *       初始化全部不执行 → 表现为「所有按钮点击失效」。
+ * 方案：脚本同步执行期间，getElementById 未命中时返回占位对象，使
+ *       .addEventListener() 静默忽略；脚本执行完后（DOMContentLoaded /
+ *       setTimeout 0）自动还原，用户交互时一切正常。
+ * 影响面：仅覆盖本次同步执行阶段，不改变其他模块行为。
+ * ------------------------------------------------------------------ */
+(function installGetElementByIdGuard() {
+    if (window.__eventsTopGuardInstalled) return;
+    window.__eventsTopGuardInstalled = true;
+
+    var DocProto = (typeof Document !== 'undefined') ? Document.prototype : null;
+    if (!DocProto || typeof DocProto.getElementById !== 'function') return;
+
+    var origGet = DocProto.getElementById;
+    window.__origGetElementById = origGet;
+    window.__eventsTopGuardActive = true;
+
+    /* 占位对象：任何 addEventListener / 属性读写都静默忽略 */
+    var stub = {
+        addEventListener: function () {},
+        removeEventListener: function () {},
+        setAttribute: function () {},
+        getAttribute: function () { return null; },
+        hasAttribute: function () { return false; },
+        removeAttribute: function () {},
+        classList: {
+            add: function () {}, remove: function () {}, toggle: function () {},
+            contains: function () { return false; }, replace: function () {}
+        },
+        style: {}, dataset: {},
+        innerText: '', innerHTML: '', textContent: '',
+        value: '', checked: false, disabled: false,
+        focus: function () {}, blur: function () {}, click: function () {},
+        appendChild: function () {}, removeChild: function () {}, insertBefore: function () {},
+        querySelector: function () { return null; },
+        querySelectorAll: function () { return []; },
+        closest: function () { return null; },
+        scrollIntoView: function () {},
+        getBoundingClientRect: function () {
+            return { left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0 };
+        },
+        offsetParent: null
+    };
+
+    DocProto.getElementById = function (id) {
+        var el = origGet.call(this, id);
+        if (el) return el;
+        if (!window.__eventsTopGuardActive) return el;
+        return stub;
+    };
+
+    function restore() {
+        if (!window.__eventsTopGuardActive) return;
+        window.__eventsTopGuardActive = false;
+        DocProto.getElementById = origGet;
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', restore, { once: true });
+    }
+    setTimeout(restore, 0);
+    setTimeout(restore, 200);
+})();
+/* ===== FIX-INJECT-END: events-top-guard ===== */
+
 window.enableTaskEdit = function(span, taskId, subId) {
     if (locks[taskId]) return showMiniToast('对方正在编辑该任务', '#eb5757');
     acquireLock(taskId);
@@ -1996,3 +2066,352 @@ document.addEventListener('click', function (e) {
         window.doManualSync();
     }
 });
+
+/* ===== FIX-INJECT-BEGIN: events-settings ===== */
+/* ------------------------------------------------------------------
+ * 修复注入②：设置控件监听 / 保存 / 回填
+ * 目的：
+ *   1) 通过 document 级事件委托，为所有带 data-setting 的控件
+ *      （滑块、数字框、复选框、主题按钮）统一处理，写入 appData
+ *      并调用 saveDataToFile()，修复「设置无法保存 / 无法修改」。
+ *   2) 提供 refreshSettingsPanel()，从 appData 回填设置控件值，
+ *      修复「设置面板没有加载默认配置值」。
+ *   3) 通过事件委托接管 月份总结 / 年度目标 / 待办输入框 等可能
+ *      因模板延迟注入而绑定失败的输入（处理逻辑幂等，不会重复添加）。
+ * 原有拖拽、同步、任务勾选、菜单、弹窗等事件与逻辑全部保留。
+ * ------------------------------------------------------------------ */
+(function bindSettingsControls() {
+    if (window.__settingsControlsBound) return;
+    window.__settingsControlsBound = true;
+
+    /* ---------- 工具 ---------- */
+    function setPath(obj, path, value) {
+        var parts = String(path).split('.');
+        var cur = obj;
+        for (var i = 0; i < parts.length - 1; i++) {
+            if (!cur[parts[i]] || typeof cur[parts[i]] !== 'object') cur[parts[i]] = {};
+            cur = cur[parts[i]];
+        }
+        cur[parts[parts.length - 1]] = value;
+    }
+
+    function persist() {
+        try {
+            if (typeof saveDataToFile === 'function') { saveDataToFile(appData); return; }
+        } catch (e) {}
+        try { localStorage.setItem('myWorkspaceAppData', JSON.stringify(appData)); } catch (e) {}
+    }
+
+    function getAppData() {
+        return (typeof appData !== 'undefined' && appData) ? appData : null;
+    }
+
+    function applySettingFromControl(el) {
+        if (!el || !el.getAttribute) return;
+        var a = getAppData();
+        if (!a) return;
+        var field = el.getAttribute('data-setting');
+        if (!field) return;
+
+        var value;
+        if (el.type === 'checkbox') value = !!el.checked;
+        else if (el.type === 'range' || el.type === 'number') value = parseFloat(el.value);
+        else value = el.value;
+
+        /* —— 特化处理 —— */
+        if (field === 'radius') {
+            var r = Math.round(parseFloat(value) || 8);
+            if (r < 0) r = 0;
+            if (r > 30) r = 30;
+            a.radius = r + 'px';
+            document.documentElement.style.setProperty('--radius', a.radius);
+            var rv = document.getElementById('radius-val'); if (rv) rv.innerText = r;
+            var rs = document.getElementById('radius-slider'); if (rs && rs !== el) rs.value = r;
+            persist(); return;
+        }
+
+        if (field.indexOf('fonts.') === 0) {
+            var k = field.split('.')[1];
+            var px = Math.round(parseFloat(value) || 14);
+            if (!a.fonts) a.fonts = {};
+            a.fonts[k] = px + 'px';
+            document.documentElement.style.setProperty('--font-' + k, a.fonts[k]);
+            var fv = document.getElementById('font-' + k + '-val'); if (fv) fv.innerText = px;
+            persist(); return;
+        }
+
+        if (field === 'expRatio') {
+            var pct = parseFloat(value);
+            if (isNaN(pct)) pct = 60;
+            if (pct < 10) pct = 10;
+            if (pct > 100) pct = 100;
+            a.expRatio = pct / 100;
+            var ev = document.getElementById('exp-ratio-val');
+            if (ev) ev.innerText = Math.round(a.expRatio * 100);
+            persist(); return;
+        }
+
+        if (field === 'commonBtns') {
+            if (!Array.isArray(a.commonBtns)) a.commonBtns = [];
+            var val = el.getAttribute('data-value') || el.value;
+            if (el.checked) {
+                if (a.commonBtns.indexOf(val) < 0) a.commonBtns.push(val);
+            } else {
+                a.commonBtns = a.commonBtns.filter(function (b) { return b !== val; });
+            }
+            persist();
+            try { if (typeof renderDayPlan === 'function') renderDayPlan(); } catch (e) {}
+            try { if (typeof renderTaskPool === 'function') renderTaskPool(); } catch (e) {}
+            return;
+        }
+
+        if (field === 'themeMode') {
+            a.themeMode = value;
+            document.body.classList.toggle('dark-mode', value === 'dark');
+            persist(); return;
+        }
+        if (field === 'themeColor') {
+            a.themeColor = value;
+            document.documentElement.style.setProperty('--accent-color', value);
+            persist(); return;
+        }
+
+        if (field === 'maxVisible') {
+            a.maxVisible = Math.max(1, Math.round(parseFloat(value) || 5));
+            var mv = document.getElementById('max-visible-val');
+            if (mv) mv.innerText = a.maxVisible;
+            persist();
+            try { if (typeof renderDayPlan === 'function') renderDayPlan(); } catch (e) {}
+            return;
+        }
+        if (field === 'energyMax') {
+            a.energyMax = Math.max(1, Math.round(parseFloat(value) || 200));
+            var emv = document.getElementById('energy-max-val');
+            if (emv) emv.innerText = a.energyMax;
+            persist();
+            try { if (typeof renderEnergyAndRPG === 'function') renderEnergyAndRPG(); } catch (e) {}
+            return;
+        }
+        if (field === 'energyWarnThreshold') {
+            a.energyWarnThreshold = Math.max(0, Math.round(parseFloat(value) || 30));
+            var ewv = document.getElementById('energy-warn-val');
+            if (ewv) ewv.innerText = a.energyWarnThreshold;
+            persist();
+            try { if (typeof renderEnergyAndRPG === 'function') renderEnergyAndRPG(); } catch (e) {}
+            return;
+        }
+        if (field === 'napEnergy' || field === 'breakEnergy') {
+            var n = Math.max(0, Math.round(parseFloat(value) || 0));
+            a[field] = n;
+            persist();
+            try { if (typeof renderEnergyAndRPG === 'function') renderEnergyAndRPG(); } catch (e) {}
+            return;
+        }
+
+        /* —— 通用写回 —— */
+        setPath(a, field, value);
+        persist();
+        try { if (typeof renderEnergyAndRPG === 'function') renderEnergyAndRPG(); } catch (e) {}
+    }
+
+    /* ---------- 设置控件委托：input / change / click ---------- */
+    document.addEventListener('input', function (e) {
+        var el = e.target;
+        if (!el || !el.getAttribute) return;
+        if (el.getAttribute('data-setting')) applySettingFromControl(el);
+    }, true);
+
+    document.addEventListener('change', function (e) {
+        var el = e.target;
+        if (!el || !el.getAttribute) return;
+        if (!el.getAttribute('data-setting')) return;
+        if (el.type === 'checkbox' || el.tagName === 'SELECT') applySettingFromControl(el);
+    }, true);
+
+    document.addEventListener('click', function (e) {
+        var el = e.target;
+        if (!el || !el.closest) return;
+        var btn = el.closest('[data-setting][data-value]');
+        if (!btn || btn.tagName !== 'BUTTON') return;
+        var field = btn.getAttribute('data-setting');
+        var val = btn.getAttribute('data-value');
+        var a = getAppData();
+        if (!a) return;
+        if (field === 'themeMode') {
+            a.themeMode = val;
+            document.body.classList.toggle('dark-mode', val === 'dark');
+            persist();
+        } else if (field === 'themeColor') {
+            a.themeColor = val;
+            document.documentElement.style.setProperty('--accent-color', val);
+            persist();
+        }
+    }, true);
+
+    /* ---------- 输入框兜底委托（模板延迟注入时顶层绑定可能失效） ---------- */
+    document.addEventListener('input', function (e) {
+        var t = e.target;
+        if (!t || !t.id) return;
+        if (t.id === 'yearly-goals') {
+            if (typeof syncGoal === 'function') syncGoal(t.innerText);
+            return;
+        }
+        if (t.id === 'yearly-goals-bottom') {
+            if (typeof syncGoal === 'function') syncGoal(t.value);
+            return;
+        }
+        if (t.id === 'month-summary-textarea') {
+            var a = getAppData();
+            if (!a) return;
+            var mKey = a.viewYear + '-' + a.viewMonth;
+            if (!a.monthlyReflections) a.monthlyReflections = {};
+            a.monthlyReflections[mKey] = t.value;
+            persist();
+        }
+    }, false);
+
+    document.addEventListener('keypress', function (e) {
+        var t = e.target;
+        if (!t || !t.id) return;
+        var a = getAppData();
+        if (!a) return;
+        if (t.id === 'pool-input-learning') {
+            if (typeof handleAddInput === 'function') handleAddInput(e, 'learning', 'pool', true);
+        } else if (t.id === 'pool-input-other') {
+            if (typeof handleAddInput === 'function') handleAddInput(e, 'other', 'pool', true);
+        } else if (t.id === 'learning-input') {
+            if (typeof handleAddInput === 'function') handleAddInput(e, 'learning', a.selectedDate, false);
+        } else if (t.id === 'other-input') {
+            if (typeof handleAddInput === 'function') handleAddInput(e, 'other', a.selectedDate, false);
+        } else if (t.id === 'todo-input') {
+            if (typeof handleAddTodoInput === 'function') handleAddTodoInput(e);
+        }
+    }, false);
+
+    /* ---------- 回填：从 appData 写回设置面板 ---------- */
+    function refreshSettingsPanel() {
+        var a = getAppData();
+        if (!a) return;
+        var d = window.DEFAULT_SETTINGS || {};
+        var fontsD = d.fonts || { title: '18px', content: '14px', hint: '12px', small: '10px' };
+
+        function setVal(id, v) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            if (document.activeElement === el) return;
+            el.value = v;
+        }
+        function setText(id, v) {
+            var el = document.getElementById(id);
+            if (el) el.innerText = v;
+        }
+        function setChecked(id, v) {
+            var el = document.getElementById(id);
+            if (el) el.checked = !!v;
+        }
+
+        var rn = parseInt(a.radius || d.radius || '8px', 10) || 8;
+        setVal('radius-slider', rn);
+        setText('radius-val', rn);
+
+        var mv = (typeof a.maxVisible === 'number') ? a.maxVisible : (d.maxVisible || 5);
+        setVal('max-visible-slider', mv);
+        setText('max-visible-val', mv);
+
+        setChecked('animation-toggle', a.animationEnabled !== false);
+
+        ['title', 'content', 'hint', 'small'].forEach(function (k) {
+            var raw = (a.fonts && a.fonts[k]) || fontsD[k] || '14px';
+            var n = parseInt(raw, 10) || 14;
+            setVal('font-' + k + '-slider', n);
+            setText('font-' + k + '-val', n);
+        });
+
+        var emax = (typeof a.energyMax === 'number') ? a.energyMax : (d.energyMax || 200);
+        setVal('energy-max-slider', emax);
+        setText('energy-max-val', emax);
+
+        var ewarn = (typeof a.energyWarnThreshold === 'number') ? a.energyWarnThreshold : (d.energyWarnThreshold || 30);
+        setVal('energy-warn-slider', ewarn);
+        setText('energy-warn-val', ewarn);
+
+        var ratio = (typeof a.expRatio === 'number') ? a.expRatio : (d.expRatio || 0.6);
+        var rp = Math.round(ratio * 100);
+        setVal('exp-ratio-slider', rp);
+        setText('exp-ratio-val', rp);
+
+        setVal('set-nap-energy', (typeof a.napEnergy === 'number') ? a.napEnergy : (d.napEnergy || 50));
+        setVal('set-break-energy', (typeof a.breakEnergy === 'number') ? a.breakEnergy : (d.breakEnergy || 20));
+
+        if (a.rpg) {
+            setVal('rpg-edit-exp', a.rpg.exp || 0);
+            setVal('rpg-edit-int', a.rpg.int || 0);
+            setVal('rpg-edit-vit', a.rpg.vit || 0);
+            setVal('rpg-edit-cre', a.rpg.cre || 0);
+            setVal('rpg-edit-foc', a.rpg.foc || 0);
+            setVal('rpg-edit-wil', a.rpg.wil || 0);
+        }
+
+        var cbs = document.querySelectorAll('#common-btns-config input[type="checkbox"]');
+        for (var i = 0; i < cbs.length; i++) {
+            var cb = cbs[i];
+            cb.checked = Array.isArray(a.commonBtns) && a.commonBtns.indexOf(cb.value) >= 0;
+        }
+    }
+
+    function tryRefresh() {
+        try { refreshSettingsPanel(); } catch (e) {
+            if (window.console && console.warn) console.warn('[7-events fix] refreshSettingsPanel error', e);
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryRefresh, { once: true });
+    } else {
+        tryRefresh();
+    }
+    setTimeout(tryRefresh, 0);
+    setTimeout(tryRefresh, 300);
+    setTimeout(tryRefresh, 1200);
+
+    window.refreshSettingsPanel = refreshSettingsPanel;
+})();
+
+/* ------------------------------------------------------------------
+ * 兜底：若原文件顶层的某处绑定仍因环境差异中断，
+ *       这里补一次基础初始化（不覆盖任何已有逻辑）
+ * ------------------------------------------------------------------ */
+(function fallbackInit() {
+    function run() {
+        try {
+            if (typeof appData === 'undefined' || !appData) return;
+            /* 原文件中断的判定：deleteTask 定义在报错点之后 */
+            var originalBroken = (typeof window.deleteTask !== 'function');
+
+            try { if (typeof window.refreshSettingsPanel === 'function') window.refreshSettingsPanel(); } catch (e) {}
+
+            if (originalBroken) {
+                try { if (typeof applyPanelLayout === 'function') applyPanelLayout(); } catch (e) {}
+                try { if (typeof renderCalendar === 'function') renderCalendar(); } catch (e) {}
+                try { if (typeof renderYearHeatmap === 'function') renderYearHeatmap(); } catch (e) {}
+                try { if (typeof renderDayPlan === 'function') renderDayPlan(); } catch (e) {}
+                try { if (typeof updateFixedProgressBars === 'function') updateFixedProgressBars(); } catch (e) {}
+                try { if (typeof renderEnergyAndRPG === 'function') renderEnergyAndRPG(); } catch (e) {}
+                try { if (typeof initTaskAndSubTaskDrag === 'function') initTaskAndSubTaskDrag(); } catch (e) {}
+                try { if (typeof initDragAndDrop === 'function') initDragAndDrop(); } catch (e) {}
+                try { if (typeof renderTaskPool === 'function') renderTaskPool(); } catch (e) {}
+                try { if (typeof renderWeekBoard === 'function') renderWeekBoard(); } catch (e) {}
+                try { if (typeof renderMethodsFileList === 'function') renderMethodsFileList(); } catch (e) {}
+            }
+        } catch (e) {
+            if (window.console && console.warn) console.warn('[7-events fix] fallbackInit error', e);
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', run, { once: true });
+    } else {
+        run();
+    }
+    setTimeout(run, 300);
+    setTimeout(run, 1500);
+})();
+/* ===== FIX-INJECT-END: events-settings ===== */

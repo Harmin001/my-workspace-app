@@ -83,3 +83,127 @@ let _pendingImportData = null;
 let _backupTimerRegistry = [];
 function _registerBackupTimer(id) { _backupTimerRegistry.push(id); return id; }
 function _clearBackupTimers() { _backupTimerRegistry.forEach(id => { clearInterval(id); clearTimeout(id); }); _backupTimerRegistry = []; }
+
+/* ===== FIX-INJECT-BEGIN: core-settings ===== */
+/* ------------------------------------------------------------------
+ * 修复注入：设置默认配置
+ * 目的：
+ *   1) 提供完整的默认设置常量 DEFAULT_SETTINGS
+ *   2) 初始化时若本地存储没有数据，可直接使用默认值
+ *   3) 提供 ensureSettingsDefaults()，用于把已有的 appData 补全为完整设置
+ *   4) 提供 loadSettingsFromStorage()，供 9-init.js 初始化时读取
+ * 说明：原有代码（DEFAULT_LEVELS / DEFAULT_TIMESLOTS / DEFAULT_FIXED_BLOCKS /
+ *       appData / peer 等）全部保留，本段只做增量补充。
+ * ------------------------------------------------------------------ */
+
+const DEFAULT_SETTINGS = {
+    themeColor: '#2383e2',
+    themeMode: 'light',
+    fonts: { title: '18px', content: '14px', hint: '12px', small: '10px' },
+    radius: '8px',
+    maxVisible: 5,
+    animationEnabled: true,
+    energyMax: 200,
+    energyWarnThreshold: 30,
+    expRatio: 0.6,
+    napEnergy: 50,
+    breakEnergy: 20,
+    levelConfig: { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) },
+    commonBtns: ['skip', 'target', 'loop', 'deadline', 'delete'],
+    timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS)),
+    fixedBlocks: JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS)),
+    panelLayout: { order: ['todo', 'learning', 'other', 'exercise'], spans: {}, sizes: {} },
+    rpg: { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' }
+};
+
+const SETTINGS_STORAGE_KEY = 'myWorkspaceAppData';
+
+/* 取一份深拷贝的默认设置（避免被外部修改污染常量） */
+function getDefaultSettings() {
+    return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+}
+
+/* 把 target（默认 appData）补全成完整设置；返回同一个对象 */
+function ensureSettingsDefaults(target) {
+    const t = (target && typeof target === 'object')
+        ? target
+        : (typeof appData !== 'undefined' ? appData : null);
+    if (!t) return getDefaultSettings();
+
+    const d = getDefaultSettings();
+
+    /* 顶层字段补全 */
+    Object.keys(d).forEach(function (k) {
+        if (t[k] === undefined || t[k] === null) t[k] = JSON.parse(JSON.stringify(d[k]));
+    });
+
+    /* 字体对象逐项补全 */
+    if (!t.fonts || typeof t.fonts !== 'object') t.fonts = JSON.parse(JSON.stringify(d.fonts));
+    ['title', 'content', 'hint', 'small'].forEach(function (k) {
+        if (!t.fonts[k] || isNaN(parseInt(t.fonts[k], 10))) t.fonts[k] = d.fonts[k];
+    });
+
+    /* 等级配置 */
+    if (!t.levelConfig || !Array.isArray(t.levelConfig.levels) || t.levelConfig.levels.length === 0) {
+        t.levelConfig = JSON.parse(JSON.stringify(d.levelConfig));
+    }
+
+    /* 数组类设置 */
+    if (!Array.isArray(t.commonBtns)) t.commonBtns = d.commonBtns.slice();
+    if (!Array.isArray(t.timeSlots) || t.timeSlots.length === 0) {
+        t.timeSlots = JSON.parse(JSON.stringify(d.timeSlots));
+    }
+    if (!Array.isArray(t.fixedBlocks) || t.fixedBlocks.length === 0) {
+        t.fixedBlocks = JSON.parse(JSON.stringify(d.fixedBlocks));
+    }
+
+    /* 面板布局 */
+    if (!t.panelLayout || typeof t.panelLayout !== 'object') {
+        t.panelLayout = JSON.parse(JSON.stringify(d.panelLayout));
+    }
+    if (!Array.isArray(t.panelLayout.order) || t.panelLayout.order.length === 0) {
+        t.panelLayout.order = d.panelLayout.order.slice();
+    }
+    if (!t.panelLayout.spans) t.panelLayout.spans = {};
+    if (!t.panelLayout.sizes) t.panelLayout.sizes = {};
+
+    /* 数值类设置 */
+    if (typeof t.energyMax !== 'number' || t.energyMax <= 0) t.energyMax = d.energyMax;
+    if (typeof t.energyWarnThreshold !== 'number') t.energyWarnThreshold = d.energyWarnThreshold;
+    if (typeof t.expRatio !== 'number' || t.expRatio <= 0 || t.expRatio > 1) t.expRatio = d.expRatio;
+    if (typeof t.napEnergy !== 'number') t.napEnergy = d.napEnergy;
+    if (typeof t.breakEnergy !== 'number') t.breakEnergy = d.breakEnergy;
+    if (typeof t.maxVisible !== 'number' || t.maxVisible < 1) t.maxVisible = d.maxVisible;
+    if (typeof t.animationEnabled !== 'boolean') t.animationEnabled = d.animationEnabled;
+    if (!t.radius || isNaN(parseInt(t.radius, 10))) t.radius = d.radius;
+    if (!t.themeMode) t.themeMode = d.themeMode;
+    if (!t.themeColor) t.themeColor = d.themeColor;
+
+    /* RPG */
+    if (!t.rpg || typeof t.rpg !== 'object') t.rpg = JSON.parse(JSON.stringify(d.rpg));
+    Object.keys(d.rpg).forEach(function (k) {
+        if (t.rpg[k] === undefined) t.rpg[k] = d.rpg[k];
+    });
+
+    return t;
+}
+
+/* 从本地存储读取设置；没有存储数据时返回默认值对象 */
+function loadSettingsFromStorage() {
+    let stored = null;
+    try {
+        const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (raw) stored = JSON.parse(raw);
+    } catch (e) {
+        stored = null;
+    }
+    return ensureSettingsDefaults((stored && typeof stored === 'object') ? stored : {});
+}
+
+/* 挂到 window，方便 9-init.js / 7-events.js 直接调用 */
+window.DEFAULT_SETTINGS = DEFAULT_SETTINGS;
+window.SETTINGS_STORAGE_KEY = SETTINGS_STORAGE_KEY;
+window.getDefaultSettings = getDefaultSettings;
+window.ensureSettingsDefaults = ensureSettingsDefaults;
+window.loadSettingsFromStorage = loadSettingsFromStorage;
+/* ===== FIX-INJECT-END: core-settings ===== */

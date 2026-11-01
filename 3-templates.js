@@ -8,3 +8,102 @@ document.addEventListener('DOMContentLoaded', () => {
         placeholder.outerHTML = mainContentHTML;
     }
 });
+
+/* ===== FIX-INJECT-BEGIN: templates-settings ===== */
+/* ------------------------------------------------------------------
+ * 修复注入：设置面板控件标识增强
+ * 目的：
+ *   - 为设置面板中的滑块 / 输入框 / 复选框 / 主题按钮补全
+ *     name 与 data-setting 属性，使字段路径与 1-core.js 里
+ *     DEFAULT_SETTINGS 的键一一对应。
+ *   - 便于 7-events.js 使用 [data-setting] 做统一事件委托与保存，
+ *     从而修复「设置无法加载默认值 / 无法保存」的问题。
+ *   - mainContentHTML 模板字符串本身与其它页面、弹窗、按钮全部保留不动，
+ *     仅在模板注入 DOM 之后追加属性，属最小侵入。
+ * ------------------------------------------------------------------ */
+
+function enhanceSettingsTemplate() {
+    /* id → 字段路径（与 DEFAULT_SETTINGS 一一对应） */
+    var map = {
+        'radius-slider':       'radius',
+        'max-visible-slider':  'maxVisible',
+        'animation-toggle':    'animationEnabled',
+        'font-title-slider':   'fonts.title',
+        'font-content-slider': 'fonts.content',
+        'font-hint-slider':    'fonts.hint',
+        'font-small-slider':   'fonts.small',
+        'energy-max-slider':   'energyMax',
+        'energy-warn-slider':  'energyWarnThreshold',
+        'exp-ratio-slider':    'expRatio',
+        'set-nap-energy':      'napEnergy',
+        'set-break-energy':    'breakEnergy',
+        'rpg-edit-exp':        'rpg.exp',
+        'rpg-edit-int':        'rpg.int',
+        'rpg-edit-vit':        'rpg.vit',
+        'rpg-edit-cre':        'rpg.cre',
+        'rpg-edit-foc':        'rpg.foc',
+        'rpg-edit-wil':        'rpg.wil'
+    };
+
+    Object.keys(map).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var field = map[id];
+        el.setAttribute('data-setting', field);
+        if (!el.getAttribute('name')) el.setAttribute('name', field);
+        el.classList.add('settings-input');
+    });
+
+    /* 主题按钮：从 inline onclick 中提取字段与取值 */
+    var themeBtns = document.querySelectorAll('#view-settings button');
+    for (var i = 0; i < themeBtns.length; i++) {
+        var btn = themeBtns[i];
+        var oc = btn.getAttribute('onclick') || '';
+        var m;
+        m = oc.match(/^\s*changeThemeMode\(\s*'([^']+)'\s*\)/);
+        if (m) {
+            btn.setAttribute('data-setting', 'themeMode');
+            btn.setAttribute('data-value', m[1]);
+            btn.classList.add('settings-btn');
+            continue;
+        }
+        m = oc.match(/^\s*changeTheme\(\s*'([^']+)'\s*\)/);
+        if (m) {
+            btn.setAttribute('data-setting', 'themeColor');
+            btn.setAttribute('data-value', m[1]);
+            btn.classList.add('settings-btn');
+        }
+    }
+
+    /* 任务常用按钮复选框：字段 commonBtns，取值来自各自 value */
+    var cbs = document.querySelectorAll('#common-btns-config input[type="checkbox"]');
+    for (var j = 0; j < cbs.length; j++) {
+        var cb = cbs[j];
+        cb.setAttribute('data-setting', 'commonBtns');
+        cb.setAttribute('data-value', cb.value);
+        if (!cb.getAttribute('name')) cb.setAttribute('name', 'commonBtns');
+        cb.classList.add('settings-input');
+    }
+
+    window.__settingsTemplateEnhanced = true;
+}
+
+/* 立即尝试 + 多轮兜底：无论模板在何时注入都能补上属性 */
+(function bindEnhanceSettingsTemplate() {
+    function attempt() {
+        try { enhanceSettingsTemplate(); } catch (e) {
+            if (window.console && console.warn) console.warn('[3-templates] enhanceSettingsTemplate error', e);
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attempt);
+    } else {
+        attempt();
+    }
+    setTimeout(attempt, 0);
+    setTimeout(attempt, 200);
+    setTimeout(attempt, 800);
+})();
+
+window.enhanceSettingsTemplate = enhanceSettingsTemplate;
+/* ===== FIX-INJECT-END: templates-settings ===== */
