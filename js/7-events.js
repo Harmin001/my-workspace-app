@@ -1985,3 +1985,14 @@ window.addEventListener('beforeunload', () => {
         renderEnergyAndRPG();
     }, 60000);
 })();
+
+// ===== 新增：立即同步按钮事件委托（不覆盖任何已有监听） =====
+document.addEventListener('click', function (e) {
+    if (!e.target || !e.target.closest) return;
+    const btn = e.target.closest('#manual-sync-btn');
+    if (!btn) return;
+    if (typeof window.doManualSync === 'function') {
+        e.preventDefault();
+        window.doManualSync();
+    }
+});
