@@ -1,3 +1,43 @@
+
+/* ==================== 布局急救补丁 (强制生效) ==================== */
+body { 
+    display: flex !important; 
+    flex-direction: row !important; 
+    height: 100vh !important; 
+    margin: 0 !important; 
+    overflow: hidden !important; 
+}
+.sidebar { 
+    width: 240px !important; 
+    display: flex !important; 
+    flex-direction: column !important; 
+    flex-shrink: 0 !important; 
+    height: 100% !important; 
+    overflow-y: auto !important;
+}
+.main-content { 
+    flex: 1 !important; 
+    display: flex !important; 
+    flex-direction: column !important; 
+    overflow: hidden !important; 
+    height: 100% !important; 
+}
+.view-container { 
+    flex: 1 !important; 
+    overflow-y: auto !important; 
+}
+.nav-item { 
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: flex-start !important;
+}
+.sidebar-footer { 
+    margin-top: auto !important; 
+    display: flex !important; 
+    flex-direction: column !important; 
+}
+/* ================================================================ */
+
 :root {
     --bg-main: #ffffff; --bg-sidebar: #f7f7f5; --bg-card: #ffffff; --bg-panel-header: #fafafa; --bg-input: #ffffff;
     --text-main: #37352f; --text-muted: #9b9a97; --border-color: #e9e9e7; --hover-bg: #efefed;
