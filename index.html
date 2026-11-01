@@ -1258,6 +1258,11 @@ function ensureEnergyData() {
     ['title','content','hint','small'].forEach(k => { if (!appData.fonts[k]) appData.fonts[k] = ({ title: "18px", content: "14px", hint: "12px", small: "10px" })[k]; });
     if (!appData.timeSlots) appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
     if (appData.timeSlotsLastModified === undefined) appData.timeSlotsLastModified = 0;
+    // 时间段是全局配置（周一到周日共用一套）。若本地时间段与内置默认不同但时间戳为 0，
+    // 说明是本地改过但时间戳丢失，补上时间戳，避免同步时被远端旧数据覆盖。
+    if (!appData.timeSlotsLastModified && JSON.stringify(appData.timeSlots) !== JSON.stringify(DEFAULT_TIMESLOTS)) {
+        appData.timeSlotsLastModified = Date.now();
+    }
     if (!Array.isArray(appData.fixedBlocks)) appData.fixedBlocks = JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS));
     appData.fixedBlocks.forEach(fb => {
         if (fb.energyCost === undefined) {
