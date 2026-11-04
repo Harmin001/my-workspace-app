@@ -3433,8 +3433,6 @@ function handleIncomingOp(op) {
         if (_dm) { _dm.deleted = true; _dm.updatedAt = Date.now(); }
         renderMethodsFileList(); refreshMethodsEditorContent();
     }
-        renderMethodsFileList(); refreshMethodsEditorContent();
-    }
     syncStatus = 'connected'; updateSyncUI();
     setTimeout(() => isSyncing = false, 100);
 }
@@ -5608,6 +5606,10 @@ window.restoreFromFolder = async function() {
         saveDataToFile(appData);
         resetSyncedBaseline(appData);
         alert('✅ 已恢复选中的 ' + checked.length + ' 个模块');
+    } catch (e) {
+        console.error('[从文件夹恢复失败]', e);
+        alert('恢复失败：' + e.message);
+    }
 };
 function updateBackupUI() {
     const s = document.getElementById('backup-status-text');
