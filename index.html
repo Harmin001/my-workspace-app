@@ -495,6 +495,16 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 .view-all-btn { display: block; width: 100%; margin-top: 8px; padding: 6px; border: 1px dashed var(--border-color); border-radius: 6px; background: var(--bg-sidebar); color: var(--accent-color); font-size: var(--font-hint); font-weight: 600; cursor: pointer; text-align: center; }
 .view-all-btn:hover { background: var(--hover-bg); }
 .mini-toast { position: fixed; left: 50%; bottom: 120px; transform: translateX(-50%); background: rgba(0,0,0,.8); color: #fff; padding: 8px 18px; border-radius: 20px; font-size: 13px; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity .3s; font-weight: 600; }
+.goals-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; max-height: 220px; overflow-y: auto; }
+.goal-item { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px; background: var(--bg-card); border: 1px solid var(--border-color); font-size: var(--font-hint); }
+.goal-item.goal-done .goal-text { text-decoration: line-through; color: var(--text-muted); }
+.goal-item input[type="checkbox"] { accent-color: var(--accent-color); width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; margin: 0; }
+.goal-text { flex: 1; min-width: 0; word-break: break-word; cursor: text; }
+.goal-del { cursor: pointer; color: var(--text-muted); font-size: 11px; padding: 0 3px; flex-shrink: 0; }
+.goal-del:hover { color: var(--danger-color); }
+.goals-input { width: 100%; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px; font-size: var(--font-hint); background: var(--bg-input); color: var(--text-main); outline: none; }
+.goals-input:focus { border-color: var(--accent-color); }
+.task-goal-select { max-width: 130px; font-size: var(--font-small); padding: 1px 2px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-input); color: var(--text-main); cursor: pointer; }
 #view-methods { padding: 16px 24px; }
 #view-methods .year-header { margin-bottom: 12px; }
 .methods-layout { display: flex; gap: 12px; flex: 1; min-height: 0; overflow: hidden; }
@@ -640,7 +650,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="nav-item" data-target="methods">📚 学习方法</div>
 <div class="nav-item" data-target="settings">⚙️ 设置</div>
 <div class="sidebar-footer">
-<div class="sidebar-goal-box"><div class="sidebar-goal-title">🎯 我的目标</div><div class="sidebar-goal-input" id="yearly-goals" contenteditable="true" placeholder="写下核心目标..."></div></div>
+<div class="sidebar-goal-box"><div class="sidebar-goal-title">🎯 我的目标</div><div class="goals-list" id="goals-list-sidebar"></div><input type="text" class="goals-input" id="goal-input-sidebar" placeholder="➕ 添加目标，回车保存"></div>
 <div class="fixed-progress-bars">
 <div class="prog-row" onclick="openStatsModal('year')"><div class="prog-label-row"><span>年完成度</span><span id="prog-year-text">0%</span></div><div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-year-fill" style="background:#2383e2;"></div></div></div>
 <div class="prog-row" onclick="openStatsModal('month')"><div class="prog-label-row"><span>月完成度</span><span id="prog-month-text">0%</span></div><div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-month-fill" style="background:#f2994a;"></div></div></div>
@@ -649,7 +659,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 </div>
 <div class="energy-rpg-panel">
 <div class="rpg-card" id="rpg-card">
-<div class="rpg-energy-section">
+<div class="rpg-energy-section" onclick="handleRpgCardClick(event)">
 <div class="energy-left">
     <div class="energy-header"><span>⚡ 今日精力</span></div>
     <div class="energy-bar-bg"><div class="energy-bar-fill" id="energy-fill" style="width:100%;"></div></div>
@@ -661,8 +671,8 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
     <button class="btn-energy-restore" onclick="restoreEnergy('break')" id="btn-break" title="恢复精力">☕+20</button>
 </div>
 </div>
-<div class="rpg-card-main">
-<div class="rpg-header"><span class="rpg-level" id="rpg-level" onclick="toggleRPGExpand(event)" title="点击展开属性" style="cursor:pointer;">Lv.1</span><span class="rpg-title" id="rpg-title" style="display:none;">新手</span></div>
+<div class="rpg-card-main" onclick="handleRpgCardClick(event)">
+<div class="rpg-header"><span class="rpg-level" id="rpg-level" title="点击查看详情" style="cursor:pointer;">Lv.1</span><span class="rpg-title" id="rpg-title">新手</span></div>
 <div class="rpg-exp-bar" id="rpg-exp-bar-wrap" onclick="toggleRPGExpand(event)" title="点击展开属性" style="cursor:pointer;position:relative;overflow:visible;">
 <div class="rpg-exp-fill" id="rpg-exp-fill" style="width:0%;"></div>
 <div id="rpg-exp-text" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);pointer-events:none;white-space:nowrap;line-height:1;">0 / 100 EXP</div>
@@ -685,7 +695,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="view-container" id="view-year">
 <div class="year-header"><h1>📊 全年总览</h1><div class="time-nav" style="margin-bottom:0;"><button onclick="changeYear(-1)">← 上一年</button><span id="year-display" style="font-size:var(--font-content);">2025年</span><button onclick="changeYear(1)">下一年 →</button></div></div>
 <div class="year-heatmap" id="year-heatmap"></div>
-<div class="year-goal-box bottom-summary"><h2>🎯 年度目标</h2><textarea id="yearly-goals-bottom" placeholder="目标会与左侧实时同步..."></textarea></div>
+<div class="year-goal-box bottom-summary"><h2>🎯 我的目标</h2><div class="goals-list" id="goals-list-main"></div><input type="text" class="goals-input" id="goal-input-main" placeholder="➕ 添加目标，回车保存"></div>
 </div>
 <div class="view-container active" id="view-month">
 <h1>📅 月计划</h1>
@@ -1006,8 +1016,7 @@ const DEFAULT_FIXED_BLOCKS = [
 const BACKUP_MODULES = {
     tasks:     { name: '核心任务',  fields: ['tasks','dailyLogs','dailyReflections','weeklyReflections','monthlyReflections','yearlyGoals','fixedBlockSchedule'] },
     exercises: { name: '锻炼数据',  fields: ['exercises','exerciseSchedule','exerciseTimeSlotSchedule','dailyExerciseChecks'] },
-    rpg:       { name: 'RPG与精力', fields: ['rpg','dailyEnergy','panelLayout'] },
-    settings:  { name: '系统设置',  fields: ['themeColor','themeMode','fonts','radius','energyMax','energyWarnThreshold','expRatio','napEnergy','breakEnergy','levelConfig','commonBtns','timeSlots','timeSlotsLastModified','fixedBlocks','maxVisible','animationEnabled'] },
+    rpg:       { name: 'RPG与精力', fields: ['rpg','dailyEnergy','panelLayout'] },    settings:  { name: '系统设置',  fields: ['themeColor','themeMode','fonts','radius','energyMax','energyWarnThreshold','expRatio','napEnergy','breakEnergy','levelConfig','commonBtns','timeSlots','timeSlotsLastModified','fixedBlocks','maxVisible','animationEnabled','goals'] },
     methods:   { name: '学习方法',  fields: ['methodsFiles','learningMethods','learningMethodsHtml','activeMethodsFileId','activeMethodsFileId2','splitScreenMode'] }
 };
 let appData = {
@@ -1020,7 +1029,7 @@ let appData = {
     ],
     exerciseSchedule: {}, dailyExerciseChecks: {}, dailyReflections: {}, dailyLogs: {},
     weeklyReflections: {}, monthlyReflections: {}, exerciseTimeSlotSchedule: {},
-    selectedDate: getTodayString(), yearlyGoals: "",
+    selectedDate: getTodayString(), yearlyGoals: "", goals: [],
     learningMethods: "", learningMethodsHtml: "", methodsCollapsed: false,
     methodsFiles: [], activeMethodsFileId: null, activeMethodsFileId2: null, splitScreenMode: false,
     themeColor: "#2383e2", themeMode: "light",
@@ -1294,6 +1303,26 @@ function ensureEnergyData() {
     if (!appData.dailyLogs) appData.dailyLogs = {};
     if (!appData.dailyEnergy) appData.dailyEnergy = {};
     if (!appData.fixedBlockSchedule) appData.fixedBlockSchedule = {};
+    // 固定块迁移为按星期几存储（W1~W7），实现每周自动复用、新一周不清空
+    (function migrateFixedBlocks() {
+        const dateKeys = Object.keys(appData.fixedBlockSchedule).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k));
+        if (dateKeys.length === 0) return;
+        dateKeys.forEach(dateStr => {
+            const d = new Date(dateStr + 'T00:00:00');
+            if (isNaN(d.getTime())) { delete appData.fixedBlockSchedule[dateStr]; return; }
+            let wd = d.getDay(); if (wd === 0) wd = 7;
+            const wKey = 'W' + wd;
+            if (!appData.fixedBlockSchedule[wKey]) appData.fixedBlockSchedule[wKey] = {};
+            const day = appData.fixedBlockSchedule[dateStr] || {};
+            Object.keys(day).forEach(tsId => {
+                if (!Array.isArray(day[tsId])) return;
+                if (!appData.fixedBlockSchedule[wKey][tsId]) appData.fixedBlockSchedule[wKey][tsId] = [];
+                const seen = new Set(appData.fixedBlockSchedule[wKey][tsId].map(x => x && x.id));
+                day[tsId].forEach(x => { if (x && x.id && !seen.has(x.id)) appData.fixedBlockSchedule[wKey][tsId].push(JSON.parse(JSON.stringify(x))); });
+            });
+            delete appData.fixedBlockSchedule[dateStr];
+        });
+    })();
     if (appData.energyMax === undefined || appData.energyMax === null) appData.energyMax = 200;
     if (appData.energyWarnThreshold === undefined || appData.energyWarnThreshold === null) appData.energyWarnThreshold = 30;
     if (appData.expRatio === undefined || appData.expRatio === null) appData.expRatio = 0.6;
@@ -1378,7 +1407,124 @@ function ensureEnergyData() {
         }
         if (t.type === 'todo' && !t.todoKind) t.todoKind = 'learning';
     });
+    ensureGoals();
 }
+const GOAL_EXP_REWARD = 200;
+function ensureGoals() {
+    if (!Array.isArray(appData.goals)) appData.goals = [];
+    if (appData.goals.length === 0 && typeof appData.yearlyGoals === 'string' && appData.yearlyGoals.trim()) {
+        appData.yearlyGoals.split('\n').map(s => s.trim()).filter(Boolean).forEach((t, i) => {
+            appData.goals.push({ id: 'g_' + Date.now() + '_' + i, text: t, done: false, doneAt: 0 });
+        });
+        appData.yearlyGoals = '';
+    }
+    appData.goals.forEach(g => {
+        if (!g.id) g.id = 'g_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        if (typeof g.text !== 'string') g.text = '';
+        if (g.done === undefined) g.done = false;
+        if (g.doneAt === undefined) g.doneAt = 0;
+    });
+}
+function renderGoals() {
+    ensureGoals();
+    ['goals-list-sidebar', 'goals-list-main'].forEach(containerId => {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        el.innerHTML = '';
+        if (appData.goals.length === 0) {
+            el.innerHTML = '<div style="color:var(--text-muted);font-size:var(--font-hint);padding:6px 2px;">暂无目标，输入后回车添加</div>';
+            return;
+        }
+        appData.goals.forEach(g => {
+            const row = document.createElement('div');
+            row.className = 'goal-item' + (g.done ? ' goal-done' : '');
+            const cb = document.createElement('input');
+            cb.type = 'checkbox'; cb.checked = !!g.done;
+            cb.onchange = () => window.toggleGoalDone(g.id);
+            const txt = document.createElement('span');
+            txt.className = 'goal-text';
+            txt.textContent = g.text;
+            txt.title = '双击编辑';
+            txt.ondblclick = () => window.editGoalText(g.id);
+            const del = document.createElement('span');
+            del.className = 'goal-del';
+            del.textContent = '✕';
+            del.title = '删除目标';
+            del.onclick = (e) => { e.stopPropagation(); window.deleteGoal(g.id); };
+            row.appendChild(cb); row.appendChild(txt); row.appendChild(del);
+            el.appendChild(row);
+        });
+    });
+}
+window.toggleGoalDone = function(id) {
+    ensureGoals();
+    const g = appData.goals.find(x => x.id === id);
+    if (!g) return;
+    g.done = !g.done;
+    if (g.done) {
+        g.doneAt = Date.now();
+        appData.rpg.exp = Math.max(0, (appData.rpg.exp || 0) + GOAL_EXP_REWARD);
+        showMiniToast('🎯 目标达成！+' + GOAL_EXP_REWARD + ' EXP');
+    } else {
+        g.doneAt = 0;
+        appData.rpg.exp = Math.max(0, (appData.rpg.exp || 0) - GOAL_EXP_REWARD);
+    }
+    renderEnergyAndRPG();
+    saveDataToFile(appData);
+    renderGoals();
+};
+window.editGoalText = function(id) {
+    const g = (appData.goals || []).find(x => x.id === id);
+    if (!g) return;
+    const v = prompt('修改目标：', g.text);
+    if (v === null) return;
+    const t = v.trim();
+    if (!t) return;
+    g.text = t;
+    saveDataToFile(appData);
+    renderGoals();
+    renderTaskGoalOptions();
+};
+window.deleteGoal = function(id) {
+    const g = (appData.goals || []).find(x => x.id === id);
+    if (!g) return;
+    if (!confirm('删除目标【' + g.text + '】？')) return;
+    appData.goals = appData.goals.filter(x => x.id !== id);
+    (appData.tasks || []).forEach(t => { if (t.goalId === id) delete t.goalId; });
+    saveDataToFile(appData);
+    renderGoals();
+    renderDayPlan();
+    renderTaskGoalOptions();
+};
+function addGoalFromInput(inputId) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    const v = inp.value.trim();
+    if (!v) return;
+    ensureGoals();
+    appData.goals.push({ id: 'g_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), text: v, done: false, doneAt: 0 });
+    inp.value = '';
+    saveDataToFile(appData);
+    renderGoals();
+    renderTaskGoalOptions();
+}
+function renderTaskGoalOptions() {
+    document.querySelectorAll('select.task-goal-select').forEach(sel => {
+        const cur = sel.value;
+        const opts = ['<option value="">🎯 绑定目标</option>'].concat(
+            (appData.goals || []).map(g => '<option value="' + g.id + '"' + (g.id === cur ? ' selected' : '') + '>🎯 ' + escapeHtml(g.text) + '</option>')
+        );
+        sel.innerHTML = opts.join('');
+        sel.value = cur;
+    });
+}
+window.setTaskGoal = function(taskId, goalId) {
+    const t = (appData.tasks || []).find(x => x.id === taskId);
+    if (!t) return;
+    if (goalId) t.goalId = goalId; else delete t.goalId;
+    saveDataToFile(appData);
+    renderDayPlan();
+};
 function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
     ensureEnergyData();
     if (!appData.dailyLogs[dateStr]) appData.dailyLogs[dateStr] = {};
@@ -1392,7 +1538,8 @@ function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
 function getDateEnergySpent(dateStr) {
     ensureEnergyData();
     let total = appData.dailyEnergy[dateStr] || 0;
-    const fbSched = appData.fixedBlockSchedule[dateStr] || {};
+    let _fbWd = new Date(dateStr + 'T00:00:00').getDay(); if (_fbWd === 0) _fbWd = 7;
+    const fbSched = appData.fixedBlockSchedule['W' + _fbWd] || {};
     Object.values(fbSched).forEach(arr => {
         arr.forEach(fbi => {
             const template = appData.fixedBlocks.find(b => b.id === fbi.blockId);
@@ -1503,7 +1650,7 @@ function renderEnergyAndRPG() {
     const title = getLevelTitle(level);
     const setT = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
     setT('rpg-level', 'Lv.' + level); setT('rpg-title', title); setT('rpg-exp-text', `${expInLevel} / ${needed} EXP`);
-    const _rpgTitleEl = document.getElementById('rpg-title'); if (_rpgTitleEl) _rpgTitleEl.style.display = 'none';
+    // 等级名称常显，不再强制隐藏
     ['int','vit','cre','foc','wil'].forEach(k => setT('rpg-' + k, rpg[k]));
     const expFill = document.getElementById('rpg-exp-fill');
     if (expFill) expFill.style.width = ((expInLevel / needed) * 100) + '%';
@@ -1681,6 +1828,12 @@ window.setExerciseEnergyCost = function(exId) {
     if (!isNaN(num) && num >= 0) { ex.energyCost = num; ex._lastModified = Date.now(); renderDayExercises(); saveDataToFile(appData); }
 };
 let _rpgExpandTimer = null;
+window.handleRpgCardClick = function(e) {
+    const t = e.target;
+    if (!t || !t.closest) return;
+    if (t.closest('button, input, select, textarea, a, .btn-energy-restore, .rpg-exp-bar')) return;
+    openRPGModal();
+};
 window.toggleRPGExpand = function(e) {
     if (e) e.stopPropagation();
     const wrap = document.getElementById('rpg-attrs-wrap');
@@ -2503,7 +2656,7 @@ function getSettingsObj() {
         fonts: appData.fonts, radius: appData.radius, levelConfig: appData.levelConfig, commonBtns: appData.commonBtns,
         timeSlots: appData.timeSlots, timeSlotsLastModified: appData.timeSlotsLastModified || 0,
         fixedBlocks: appData.fixedBlocks, maxVisible: appData.maxVisible,
-        animationEnabled: appData.animationEnabled, yearlyGoals: appData.yearlyGoals, panelLayout: appData.panelLayout
+        animationEnabled: appData.animationEnabled, yearlyGoals: appData.yearlyGoals, goals: appData.goals, panelLayout: appData.panelLayout
     };
 }
 function persistNow(data) {
@@ -2812,11 +2965,24 @@ function handleIncomingOp(op) {
         const incoming = Object.assign({}, op.settings);
         const localTSMod = appData.timeSlotsLastModified || 0;
         const incomingTSMod = incoming.timeSlotsLastModified || 0;
-        if (incoming.timeSlots !== undefined && localTSMod > 0 && incomingTSMod <= localTSMod) {
-            delete incoming.timeSlots;
-            delete incoming.timeSlotsLastModified;
+        if (incoming.timeSlots !== undefined) {
+            const validIncoming = Array.isArray(incoming.timeSlots) && incoming.timeSlots.length > 0;
+            if (!validIncoming || (localTSMod > 0 && incomingTSMod <= localTSMod)) {
+                delete incoming.timeSlots;
+                delete incoming.timeSlotsLastModified;
+            }
+        }
+        if (incoming.goals && Array.isArray(incoming.goals)) {
+            if (!Array.isArray(appData.goals)) appData.goals = [];
+            const localGoalMap = new Map(appData.goals.map(g => [g.id, g]));
+            incoming.goals.forEach(rg => {
+                if (!localGoalMap.has(rg.id)) appData.goals.push(JSON.parse(JSON.stringify(rg)));
+                else { const lg = localGoalMap.get(rg.id); if (rg.text) lg.text = rg.text; if (rg.done) { lg.done = true; lg.doneAt = rg.doneAt || lg.doneAt || Date.now(); } }
+            });
+            delete incoming.goals;
         }
         Object.assign(appData, incoming);
+        renderGoals();
         document.body.classList.toggle('dark-mode', appData.themeMode === 'dark');
         if (appData.themeColor) document.documentElement.style.setProperty('--accent-color', appData.themeColor);
         if (appData.fonts) ['title','content','hint','small'].forEach(k => document.documentElement.style.setProperty(`--font-${k}`, appData.fonts[k]));
@@ -3120,9 +3286,7 @@ function renderYearHeatmap() {
     }
     h.innerHTML = '';
     h.appendChild(frag);
-    const g = appData.yearlyGoals || "";
-    document.getElementById('yearly-goals').innerText = g;
-    document.getElementById('yearly-goals-bottom').value = g;
+    renderGoals();
 }
 function renderCalendar() {
     ensureEnergyData();
@@ -3253,6 +3417,10 @@ function removeExerciseFromDate(name, ds) {
 function isExerciseAllChecked(ds, ex) { if (!ex) return false; return isCategoryAllCheckedForDate(ex.id, ds); }
 function renderWeekBoard() {
     ensureEnergyData();
+    if (!Array.isArray(appData.timeSlots) || appData.timeSlots.length === 0) {
+        appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
+        appData.timeSlotsLastModified = Date.now();
+    }
     const board = document.getElementById('week-board');
     if (!board) return;
     board.innerHTML = '';
@@ -3325,14 +3493,15 @@ function renderWeekBoard() {
                 exDiv.appendChild(cb); exDiv.appendChild(lbl); exDiv.appendChild(del);
                 col.appendChild(exDiv);
             });
-            const fbDaySch = (appData.fixedBlockSchedule && appData.fixedBlockSchedule[ds]) || {};
+            const _fbKeyMobile = 'W' + (i + 1);
+            const fbDaySch = (appData.fixedBlockSchedule && appData.fixedBlockSchedule[_fbKeyMobile]) || {};
             Object.keys(fbDaySch).forEach(tsId => {
                 const tsl = appData.timeSlots.find(x => x.id === tsId);
                 fbDaySch[tsId].forEach(fbi => {
                     const fbEl = document.createElement('div'); fbEl.className = 'fixed-block-item';
                     const txt = document.createElement('span'); txt.innerText = (tsl ? tsl.label.split('-')[0] + ' ' : '') + fbi.name;
                     const rm = document.createElement('span'); rm.className = 'fb-del'; rm.innerText = '✕'; rm.title = '移除该固定块';
-                    rm.onclick = (e) => { e.stopPropagation(); removeFixedBlockInstance(ds, tsId, fbi.id); };
+                    rm.onclick = (e) => { e.stopPropagation(); removeFixedBlockInstance(_fbKeyMobile, tsId, fbi.id); };
                     fbEl.appendChild(txt); fbEl.appendChild(rm);
                     col.appendChild(fbEl);
                 });
@@ -3352,9 +3521,10 @@ function renderWeekBoard() {
         board.appendChild(header);
     });
     appData.timeSlots.forEach(ts => {
+        if (!ts || typeof ts.label !== 'string' || !ts.label) return;
         const timeCell = document.createElement('div'); timeCell.className = 'week-time-cell'; timeCell.innerText = ts.label.replace('-', '\n');
         board.appendChild(timeCell);
-        dates.forEach(ds => {
+        dates.forEach((ds, di) => {
             const isToday = ds === todayStr;
             const cell = document.createElement('div');
             cell.className = 'week-grid-cell' + (isToday ? ' today-col' : '');
@@ -3392,12 +3562,13 @@ function renderWeekBoard() {
                 exDiv.appendChild(cb); exDiv.appendChild(lbl); exDiv.appendChild(del);
                 cell.appendChild(exDiv);
             });
-            const fbSched = (appData.fixedBlockSchedule && appData.fixedBlockSchedule[ds]) || {};
+            const _fbKeyDesk = 'W' + (di + 1);
+            const fbSched = (appData.fixedBlockSchedule && appData.fixedBlockSchedule[_fbKeyDesk]) || {};
             (fbSched[ts.id] || []).forEach(fbi => {
                 const fbEl = document.createElement('div'); fbEl.className = 'fixed-block-item';
                 const txt = document.createElement('span'); txt.innerText = fbi.name;
                 const rm = document.createElement('span'); rm.className = 'fb-del'; rm.innerText = '✕'; rm.title = '移除该固定块';
-                rm.onclick = (e) => { e.stopPropagation(); removeFixedBlockInstance(ds, ts.id, fbi.id); };
+                rm.onclick = (e) => { e.stopPropagation(); removeFixedBlockInstance(_fbKeyDesk, ts.id, fbi.id); };
                 fbEl.appendChild(txt); fbEl.appendChild(rm);
                 cell.appendChild(fbEl);
             });
@@ -3808,7 +3979,13 @@ function generateTaskDOM(task, ds, options = {}) {
     });
     let moreMenuHtml = '';
     if (moreBtnsHtml) moreMenuHtml = `<div class="more-menu-container"><span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span><div class="more-menu">${moreBtnsHtml}</div></div>`;
-    let headerHtml = `<div class="main-task-top-row"><div class="main-task-title-area">${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}</div><div class="task-right-group">${badgesHtml ? `<div class="task-badges-inline">${badgesHtml}</div>` : ''}<div class="task-meta">${btnsHtml}${moreMenuHtml}</div></div></div>`;
+    const _boundGoal = task.goalId ? (appData.goals || []).find(g => g.id === task.goalId) : null;
+    if (_boundGoal) badgesHtml += `<span class="task-badge" style="color:#0e7490;background:#cffafe;border-color:#67e8f9;">🎯 ${escapeHtml(_boundGoal.text)}</span>`;
+    const goalSelect = `<select class="task-goal-select" onchange="setTaskGoal('${task.id}', this.value)" onclick="event.stopPropagation()" title="绑定我的目标">` +
+        `<option value="">🎯 绑定目标</option>` +
+        (appData.goals || []).map(g => `<option value="${g.id}" ${g.id === task.goalId ? 'selected' : ''}>🎯 ${escapeHtml(g.text)}</option>`).join('') +
+        `</select>`;
+    let headerHtml = `<div class="main-task-top-row"><div class="main-task-title-area">${mainCb}<div class="task-text-wrap">${editT}</div>${loopL}</div><div class="task-right-group">${badgesHtml ? `<div class="task-badges-inline">${badgesHtml}</div>` : ''}<div class="task-meta">${goalSelect}${btnsHtml}${moreMenuHtml}</div></div></div>`;
     let progressRowHtml = '';
     if (task.target || hasSub || true) {
         const pct = Math.min(100, Math.round((mp.done / mp.total) * 100));
@@ -4244,9 +4421,11 @@ function handleDrop(ev, td, timeslot, poolKind) {
             ensureEnergyData();
             const fb = appData.fixedBlocks.find(b => b.id === draggedFixedBlockId);
             if (fb) {
-                if (!appData.fixedBlockSchedule[td]) appData.fixedBlockSchedule[td] = {};
-                if (!appData.fixedBlockSchedule[td][timeslot]) appData.fixedBlockSchedule[td][timeslot] = [];
-                appData.fixedBlockSchedule[td][timeslot].push({ id: 'fbi_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), blockId: fb.id, name: fb.name });
+                let _fbWd2 = new Date(td + 'T00:00:00').getDay(); if (_fbWd2 === 0) _fbWd2 = 7;
+                const _fbKey = 'W' + _fbWd2;
+                if (!appData.fixedBlockSchedule[_fbKey]) appData.fixedBlockSchedule[_fbKey] = {};
+                if (!appData.fixedBlockSchedule[_fbKey][timeslot]) appData.fixedBlockSchedule[_fbKey][timeslot] = [];
+                appData.fixedBlockSchedule[_fbKey][timeslot].push({ id: 'fbi_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), blockId: fb.id, name: fb.name });
                 saveDataToFile(appData);
             }
         }
@@ -4684,14 +4863,12 @@ window.addSubTask = function(e, tid) {
     if (t.type !== 'todo') syncParentTaskStatus(t, appData.selectedDate);
     renderDayPlan(); renderCalendar(); saveDataToFile(appData); refreshDetailModalIfOpen();
 };
-function syncGoal(v) {
-    appData.yearlyGoals = v;
-    if (document.activeElement.id !== 'yearly-goals') document.getElementById('yearly-goals').innerText = v;
-    if (document.activeElement.id !== 'yearly-goals-bottom') document.getElementById('yearly-goals-bottom').value = v;
-    saveDataToFile(appData);
+function bindGoalInputs() {
+    const s = document.getElementById('goal-input-sidebar');
+    const m = document.getElementById('goal-input-main');
+    if (s) s.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addGoalFromInput('goal-input-sidebar'); } });
+    if (m) m.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addGoalFromInput('goal-input-main'); } });
 }
-document.getElementById('yearly-goals').addEventListener('input', e => syncGoal(e.target.innerText));
-document.getElementById('yearly-goals-bottom').addEventListener('input', e => syncGoal(e.target.value));
 function updateFixedProgressBars() {
     ensureEnergyData();
     const td = getTodayString();
@@ -5143,7 +5320,15 @@ window.connectToPeer = function(targetId = null) {
 function mergeData(local, remote) {
     const merged = JSON.parse(JSON.stringify(local));
     const configKeys = ['yearlyGoals', 'themeColor', 'themeMode', 'fonts', 'radius', 'energyMax', 'energyWarnThreshold', 'expRatio', 'napEnergy', 'breakEnergy', 'levelConfig', 'commonBtns', 'maxVisible', 'animationEnabled', 'panelLayout'];
-    configKeys.forEach(k => { if (remote[k] !== undefined) merged[k] = remote[k]; });
+    configKeys.forEach(k => { if (k !== 'goals' && remote[k] !== undefined) merged[k] = remote[k]; });
+    if (remote.goals && Array.isArray(remote.goals)) {
+        if (!Array.isArray(merged.goals)) merged.goals = [];
+        const _gm = new Map(merged.goals.map(g => [g.id, g]));
+        remote.goals.forEach(rg => {
+            if (!_gm.has(rg.id)) merged.goals.push(JSON.parse(JSON.stringify(rg)));
+            else { const lg = _gm.get(rg.id); if (rg.text) lg.text = rg.text; if (rg.done) { lg.done = true; lg.doneAt = rg.doneAt || lg.doneAt || Date.now(); } }
+        });
+    }
     if (remote.methodsFiles && Array.isArray(remote.methodsFiles)) {
         if (!Array.isArray(merged.methodsFiles)) merged.methodsFiles = [];
         const localFileMap = new Map(merged.methodsFiles.map(f => [f.id, f]));
@@ -5182,6 +5367,7 @@ function mergeData(local, remote) {
             if (rt.countEnded !== undefined) lt.countEnded = rt.countEnded || lt.countEnded;
             if (rt.estimate !== undefined) lt.estimate = rt.estimate;
             if (rt.pinned !== undefined) lt.pinned = rt.pinned;
+            if (rt.goalId !== undefined) lt.goalId = rt.goalId;
             if (rt.timeSlot !== undefined) lt.timeSlot = rt.timeSlot;
             if (rt.timeSlots !== undefined) lt.timeSlots = rt.timeSlots;
             if (rt.completions) { if (!lt.completions) lt.completions = {}; Object.assign(lt.completions, rt.completions); }
@@ -5285,7 +5471,7 @@ function mergeData(local, remote) {
     merged.tasks.sort((a, b) => String(a.id).localeCompare(String(b.id)));
     merged.exercises.sort((a, b) => String(a.id).localeCompare(String(b.id)));
     merged.fixedBlocks.sort((a, b) => String(a.id).localeCompare(String(b.id)));
-    if (Array.isArray(merged.timeSlots)) merged.timeSlots.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    // 时间段保持用户自定义顺序，不再按 id 排序（避免 ts10 排到 ts2 前面导致错乱）
     return merged;
 }
 function computeDiffs(oldData, newData) {
@@ -5345,6 +5531,7 @@ function applyRemoteData(payload, oldData) {
         if (!paperEl2 || !paperEl2.contains(ae2)) refreshMethodsEditorContent();
     }
     if (diffs.levelConfig) renderLevelConfig();
+    renderGoals();
     if (diffs.commonBtns && appData.commonBtns) document.querySelectorAll('#common-btns-config input[type="checkbox"]').forEach(cb => { cb.checked = appData.commonBtns.includes(cb.value); });
     if (diffs.timeSlots || diffs.timeSlotsLastModified) { renderTimeSlotConfig(); renderWeekBoard(); renderTaskPool(); }
     if (diffs.fixedBlocks) { renderFixedBlockPool(); renderFixedBlockEnergyConfig(); }
@@ -5534,6 +5721,7 @@ window.addEventListener('beforeunload', () => {
     initDragAndDrop(); renderTimeSlotConfig(); updateBackupUI(); renderEnergyAndRPG();
     renderLevelConfig(); renderFixedBlockEnergyConfig();
     renderP2PHistory(); renderFixedBlockPool();
+    bindGoalInputs(); renderGoals();
     initMethodsEditor();
     const sh = localStorage.getItem('my_p2p_host_id');
     if (sh) document.getElementById('my-peer-id').innerText = sh;
