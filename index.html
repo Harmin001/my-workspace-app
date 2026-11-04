@@ -1094,6 +1094,7 @@ function checkVersionUpdate() {
 window.closeVersionUpdateModal = function() {
     const ov = document.getElementById('version-update-overlay');
     if (ov) ov.classList.remove('active');
+    try { localStorage.setItem('myWorkspaceVersion', APP_VERSION); } catch (e) {}
 };
 window.saveWorkspaceTitle = function(el) {
     if (!el) return;
@@ -4694,21 +4695,6 @@ function renderTaskListModalContent(type) {
 }
 function _cleanupDragGhosts() {
     document.querySelectorAll('.sortable-ghost, .sortable-chosen, .sortable-fallback').forEach(el => {
-        if (el && el.classList && el.classList.contains('sortable-ghost')) { try { el.remove(); } catch(e) {} }
-    });
-    // 清理每个 zone 内重复的 data-task-id
-    document.querySelectorAll('.task-drop-zone').forEach(zone => {
-        const seen = new Set();
-        Array.from(zone.querySelectorAll('.main-task-item[data-task-id]')).forEach(el => {
-            const id = el.dataset.taskId;
-            if (!id) return;
-            if (seen.has(id)) { try { el.remove(); } catch(e) {} } else seen.add(id);
-        });
-    });
-    isDraggingActive = false;
-}
-function _cleanupDragGhosts() {
-    document.querySelectorAll('.sortable-ghost, .sortable-chosen, .sortable-fallback').forEach(el => {
         if (el && el.classList && el.classList.contains('sortable-ghost')) {
             try { el.remove(); } catch (e) {}
         } else {
@@ -4738,10 +4724,6 @@ function initTaskAndSubTaskDrag() {
                 // ✅ 拖拽禁止进入已完成区（只出不进），避免 DOM 临时副本残留
                 if (evt.to && evt.to.dataset && evt.to.dataset.completed === 'true') return false;
                 return true;
-            },
-            onCancel: function() {
-                _cleanupDragGhosts();
-                setTimeout(renderDayPlan, 30);
             },
             onCancel: function() {
                 _cleanupDragGhosts();
@@ -5866,8 +5848,8 @@ function mergeData(local, remote) {
                 }
             }
         });
-    }    if (!Array.isArray(merged.methodsFiles) || merged.methodsFiles.length === 0) merged.methods
-Files = [{ id: 'file_default', name: '我的学习方法', type: 'file', parentId: null, contentHtml: '', contentText: '', updatedAt: 0 }];
+    }
+    if (!Array.isArray(merged.methodsFiles) || merged.methodsFiles.length === 0) merged.methodsFiles = [{ id: 'file_default', name: '我的学习方法', type: 'file', parentId: null, contentHtml: '', contentText: '', updatedAt: 0 }];
     if (!merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId)) merged.activeMethodsFileId = merged.methodsFiles.find(f => f.type === 'file')?.id;
     const curFile = merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId);
     merged.learningMethodsHtml = curFile ? curFile.contentHtml || '' : '';
