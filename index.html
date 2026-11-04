@@ -504,6 +504,9 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 .goal-del:hover { color: var(--danger-color); }
 .goals-input { width: 100%; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px; font-size: var(--font-hint); background: var(--bg-input); color: var(--text-main); outline: none; }
 .goals-input:focus { border-color: var(--accent-color); }
+.goal-timer-btn { cursor: pointer; padding: 1px 4px; font-size: 12px; border-radius: 4px; color: var(--accent-color); flex-shrink: 0; }
+.goal-timer-btn:hover { background: var(--hover-bg); }
+.goal-timer-display { font-size: 10px; color: #27ae60; font-weight: 700; padding: 0 4px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .task-goal-select { max-width: 130px; font-size: var(--font-small); padding: 1px 2px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-input); color: var(--text-main); cursor: pointer; }
 #view-methods { padding: 16px 24px; }
 #view-methods .year-header { margin-bottom: 12px; }
@@ -1036,9 +1039,9 @@ let appData = {
     fonts: { title: "18px", content: "14px", hint: "12px", small: "10px" },
     radius: "8px",
     viewYear: new Date().getFullYear(), viewMonth: new Date().getMonth(), viewWeekBaseDate: getTodayString(),
-    _lastModified: 1, energyMax: 200, energyWarnThreshold: 30, expRatio: 0.6, dailyEnergy: {},
+    _lastModified: 1, energyMax: 200, energyWarnThreshold: 30, expRatio: 0.6, dailyEnergy: {}, dailyEnergyTS: {},
     napEnergy: 50, breakEnergy: 20,
-    rpg: { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' },
+    rpg: { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '', _lastModified: 0 },
     panelLayout: { order: ['todo', 'learning', 'other', 'exercise'], spans: {}, sizes: {} },
     levelConfig: { levels: JSON.parse(JSON.stringify(DEFAULT_LEVELS)) },
     commonBtns: ['skip', 'target', 'loop', 'deadline', 'delete'],
@@ -1101,6 +1104,39 @@ let _pendingImportData = null;
 let _backupTimerRegistry = [];
 function _registerBackupTimer(id) { _backupTimerRegistry.push(id); return id; }
 function _clearBackupTimers() { _backupTimerRegistry.forEach(id => { clearInterval(id); clearTimeout(id); }); _backupTimerRegistry = []; }
+// ============ 双向同步时间戳合并 ============
+let _syncSnapshot = null;
+let _conflictCount = 0;
+
+function _taskContentChanged(a, b) {
+    const strip = (t) => {
+        if (!t) return '';
+        const c = {};
+        ['text','type','todoKind','date','completed','current','target','countTotal','countEnded','deadline','pinned','energyCost','recurringType','timeSlot','goalId','note','completions','currents','timeSlots','skipDates','subTasks','recurringEndedDate'].forEach(k => { if (t[k] !== undefined) c[k] = t[k]; });
+        return JSON.stringify(c);
+    };
+    return strip(a) !== strip(b);
+}
+
+function _stampChanges(data) {
+    if (isSyncing) return;
+    if (!_syncSnapshot) return;
+    const now = Date.now();
+    // tasks: 逐条对比，内容变化则更新该条的 _lastModified
+    const prevTaskMap = new Map((_syncSnapshot.tasks || []).map(t => [t.id, t]));
+    (data.tasks || []).forEach(ct => {
+        const pt = prevTaskMap.get(ct.id);
+        if (!pt) { ct._lastModified = now; return; }
+        if (_taskContentChanged(pt, ct)) ct._lastModified = now;
+    });
+    // rpg: 内容变化则更新 _lastModified
+    const rpgStrip = (r) => r ? JSON.stringify({ exp: r.exp, int: r.int, vit: r.vit, cre: r.cre, foc: r.foc, wil: r.wil, streak: r.streak, lastDate: r.lastDate }) : '';
+    if (data.rpg && rpgStrip(data.rpg) !== rpgStrip(_syncSnapshot.rpg)) data.rpg._lastModified = now;
+    // timeSlots: 内容变化则更新 timeSlotsLastModified（兜底，已有入口也会更新）
+    if (JSON.stringify(data.timeSlots || []) !== JSON.stringify(_syncSnapshot.timeSlots || [])) data.timeSlotsLastModified = now;
+}
+// ============ 双向同步时间戳合并 END ============
+
 function getTodayString() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1302,6 +1338,7 @@ function ensureEnergyData() {
     if (!appData.monthlyReflections) appData.monthlyReflections = {};
     if (!appData.dailyLogs) appData.dailyLogs = {};
     if (!appData.dailyEnergy) appData.dailyEnergy = {};
+    if (!appData.dailyEnergyTS) appData.dailyEnergyTS = {};
     if (!appData.fixedBlockSchedule) appData.fixedBlockSchedule = {};
     // 固定块迁移为按星期几存储（W1~W7），实现每周自动复用、新一周不清空
     (function migrateFixedBlocks() {
@@ -1432,6 +1469,7 @@ function ensureGoals() {
         if (typeof g.text !== 'string') g.text = '';
         if (g.done === undefined) g.done = false;
         if (g.doneAt === undefined) g.doneAt = 0;
+        if (!g.timer || typeof g.timer !== 'object') g.timer = { type: 'up', seconds: 0, running: false, startedAt: 0, target: 0, taskId: null, taskLabel: '' };
     });
 }
 function renderGoals() {
@@ -1460,7 +1498,24 @@ function renderGoals() {
             del.textContent = '✕';
             del.title = '删除目标';
             del.onclick = (e) => { e.stopPropagation(); window.deleteGoal(g.id); };
-            row.appendChild(cb); row.appendChild(txt); row.appendChild(del);
+            const timerBtn = document.createElement('span');
+            timerBtn.className = 'goal-timer-btn';
+            timerBtn.textContent = (g.timer && g.timer.running) ? '⏸' : '⏱';
+            timerBtn.title = '计时器';
+            timerBtn.onclick = (e) => { e.stopPropagation(); window.openGoalTimer(g.id); };
+            row.appendChild(cb); row.appendChild(txt);
+            if (g.timer && (g.timer.running || Number(g.timer.seconds) > 0 || (g.timer.type === 'down' && Number(g.timer.target) > 0))) {
+                const timeDisp = document.createElement('span');
+                timeDisp.className = 'goal-timer-display';
+                timeDisp.dataset.goalId = g.id;
+                const elapsed = window._getGoalTimerElapsed(g);
+                timeDisp.textContent = (g.timer.type === 'down' && Number(g.timer.target) > 0)
+                    ? ('⏳ ' + window._fmtSecs(Math.max(0, Number(g.timer.target) - elapsed)))
+                    : ('⏱ ' + window._fmtSecs(elapsed));
+                row.appendChild(timeDisp);
+            }
+            row.appendChild(timerBtn);
+            row.appendChild(del);
             el.appendChild(row);
         });
     });
@@ -1534,6 +1589,95 @@ window.setTaskGoal = function(taskId, goalId) {
     saveDataToFile(appData);
     renderDayPlan();
 };
+window._getGoalTimerElapsed = function(goal) {
+    const t = goal && goal.timer;
+    if (!t) return 0;
+    let s = Number(t.seconds) || 0;
+    if (t.running && Number(t.startedAt) > 0) s += Math.floor((Date.now() - Number(t.startedAt)) / 1000);
+    return s;
+};
+window._fmtSecs = function(s) {
+    s = Math.max(0, Math.floor(Number(s) || 0));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+    if (h > 0) return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+    return String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+};
+window.openGoalTimer = function(goalId) {
+    const goal = (appData.goals || []).find(x => x.id === goalId);
+    if (!goal) return;
+    if (!goal.timer) goal.timer = { type: 'up', seconds: 0, running: false, startedAt: 0, target: 0, taskId: null, taskLabel: '' };
+    const t = goal.timer;
+    // 树形任务选项：optgroup 母任务 + 缩进子任务
+    const taskOptsHtml = [];
+    (appData.tasks || []).filter(x => x.type !== 'todo').forEach(mainTask => {
+        const label = (mainTask.type === 'learning' ? '📚 ' : '🧺 ') + mainTask.text;
+        taskOptsHtml.push('<optgroup label="' + escapeHtml(label) + '">');
+        taskOptsHtml.push('<option value="' + mainTask.id + '"' + (t.taskId === mainTask.id ? ' selected' : '') + '>📌 ' + escapeHtml(mainTask.text) + '</option>');
+        (mainTask.subTasks || []).forEach(sub => {
+            const subVal = mainTask.id + '::' + sub.id;
+            taskOptsHtml.push('<option value="' + subVal + '"' + (t.taskId === subVal ? ' selected' : '') + '>　└ ' + escapeHtml(sub.text) + '</option>');
+        });
+        taskOptsHtml.push('</optgroup>');
+    });
+    const old = document.getElementById('goal-timer-modal-overlay');
+    if (old) old.remove();
+    const modal = document.createElement('div');
+    modal.id = 'goal-timer-modal-overlay';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = '<div style="background:var(--bg-card);color:var(--text-main);border-radius:16px;padding:20px;max-width:460px;width:100%;border:1px solid var(--border-color);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-weight:700;font-size:var(--font-content);">⏱ 目标计时器</div><div style="cursor:pointer;color:var(--text-muted);font-size:1.5em;padding:0 8px;line-height:1;" id="gt-close">×</div></div>' +
+        '<div style="font-size:var(--font-hint);color:var(--text-muted);margin-bottom:12px;">🎯 ' + escapeHtml(goal.text) + '</div>' +
+        '<div style="margin-bottom:8px;"><div style="font-size:var(--font-hint);font-weight:600;margin-bottom:4px;">计时模式</div><select id="gt-mode" style="width:100%;padding:6px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"><option value="up"' + (t.type !== 'down' ? ' selected' : '') + '>⏱ 正序计时</option><option value="down"' + (t.type === 'down' ? ' selected' : '') + '>⏳ 倒序倒计时</option></select></div>' +
+        '<div id="gt-target-wrap" style="margin-bottom:8px;display:' + (t.type === 'down' ? 'block' : 'none') + ';"><div style="font-size:var(--font-hint);font-weight:600;margin-bottom:4px;">倒计时目标（分钟）</div><input id="gt-target" type="number" min="1" max="999" value="' + Math.max(1, Math.round((Number(t.target) || 0) / 60 || 25)) + '" style="width:100%;padding:6px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"></div>' +
+        '<div style="margin-bottom:12px;"><div style="font-size:var(--font-hint);font-weight:600;margin-bottom:4px;">绑定任务（可选）</div><select id="gt-task" style="width:100%;padding:6px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"><option value="">（不绑定）</option>' + taskOptsHtml.join('') + '</select></div>' +
+        '<div style="text-align:center;font-size:2em;font-weight:800;font-variant-numeric:tabular-nums;margin:12px 0;color:#27ae60;" id="gt-display">' + (t.type === 'down' && Number(t.target) > 0 ? window._fmtSecs(Math.max(0, Number(t.target) - window._getGoalTimerElapsed(goal))) : window._fmtSecs(window._getGoalTimerElapsed(goal))) + '</div>' +
+        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">' +
+        '<button class="btn btn-sm btn-primary" id="gt-start" style="background:#27ae60;border-color:#27ae60;">▶ 开始</button>' +
+        '<button class="btn btn-sm" id="gt-pause">⏸ 暂停</button>' +
+        '<button class="btn btn-sm" id="gt-stop" style="color:var(--danger-color);">⏹ 重置</button>' +
+        '</div></div>';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+    document.getElementById('gt-close').onclick = () => modal.remove();
+    document.getElementById('gt-mode').onchange = function() { document.getElementById('gt-target-wrap').style.display = this.value === 'down' ? 'block' : 'none'; };
+    document.getElementById('gt-start').onclick = function() { window._gtStart(goalId); };
+    document.getElementById('gt-pause').onclick = function() { window._gtPause(goalId); };
+    document.getElementById('gt-stop').onclick = function() { window._gtStop(goalId); };
+};
+window._gtStart = function(goalId) {
+    const goal = (appData.goals || []).find(x => x.id === goalId);
+    if (!goal) return;
+    if (!goal.timer) goal.timer = { type: 'up', seconds: 0, running: false, startedAt: 0, target: 0, taskId: null, taskLabel: '' };
+    const t = goal.timer;
+    const modeSel = document.getElementById('gt-mode');
+    const targetInput = document.getElementById('gt-target');
+    const taskSel = document.getElementById('gt-task');
+    if (modeSel) t.type = modeSel.value === 'down' ? 'down' : 'up';
+    if (targetInput && t.type === 'down') { const m = parseInt(targetInput.value) || 0; t.target = Math.max(0, m) * 60; }
+    if (taskSel) { t.taskId = taskSel.value || null; t.taskLabel = (taskSel.value && taskSel.selectedOptions[0]) ? taskSel.selectedOptions[0].textContent.trim() : ''; }
+    if (!t.running) { t.startedAt = Date.now(); t.running = true; }
+    saveDataToFile(appData);
+    renderGoals();
+};
+window._gtPause = function(goalId) {
+    const goal = (appData.goals || []).find(x => x.id === goalId);
+    if (!goal || !goal.timer) return;
+    const t = goal.timer;
+    if (t.running && Number(t.startedAt) > 0) {
+        t.seconds = (Number(t.seconds) || 0) + Math.floor((Date.now() - Number(t.startedAt)) / 1000);
+        t.startedAt = 0; t.running = false;
+        saveDataToFile(appData);
+        renderGoals();
+    }
+};
+window._gtStop = function(goalId) {
+    const goal = (appData.goals || []).find(x => x.id === goalId);
+    if (!goal) return;
+    if (!goal.timer) goal.timer = { type: 'up', seconds: 0, running: false, startedAt: 0, target: 0, taskId: null, taskLabel: '' };
+    goal.timer.seconds = 0; goal.timer.startedAt = 0; goal.timer.running = false;
+    saveDataToFile(appData);
+    renderGoals();
+};
 function logTaskAction(dateStr, taskId, taskName, actionType, delta = 0) {
     ensureEnergyData();
     if (!appData.dailyLogs[dateStr]) appData.dailyLogs[dateStr] = {};
@@ -1566,6 +1710,7 @@ function adjustTodayEnergy(delta) {
     ensureEnergyData();
     const today = getTodayString();
     appData.dailyEnergy[today] = (appData.dailyEnergy[today] || 0) + delta;
+    appData.dailyEnergyTS[today] = Date.now();
 }
 function adjustExp(delta) {
     ensureEnergyData();
@@ -1775,6 +1920,8 @@ window.restoreEnergy = function(type) {
     if (targetRemain <= shownRemain) { showMiniToast('⚡ 精力已满，无需恢复'); return; }
     const reduce = targetRemain - rawRemain;
     appData.dailyEnergy[today] = (appData.dailyEnergy[today] || 0) - reduce;
+    if (!appData.dailyEnergyTS) appData.dailyEnergyTS = {};
+    appData.dailyEnergyTS[today] = Date.now();
     renderEnergyAndRPG();
     saveDataToFile(appData);
     showMiniToast(`⚡ 精力 +${targetRemain - shownRemain}`);
@@ -1900,15 +2047,28 @@ function methodsSaveSelection() {
     if (!editor) return;
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
-    const range = sel.getRangeAt(0);
-    if (editor.contains(range.startContainer) && editor.contains(range.endContainer)) methodsSavedRange = range.cloneRange();
+    const ranges = [];
+    for (let i = 0; i < sel.rangeCount; i++) {
+        const r = sel.getRangeAt(i);
+        if (editor.contains(r.startContainer) && editor.contains(r.endContainer)) {
+            ranges.push(r.cloneRange());
+        }
+    }
+    if (ranges.length > 0) methodsSavedRange = ranges;
 }
 function methodsRestoreSelection() {
     if (!methodsSavedRange) return;
     const editor = methodsGetEditor();
     if (!editor) return;
     const sel = window.getSelection();
-    try { sel.removeAllRanges(); sel.addRange(methodsSavedRange); } catch(e) {}
+    try {
+        sel.removeAllRanges();
+        if (Array.isArray(methodsSavedRange)) {
+            methodsSavedRange.forEach(r => { try { sel.addRange(r); } catch(e) {} });
+        } else {
+            sel.addRange(methodsSavedRange);
+        }
+    } catch(e) {}
     editor.focus();
 }
 function methodsApplyFontSize(px) {
@@ -2229,6 +2389,26 @@ function methodsUpdateToolbarState() {
         try { state = document.queryCommandState(cmd); } catch(e) {}
         btn.classList.toggle('active', state);
     });
+    // ✅ 字号下拉联动：读取选中文字实际字号，映射到最近的选项
+    const sizeSelect = document.getElementById('methods-size-select');
+    if (sizeSelect) {
+        let fontSizePx = 0;
+        try {
+            let refNode = sel.anchorNode;
+            if (refNode && refNode.nodeType === 3) refNode = refNode.parentNode;
+            if (refNode && editor.contains(refNode)) {
+                const computed = window.getComputedStyle(refNode);
+                const px = parseFloat(computed.fontSize);
+                if (!isNaN(px) && px > 0) fontSizePx = Math.round(px);
+            }
+        } catch (e) {}
+        if (fontSizePx > 0) {
+            const opts = Array.from(sizeSelect.options).map(o => parseInt(o.value) || 14);
+            let closest = opts[0];
+            opts.forEach(v => { if (Math.abs(v - fontSizePx) < Math.abs(closest - fontSizePx)) closest = v; });
+            sizeSelect.value = String(closest);
+        }
+    }
 }
 function methodsExecCommand(cmd, val) {
     const editor = methodsGetEditor();
@@ -2470,7 +2650,7 @@ function initMethodsEditor() {
         paperContainer.addEventListener('input', (e) => {
             if (e.target.classList && e.target.classList.contains('methods-content')) methodsTriggerSave();
         });
-        paperContainer.addEventListener('mouseup', methodsSaveSelection);
+        paperContainer.addEventListener('mouseup', function() { methodsSaveSelection(); methodsUpdateToolbarState(); });
         paperContainer.addEventListener('keyup', methodsSaveSelection);
         paperContainer.addEventListener('focusin', (e) => {
             const ed = e.target.closest && e.target.closest('.methods-content');
@@ -2688,7 +2868,9 @@ function persistNow(data) {
 function saveDataToFile(data) {
     if (!data) data = appData;
     if (!isSyncing) data._lastModified = Date.now();
+    _stampChanges(data);
     persistNow(data);
+    if (!isSyncing) _syncSnapshot = JSON.parse(JSON.stringify(data));
     if (!isSyncing) {
         clearTimeout(_opDebounceTimer);
         _opDebounceTimer = setTimeout(() => {
@@ -2787,10 +2969,11 @@ function resetSyncedBaseline(data) {
     lastSyncedExerciseTimeSlotSchedule = JSON.parse(JSON.stringify(data.exerciseTimeSlotSchedule || {}));
     lastSyncedReflections = JSON.parse(JSON.stringify({ daily: data.dailyReflections, weekly: data.weeklyReflections, monthly: data.monthlyReflections }));
     lastSyncedRpg = JSON.parse(JSON.stringify(data.rpg));
-    lastSyncedEnergy = JSON.parse(JSON.stringify(data.dailyEnergy));
+    lastSyncedEnergy = JSON.parse(JSON.stringify({ e: data.dailyEnergy || {}, t: data.dailyEnergyTS || {} }));
     lastSyncedTasks = JSON.parse(JSON.stringify(data.tasks));
     lastSyncedExercises = JSON.parse(JSON.stringify(data.exercises));
     lastSyncedMethods = JSON.parse(JSON.stringify(data.methodsFiles));
+    _syncSnapshot = JSON.parse(JSON.stringify(data));
 }
 function broadcastDiffs(data) {
     if (!conn || !conn.open) return;
@@ -2825,9 +3008,10 @@ function broadcastDiffs(data) {
         conn.send({ type: 'OP', data: { action: 'UPDATE_RPG', rpg: data.rpg, clientId: CLIENT_ID, time: Date.now() } });
         lastSyncedRpg = JSON.parse(jstr(data.rpg));
     }
-    if (jstr(lastSyncedEnergy) !== jstr(data.dailyEnergy)) {
-        conn.send({ type: 'OP', data: { action: 'UPDATE_ENERGY', energy: data.dailyEnergy, clientId: CLIENT_ID, time: Date.now() } });
-        lastSyncedEnergy = JSON.parse(jstr(data.dailyEnergy));
+    const _curEnergyBundle = { e: data.dailyEnergy || {}, t: data.dailyEnergyTS || {} };
+    if (jstr(lastSyncedEnergy) !== jstr(_curEnergyBundle)) {
+        conn.send({ type: 'OP', data: { action: 'UPDATE_ENERGY', energy: data.dailyEnergy, ts: data.dailyEnergyTS, clientId: CLIENT_ID, time: Date.now() } });
+        lastSyncedEnergy = JSON.parse(jstr(_curEnergyBundle));
     }
     const currentTasks = data.tasks || [];
     currentTasks.forEach(ct => {
@@ -3010,18 +3194,35 @@ function handleIncomingOp(op) {
         appData.monthlyReflections = op.reflections.monthly;
         renderCalendar(); renderWeekBoard();
     } else if (op.action === 'UPDATE_RPG') {
-        appData.rpg = op.rpg;
+        const lTime = Number((appData.rpg || {})._lastModified || 0);
+        const rTime = Number((op.rpg || {})._lastModified || 0);
+        if (rTime >= lTime) appData.rpg = op.rpg;
         renderEnergyAndRPG();
     } else if (op.action === 'UPDATE_ENERGY') {
-        appData.dailyEnergy = op.energy;
+        const _remoteEnergy = op.energy || {};
+        const _remoteEnergyTS = op.ts || {};
+        if (!appData.dailyEnergy) appData.dailyEnergy = {};
+        if (!appData.dailyEnergyTS) appData.dailyEnergyTS = {};
+        Object.keys(_remoteEnergy).forEach(dateStr => {
+            const _lTS = appData.dailyEnergyTS[dateStr] || 0;
+            const _rDateTS = _remoteEnergyTS[dateStr] || 0;
+            if (_rDateTS >= _lTS) {
+                appData.dailyEnergy[dateStr] = _remoteEnergy[dateStr];
+                if (_rDateTS > 0) appData.dailyEnergyTS[dateStr] = _rDateTS;
+            }
+        });
         renderEnergyAndRPG();
     } else if (op.action === 'UPDATE_TASK') {
         const t = appData.tasks.find(x => x.id === op.task.id);
-        if (t) Object.assign(t, op.task);
-        else appData.tasks.push(op.task);
+        if (t) {
+            const lTime = Number(t._lastModified || 0);
+            const rTime = Number(op.task._lastModified || 0);
+            if (rTime > lTime) Object.assign(t, op.task);
+            // 否则保留本地（本地较新或时间戳相等都不覆盖）
+        } else appData.tasks.push(op.task);
         renderDayPlan(); renderCalendar(); renderWeekBoard(); renderYearHeatmap(); updateFixedProgressBars();
         refreshDetailModalIfOpen();
-    } else if (op.action === 'DELETE_TASK') {
+    }else if (op.action === 'DELETE_TASK') {
         appData.tasks = appData.tasks.filter(x => x.id !== op.id);
         renderDayPlan(); renderCalendar(); renderWeekBoard(); renderYearHeatmap(); updateFixedProgressBars();
         refreshDetailModalIfOpen();
@@ -4084,6 +4285,8 @@ window.decrementCountTask = function(taskId) {
     const ec = t.energyCost || 1;
     const today = getTodayString();
     appData.dailyEnergy[today] = (appData.dailyEnergy[today] || 0) - ec;
+    if (!appData.dailyEnergyTS) appData.dailyEnergyTS = {};
+    appData.dailyEnergyTS[today] = Date.now();
     appData.rpg.exp = Math.max(0, appData.rpg.exp - Math.floor(ec * appData.expRatio));
     logTaskAction(today, t.id, t.text, 'count', -1);
     renderEnergyAndRPG(); updateFixedProgressBars(); saveDataToFile(appData);
@@ -4253,6 +4456,11 @@ function initTaskAndSubTaskDrag() {
         zone._sortable = new Sortable(zone, {
             group: groupConfig, animation: 150, ghostClass: 'sortable-ghost', draggable: '.main-task-item',
             onStart: function() { isDraggingActive = true; },
+            onMove: function(evt) {
+                // ✅ 拖拽禁止进入已完成区（只出不进），避免 DOM 临时副本残留
+                if (evt.to && evt.to.dataset && evt.to.dataset.completed === 'true') return false;
+                return true;
+            },
             onEnd: function(evt) {
                 isDraggingActive = false;
                 const item = evt.item, taskId = item.dataset.taskId;
@@ -4264,6 +4472,10 @@ function initTaskAndSubTaskDrag() {
                 const toCompleted = evt.to && evt.to.dataset ? evt.to.dataset.completed === 'true' : false;
                 const validTypes = ['todo', 'learning', 'other'];
                 if (!toType || !validTypes.includes(toType) || toCompleted) { setTimeout(renderDayPlan, 30); return; }
+                // ✅ 同 zone 内拖动仅是排序，不改完成状态；跨 zone 从已完成拖出才取消完成
+                const fromZoneId = evt.from && evt.from.id;
+                const toZoneId = evt.to && evt.to.id;
+                const sameZone = (fromZoneId === toZoneId);
                 if (toType === 'todo') {
                     if (fromType !== 'todo') {
                         task.todoKind = (fromType === 'other') ? 'other' : 'learning';
@@ -4282,9 +4494,10 @@ function initTaskAndSubTaskDrag() {
                     if (task.subTasks) task.subTasks.forEach(s => { s.completed = false; if (s.completions) delete s.completions; });
                 } else {
                     task.type = toType;
-                    if (isTaskDone(task, appData.selectedDate)) setTaskDone(task, appData.selectedDate, false);
+                    if (!sameZone && isTaskDone(task, appData.selectedDate)) setTaskDone(task, appData.selectedDate, false);
                 }
-                const newOrderIds = Array.from(evt.to.querySelectorAll('.main-task-item')).map(el => el.dataset.taskId).filter(Boolean);
+                // ✅ 关键：newOrderIds 去重，防止 Sortable 拖回原位时同一 id 出现两次导致 appData 重复叠加
+                const newOrderIds = [...new Set(Array.from(evt.to.querySelectorAll('.main-task-item')).map(el => el.dataset.taskId).filter(Boolean))];
                 appData.tasks = appData.tasks.filter(t => t.id !== taskId);
                 const insertIndex = appData.tasks.findIndex(t => newOrderIds.includes(t.id));
                 if (insertIndex !== -1) appData.tasks.splice(insertIndex, 0, task);
@@ -4305,7 +4518,7 @@ function initTaskAndSubTaskDrag() {
                 if (!taskId) { setTimeout(renderDayPlan, 30); return; }
                 const task = appData.tasks.find(t => t.id === taskId);
                 if (!task) { setTimeout(renderDayPlan, 30); return; }
-                const newSubIds = Array.from(evt.to.querySelectorAll('.sub-task-item')).map(el => el.dataset.subId).filter(Boolean);
+                const newSubIds = [...new Set(Array.from(evt.to.querySelectorAll('.sub-task-item')).map(el => el.dataset.subId).filter(Boolean))];
                 const reordered = newSubIds.map(id => task.subTasks.find(s => s.id === id)).filter(Boolean);
                 const others = task.subTasks.filter(s => !newSubIds.includes(s.id));
                 task.subTasks = [...reordered, ...others];
@@ -5359,48 +5572,29 @@ function mergeData(local, remote) {
     merged.methodsFiles.sort((a, b) => String(a.id).localeCompare(String(b.id)));
     const localTasksMap = new Map(merged.tasks.map(t => [t.id, t]));
     (remote.tasks || []).forEach(rt => {
-        if (!localTasksMap.has(rt.id)) merged.tasks.push(rt);
-        else {
-            const lt = localTasksMap.get(rt.id);
-            if (rt.type !== undefined && rt.type !== lt.type) lt.type = rt.type;
-            if (rt.todoKind !== undefined) lt.todoKind = rt.todoKind;
-            if (rt.date !== undefined && rt.date !== lt.date) lt.date = rt.date;
-            lt.text = rt.text || lt.text;
-            if (rt.completed !== undefined) lt.completed = rt.completed;
-            if (rt.note !== undefined) lt.note = rt.note;
-            if (rt.deadline !== undefined) lt.deadline = rt.deadline;
-            if (rt.target !== undefined) lt.target = rt.target;
-            if (rt.recurringType !== undefined) lt.recurringType = rt.recurringType;
-            if (rt.energyCost !== undefined) lt.energyCost = rt.energyCost;
-            if (rt.countTotal !== undefined) lt.countTotal = Math.max(lt.countTotal || 0, rt.countTotal);
-            if (rt.countEnded !== undefined) lt.countEnded = rt.countEnded || lt.countEnded;
-            if (rt.estimate !== undefined) lt.estimate = rt.estimate;
-            if (rt.pinned !== undefined) lt.pinned = rt.pinned;
-            if (rt.goalId !== undefined) lt.goalId = rt.goalId;
-            if (rt.timeSlot !== undefined) lt.timeSlot = rt.timeSlot;
-            if (rt.timeSlots !== undefined) lt.timeSlots = rt.timeSlots;
-            if (rt.completions) { if (!lt.completions) lt.completions = {}; Object.assign(lt.completions, rt.completions); }
-            if (rt.currents) { if (!lt.currents) lt.currents = {}; for (let k in rt.currents) lt.currents[k] = Math.max(lt.currents[k] || 0, rt.currents[k]); }
-            if (rt.skipDates) { if (!lt.skipDates) lt.skipDates = {}; Object.assign(lt.skipDates, rt.skipDates); }
-            if (rt.recurringEndedDate) lt.recurringEndedDate = rt.recurringEndedDate;
+        if (!localTasksMap.has(rt.id)) { merged.tasks.push(rt); return; }
+        const lt = localTasksMap.get(rt.id);
+        const lTime = Number(lt._lastModified || 0);
+        const rTime = Number(rt._lastModified || 0);
+        // 冲突检测：时间戳相近（2 秒内）且内容不同 → 保留本地并计数
+        if (lTime > 0 && rTime > 0 && Math.abs(lTime - rTime) < 2000 && _taskContentChanged(lt, rt)) {
+            _conflictCount++;
+            console.warn('[同步冲突] 任务「' + (rt.text || rt.id) + '」时间戳相近，保留本地版本', lt, rt);
+        }
+        if (rTime > lTime) {
+            // 远端时间戳更新 → 用远端覆盖主字段，但保留本地新增的子任务
+            const localSubs = JSON.parse(JSON.stringify(lt.subTasks || []));
+            Object.assign(lt, rt);
+            if (!Array.isArray(lt.subTasks)) lt.subTasks = [];
+            const remoteSubMap = new Map(lt.subTasks.map(s => [s.id, s]));
+            localSubs.forEach(ls => { if (!remoteSubMap.has(ls.id)) lt.subTasks.push(ls); });
+            lt._lastModified = rTime;
+        } else {
+            // 本地时间戳更新或相等 → 保留本地主字段，仅补充本地没有的远端子任务
             if (rt.subTasks) {
                 if (!lt.subTasks) lt.subTasks = [];
                 const localSubMap = new Map(lt.subTasks.map(s => [s.id, s]));
-                rt.subTasks.forEach(rs => {
-                    if (!localSubMap.has(rs.id)) lt.subTasks.push(rs);
-                    else {
-                        const ls = localSubMap.get(rs.id);
-                        ls.text = rs.text || ls.text;
-                        if (rs.completed !== undefined) ls.completed = rs.completed;
-                        if (rs.target !== undefined) ls.target = rs.target;
-                        if (rs.energyCost !== undefined) ls.energyCost = rs.energyCost;
-                        if (rs.countTotal !== undefined) ls.countTotal = Math.max(ls.countTotal || 0, rs.countTotal);
-                        if (rs.countEnded !== undefined) ls.countEnded = rs.countEnded || ls.countEnded;
-                        if (rs.estimate !== undefined) ls.estimate = rs.estimate;
-                        if (rs.completions) { if (!ls.completions) ls.completions = {}; Object.assign(ls.completions, rs.completions); }
-                        if (rs.currents) { if (!ls.currents) ls.currents = {}; for (let k in rs.currents) ls.currents[k] = Math.max(ls.currents[k] || 0, rs.currents[k]); }
-                    }
-                });
+                rt.subTasks.forEach(rs => { if (!localSubMap.has(rs.id)) lt.subTasks.push(rs); });
             }
         }
     });
@@ -5452,11 +5646,24 @@ function mergeData(local, remote) {
     });
     if (remote.dailyEnergy) {
         if (!merged.dailyEnergy) merged.dailyEnergy = {};
-        Object.keys(remote.dailyEnergy).forEach(dateStr => { merged.dailyEnergy[dateStr] = Math.max(merged.dailyEnergy[dateStr] || 0, remote.dailyEnergy[dateStr]); });
+        if (!merged.dailyEnergyTS) merged.dailyEnergyTS = {};
+        const _rTS = remote.dailyEnergyTS || {};
+        Object.keys(remote.dailyEnergy).forEach(dateStr => {
+            const _lTS = merged.dailyEnergyTS[dateStr] || 0;
+            const _rDateTS = _rTS[dateStr] || 0;
+            if (_rDateTS >= _lTS) {
+                merged.dailyEnergy[dateStr] = remote.dailyEnergy[dateStr];
+                if (_rDateTS > 0) merged.dailyEnergyTS[dateStr] = _rDateTS;
+            }
+        });
     }
     if (remote.rpg) {
-        ['exp', 'int', 'vit', 'cre', 'foc', 'wil', 'streak'].forEach(k => { merged.rpg[k] = Math.max(merged.rpg[k] || 0, remote.rpg[k] || 0); });
-        if (remote.rpg.lastDate && (!merged.rpg.lastDate || remote.rpg.lastDate > merged.rpg.lastDate)) merged.rpg.lastDate = remote.rpg.lastDate;
+        const lTime = Number((merged.rpg || {})._lastModified || 0);
+        const rTime = Number(remote.rpg._lastModified || 0);
+        if (rTime > lTime) {
+            merged.rpg = Object.assign(JSON.parse(JSON.stringify(merged.rpg || {})), remote.rpg);
+        }
+        // 时间戳相等或本地较新 → 保留本地 rpg
     }
     if (remote.fixedBlocks) {
         if (!merged.fixedBlocks) merged.fixedBlocks = [];
@@ -5560,6 +5767,15 @@ function applyRemoteData(payload, oldData) {
     }
     lastSavedSignature = '';
     saveLocalStorage();
+    _syncSnapshot = JSON.parse(JSON.stringify(appData));
+    // 统一兜底刷新，防止渲染滞后
+    updateFixedProgressBars();
+    renderGoals();
+    renderEnergyAndRPG();
+    if (_conflictCount > 0) {
+        showMiniToast('⚠️ 检测到 ' + _conflictCount + ' 项冲突，已保留本地最新版本');
+        _conflictCount = 0;
+    }
     setTimeout(() => { isSyncing = false; }, 100);
 }
 function setupConnection(connection, isHost, targetId) {
@@ -5662,6 +5878,7 @@ window.addEventListener('beforeunload', () => {
     cleanupMethodsTimers();
     if (_opDebounceTimer) clearTimeout(_opDebounceTimer);
     if (_mainLoopInterval) clearInterval(_mainLoopInterval);
+    if (window._goalTimerTick) { clearInterval(window._goalTimerTick); window._goalTimerTick = null; }
     _clearBackupTimers();
     if (resizeObserver) { try { resizeObserver.disconnect(); } catch(e) {} }
     if (_panelSortable) { try { _panelSortable.destroy(); } catch(e) {} }
@@ -5760,6 +5977,30 @@ window.addEventListener('beforeunload', () => {
         // 延迟到本地数据完全加载后再触发同步，避免同步基线在旧数据上覆盖新时间段
         setTimeout(() => { initPeer(false, true); }, 1200);
     }
+    if (window._goalTimerTick) clearInterval(window._goalTimerTick);
+    window._goalTimerTick = setInterval(() => {
+        if (document.hidden) return;
+        document.querySelectorAll('.goal-timer-display').forEach(el => {
+            const gid = el.dataset.goalId;
+            const goal = appData.goals && appData.goals.find(x => x.id === gid);
+            if (!goal || !goal.timer || !goal.timer.running) return;
+            const elapsed = window._getGoalTimerElapsed(goal);
+            el.textContent = (goal.timer.type === 'down' && Number(goal.timer.target) > 0)
+                ? ('⏳ ' + window._fmtSecs(Math.max(0, Number(goal.timer.target) - elapsed)))
+                : ('⏱ ' + window._fmtSecs(elapsed));
+        });
+        const gtDisp = document.getElementById('gt-display');
+        const modal = document.getElementById('goal-timer-modal-overlay');
+        if (gtDisp && modal) {
+            const running = appData.goals && appData.goals.find(x => x.timer && x.timer.running);
+            if (running) {
+                const elapsed = window._getGoalTimerElapsed(running);
+                gtDisp.textContent = (running.timer.type === 'down' && Number(running.timer.target) > 0)
+                    ? window._fmtSecs(Math.max(0, Number(running.timer.target) - elapsed))
+                    : window._fmtSecs(elapsed);
+            }
+        }
+    }, 1000);
     if (_mainLoopInterval) clearInterval(_mainLoopInterval);
     _mainLoopInterval = setInterval(() => {
         if (document.hidden) return;
