@@ -663,7 +663,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 </head>
 <body>
 <div class="sidebar">
-<div class="sidebar-title"><span id="workspace-title" contenteditable="true" spellcheck="false" style="outline:none;border-radius:4px;padding:2px 4px;min-width:20px;" title="点击可编辑标题" onblur="saveWorkspaceTitle(this)">🚀 我的工作台</span><div class="sync-controls"><div class="p2p-dot" id="p2p-indicator" title="同步状态"></div><button class="btn-manual-sync" id="btn-manual-sync" onclick="manualSync()" title="立即与配对设备双向同步">立即同步</button></div></div>
+<div class="sidebar-title"><span id="workspace-title" contenteditable="true" spellcheck="false" style="outline:none;border-radius:4px;padding:2px 4px;min-width:20px;cursor:text;" title="点击编辑工作台名称" onfocus="selectAllTitle(this)" onblur="saveWorkspaceTitle(this)">🚀 我的工作台</span><div class="sync-controls"><div class="p2p-dot" id="p2p-indicator" title="未连接"></div><button class="btn-manual-sync" id="btn-manual-sync" onclick="manualSync()" title="立即与配对设备双向同步">立即同步</button></div></div>
 <div class="nav-item" data-target="year">📊 全年</div>
 <div class="nav-item" data-target="month">📅 月计划</div>
 <div class="nav-item" data-target="week">🗓️ 周计划</div>
@@ -702,13 +702,13 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div id="rpg-exp-text" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);pointer-events:none;white-space:nowrap;line-height:1;">0 / 100 EXP</div>
 </div>
 </div>
-</div>
 <div class="rpg-attrs" id="rpg-attrs-wrap" style="display:none;">
 <div class="rpg-attr"><span>📚 智力</span><b id="rpg-int">0</b></div>
 <div class="rpg-attr"><span>💪 体力</span><b id="rpg-vit">0</b></div>
 <div class="rpg-attr"><span>🎨 创造力</span><b id="rpg-cre">0</b></div>
 <div class="rpg-attr"><span>🎯 专注</span><b id="rpg-foc">0</b></div>
 <div class="rpg-attr"><span>🔥 毅力</span><b id="rpg-wil">0</b></div>
+</div>
 </div>
 </div>
 </div>
@@ -1072,7 +1072,7 @@ let appData = {
     timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS)),
     timeSlotsLastModified: 0,
     fixedBlocks: JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS)),
-    fixedBlockSchedule: {}, maxVisible: 5, animationEnabled: true
+    fixedBlockSchedule: {}, maxVisible: 5, animationEnabled: true, statsChartMode: 'times'
 };
 let peer = null, conn = null;
 function checkVersionUpdate() {
@@ -1091,19 +1091,26 @@ function checkVersionUpdate() {
         // 注意：不在这里写 localStorage，等用户关闭弹窗时再写
     } catch (e) { console.warn('[版本弹窗]', e); }
 }
-window.saveWorkspaceTitle = function(el) {
-    const v = (el.innerText || '').trim() || '🚀 我的工作台';
-    appData.workspaceTitle = v;
-    el.innerText = v;
-    saveDataToFile(appData);
-};
 window.closeVersionUpdateModal = function() {
     const ov = document.getElementById('version-update-overlay');
     if (ov) ov.classList.remove('active');
+};
+window.saveWorkspaceTitle = function(el) {
+    if (!el) return;
+    const v = (el.innerText || '').replace(/\s+/g, ' ').trim() || '🚀 我的工作台';
+    el.innerText = v;
+    appData.workspaceTitle = v;
+    saveDataToFile(appData);
+};
+window.selectAllTitle = function(el) {
+    if (!el) return;
     try {
-        // 关闭弹窗时才标记当前版本已读，防止刷新后重复弹
-        localStorage.setItem('myWorkspaceVersion', APP_VERSION);
-    } catch (e) { console.warn('[版本弹窗-写入]', e); }
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } catch (e) {}
 };
 let isSyncing = false, isAutoReconnecting = false, isConnecting = false;
 let connectTimer = null;
@@ -1476,13 +1483,22 @@ function ensureEnergyData() {
             if (f.updatedAt === undefined) f.updatedAt = 0;
         }
     });
+    // 恢复/同步后重建文件夹层级：parentId 指向不存在或已删除文件夹时，回退为根节点
+    (function _repairMethodsTree() {
+        const _validFolderIds = new Set(
+            appData.methodsFiles.filter(f => f.type === 'folder' && !f.deleted).map(f => f.id)
+        );
+        appData.methodsFiles.forEach(f => {
+            if (f.parentId && !_validFolderIds.has(f.parentId)) f.parentId = null;
+        });
+    })();
     if (!appData.activeMethodsFileId || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId && !f.deleted)) {
-        const firstFile = appData.methodsFiles.find(f => f.type === 'file' && !f.deleted) || appData.methodsFiles.find(f => !f.deleted);
+        const firstFile = appData.methodsFiles.find(f => f.type === 'file' && !f.deleted);
         appData.activeMethodsFileId = firstFile ? firstFile.id : null;
     }
     if (!appData.activeMethodsFileId2 || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId2 && !f.deleted)) {
-        const activeFiles = appData.methodsFiles.filter(f => f.type === 'file' && !f.deleted);
-        const secondFile = activeFiles[1] || activeFiles[0];
+        const _fs2 = appData.methodsFiles.filter(f => f.type === 'file' && !f.deleted);
+        const secondFile = _fs2[1] || _fs2[0];
         appData.activeMethodsFileId2 = secondFile ? secondFile.id : null;
     }
     appData.tasks.forEach(t => {
@@ -2266,8 +2282,8 @@ function methodsSetStatus(txt, color) {
 function getCurrentMethodsFile(idStr) {
     if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) return null;
     const targetId = idStr || appData.activeMethodsFileId;
-    const f = appData.methodsFiles.find(f => f.id === targetId);
-    return (f && f.type === 'file') ? f : appData.methodsFiles.find(f => f.type === 'file');
+    const f = appData.methodsFiles.find(f => f.id === targetId && !f.deleted);
+    return (f && f.type === 'file') ? f : appData.methodsFiles.find(f => f.type === 'file' && !f.deleted);
 }
 /* ===== 学习方法多纸张支持 ===== */
 const METHODS_PAGE_BREAK_HTML = '<div class="methods-page-break" data-page-break="1"></div>';
@@ -2776,7 +2792,7 @@ function renameMethodsFile(id) {
     showMiniToast('✏️ 已重命名');
 }
 function deleteMethodsFile(id) {
-    const f = appData.methodsFiles.find(x => x.id === id);
+    const f = appData.methodsFiles.find(x => x.id === id && !x.deleted);
     if (!f) return;
     if (f.type === 'folder') {
         const children = appData.methodsFiles.filter(x => x.parentId === id && !x.deleted);
@@ -2791,14 +2807,13 @@ function deleteMethodsFile(id) {
         if (item) { item.deleted = true; item.updatedAt = Date.now(); }
     };
     deleteRecursive(id);
+    const _validFiles = appData.methodsFiles.filter(x => x.type === 'file' && !x.deleted);
     if (appData.activeMethodsFileId === id || !appData.methodsFiles.find(x => x.id === appData.activeMethodsFileId && !x.deleted)) {
-        const firstFile = appData.methodsFiles.find(x => x.type === 'file' && !x.deleted);
-        appData.activeMethodsFileId = firstFile ? firstFile.id : null;
+        appData.activeMethodsFileId = _validFiles[0] ? _validFiles[0].id : null;
     }
     if (appData.activeMethodsFileId2 === id || !appData.methodsFiles.find(x => x.id === appData.activeMethodsFileId2 && !x.deleted)) {
-        const activeFiles = appData.methodsFiles.filter(x => x.type === 'file' && !x.deleted);
-        const secondFile = activeFiles[1] || activeFiles[0];
-        appData.activeMethodsFileId2 = secondFile ? secondFile.id : null;
+        const _s = _validFiles[1] || _validFiles[0];
+        appData.activeMethodsFileId2 = _s ? _s.id : null;
     }
     renderMethodsFileList(); refreshMethodsEditorContent(); saveDataToFile(appData);
     showMiniToast('🗑️ 已删除');
@@ -3077,15 +3092,12 @@ window.changeRadius = function(v) {
     if (!isSyncing) saveDataToFile(appData);
 };
 function updateSyncUI() {
-    const badge = document.getElementById('sync-status-badge');
-    const text = document.getElementById('sync-status-text');
-    if (badge) badge.className = 'sync-status-badge ' + syncStatus;
-    if (text) {
-        if (syncStatus === 'connected') text.innerText = '已同步';
-        else if (syncStatus === 'syncing') text.innerText = '同步中...';
-        else if (syncStatus === 'conflict') text.innerText = '存在冲突';
-        else text.innerText = '离线模式';
-    }
+    // 同步状态文字已从 UI 移除，仅保留 p2p-dot 圆点指示
+    const dot = document.getElementById('p2p-indicator');
+    if (!dot) return;
+    if (syncStatus === 'connected') { dot.classList.add('connected'); dot.classList.remove('connecting'); dot.title = '已同步'; }
+    else if (syncStatus === 'syncing') { dot.classList.add('connecting'); dot.classList.remove('connected'); dot.title = '同步中'; }
+    else { dot.classList.remove('connected', 'connecting'); dot.title = syncStatus === 'conflict' ? '存在冲突' : '未连接'; }
 }
 let _manualSyncInProgress = false;
 let _manualSyncTimer = null;
@@ -3616,8 +3628,17 @@ window.openStatsModal = function(type) {
         [...new Set([...manual, ...allSlotExs, ...rec])].forEach(n => {
             const ex = appData.exercises.find(e => e.name === n);
             if (!ex) return;
-            if (!ex.subTasks || ex.subTasks.length === 0) { if (checks[ex.id]) ed++; }
-            else ex.subTasks.forEach(sub => { if (checks[`${ex.id}_${sub.id}`]) ed++; });
+            const _ec = ex.energyCost || 15;
+            if (!ex.subTasks || ex.subTasks.length === 0) {
+                if (checks[ex.id]) { ed++; eExp += _ec * appData.expRatio; }
+            } else {
+                let _allDone = true;
+                ex.subTasks.forEach(sub => {
+                    if (checks[`${ex.id}_${sub.id}`]) ed++;
+                    else _allDone = false;
+                });
+                if (_allDone) eExp += _ec * appData.expRatio;
+            }
         });
         const logs = (appData.dailyLogs && appData.dailyLogs[d]) ? appData.dailyLogs[d] : {};
         const logItems = [];
@@ -3660,12 +3681,17 @@ window.openStatsModal = function(type) {
     const _chartTitleMap = { 'year': '本年三大类累计', 'month': '本月三大类累计', 'week': '本周三大类累计', 'day': '本日三大类累计' };
     const _ct = document.getElementById('stats-chart-title');
     if (_ct) _ct.innerText = (_chartTitleMap[type] || '三大类累计') + ' · ' + _unitLabel;
-    // 切换按钮高亮
     const _btnT = document.getElementById('stats-mode-times');
     const _btnE = document.getElementById('stats-mode-exp');
     if (_btnT) _btnT.classList.toggle('btn-primary', _chartMode === 'times');
     if (_btnE) _btnE.classList.toggle('btn-primary', _chartMode === 'exp');
+    window._currentStatsType = type;
     document.getElementById('stats-modal').classList.add('active');
+};
+window.switchStatsMode = function(mode) {
+    appData.statsChartMode = mode === 'exp' ? 'exp' : 'times';
+    saveDataToFile(appData);
+    if (window._currentStatsType) window.openStatsModal(window._currentStatsType);
 };
 window.closeStatsModal = function() { document.getElementById('stats-modal').classList.remove('active'); };
 function renderYearHeatmap() {
@@ -4668,7 +4694,6 @@ function renderTaskListModalContent(type) {
 }
 function _cleanupDragGhosts() {
     document.querySelectorAll('.sortable-ghost, .sortable-chosen, .sortable-fallback').forEach(el => {
-        if (el && el.parentNode && el.parentNode.classList && el.parentNode.classList.contains('task-drop-zone')) return;
         if (el && el.classList && el.classList.contains('sortable-ghost')) { try { el.remove(); } catch(e) {} }
     });
     // 清理每个 zone 内重复的 data-task-id
@@ -4682,6 +4707,25 @@ function _cleanupDragGhosts() {
     });
     isDraggingActive = false;
 }
+function _cleanupDragGhosts() {
+    document.querySelectorAll('.sortable-ghost, .sortable-chosen, .sortable-fallback').forEach(el => {
+        if (el && el.classList && el.classList.contains('sortable-ghost')) {
+            try { el.remove(); } catch (e) {}
+        } else {
+            el.classList.remove('sortable-chosen', 'sortable-ghost', 'sortable-fallback');
+        }
+    });
+    // 按 data-task-id 去重，防 DOM 里残留重复卡片
+    document.querySelectorAll('.task-drop-zone').forEach(zone => {
+        const seen = new Set();
+        Array.from(zone.querySelectorAll('.main-task-item[data-task-id]')).forEach(el => {
+            const id = el.dataset.taskId;
+            if (!id) return;
+            if (seen.has(id)) { try { el.remove(); } catch (e) {} } else seen.add(id);
+        });
+    });
+    isDraggingActive = false;
+}
 function initTaskAndSubTaskDrag() {
     document.querySelectorAll('.task-drop-zone').forEach(zone => {
         if (zone._sortable) { try { zone._sortable.destroy(); } catch(e) {} zone._sortable = null; }
@@ -4689,10 +4733,15 @@ function initTaskAndSubTaskDrag() {
         const groupConfig = isCompletedZone ? { name: 'shared-tasks', pull: true, put: false } : 'shared-tasks';
         zone._sortable = new Sortable(zone, {
             group: groupConfig, animation: 150, ghostClass: 'sortable-ghost', draggable: '.main-task-item',
-            onStart: function() { isDraggingActive = true; },
+            onStart: function() { isDraggingActive = true; _cleanupDragGhosts(); },
             onMove: function(evt) {
+                // ✅ 拖拽禁止进入已完成区（只出不进），避免 DOM 临时副本残留
                 if (evt.to && evt.to.dataset && evt.to.dataset.completed === 'true') return false;
                 return true;
+            },
+            onCancel: function() {
+                _cleanupDragGhosts();
+                setTimeout(renderDayPlan, 30);
             },
             onCancel: function() {
                 _cleanupDragGhosts();
@@ -5809,13 +5858,16 @@ function mergeData(local, remote) {
                 const lf = localFileMap.get(rf.id);
                 const rAt = rf.updatedAt || 0;
                 const lAt = lf.updatedAt || 0;
-                if (rAt > lAt) Object.assign(lf, JSON.parse(JSON.stringify(rf)));
+                if (rAt > lAt) {
+                    lf.name = rf.name; lf.type = rf.type; lf.parentId = rf.parentId;
+                    lf.deleted = !!rf.deleted;
+                    if (rf.type === 'file') { lf.contentHtml = rf.contentHtml; lf.contentText = rf.contentText; }
+                    lf.updatedAt = rf.updatedAt;
+                }
             }
         });
-        // 注意：不物理移除 deleted 项，保留在数组中靠渲染层过滤
-        // 否则下次合并时会把远端旧文件当作"新增"重新 push 回来
-    }
-    if (!Array.isArray(merged.methodsFiles) || merged.methodsFiles.length === 0) merged.methodsFiles = [{ id: 'file_default', name: '我的学习方法', type: 'file', parentId: null, contentHtml: '', contentText: '', updatedAt: 0 }];
+    }    if (!Array.isArray(merged.methodsFiles) || merged.methodsFiles.length === 0) merged.methods
+Files = [{ id: 'file_default', name: '我的学习方法', type: 'file', parentId: null, contentHtml: '', contentText: '', updatedAt: 0 }];
     if (!merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId)) merged.activeMethodsFileId = merged.methodsFiles.find(f => f.type === 'file')?.id;
     const curFile = merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId);
     merged.learningMethodsHtml = curFile ? curFile.contentHtml || '' : '';
@@ -6114,7 +6166,7 @@ document.addEventListener('dragover', (e) => {
     else if (e.clientY > rect.bottom - threshold) startAutoScroll(view, 1);
     else stopAutoScroll();
 });
-document.addEventListener('dragend', () => { stopAutoScroll(); isDraggingActive = false; });
+document.addEventListener('dragend', () => { stopAutoScroll(); _cleanupDragGhosts(); });
 document.addEventListener('drop', () => { stopAutoScroll(); }, true);
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
@@ -6210,8 +6262,8 @@ window.addEventListener('beforeunload', () => {
     initDragAndDrop(); renderTimeSlotConfig(); updateBackupUI(); renderEnergyAndRPG();
     renderLevelConfig(); renderFixedBlockEnergyConfig();
     renderP2PHistory(); renderFixedBlockPool();
+    bindGoalInputs(); renderGoals();
     if (appData.workspaceTitle) { const _wt = document.getElementById('workspace-title'); if (_wt) _wt.innerText = appData.workspaceTitle; }
-    bindGoalInputs(); renderGoals(); window.renderGlobalTimer();
     initMethodsEditor();
     const sh = localStorage.getItem('my_p2p_host_id');
     if (sh) document.getElementById('my-peer-id').innerText = sh;
