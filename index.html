@@ -663,15 +663,16 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 </head>
 <body>
 <div class="sidebar">
-<div class="sidebar-title">🚀 我的工作台<div class="sync-controls"><div class="p2p-dot" id="p2p-indicator" title="未连接"></div><span class="sync-status-badge offline" id="sync-status-badge"><span id="sync-status-text">离线</span></span><button class="btn-manual-sync" id="btn-manual-sync" onclick="manualSync()" title="立即与配对设备双向同步">立即同步</button></div></div>
+<div class="sidebar-title"><span id="workspace-title" contenteditable="true" spellcheck="false" style="outline:none;border-radius:4px;padding:2px 4px;min-width:20px;" title="点击可编辑标题" onblur="saveWorkspaceTitle(this)">🚀 我的工作台</span><div class="sync-controls"><div class="p2p-dot" id="p2p-indicator" title="同步状态"></div><button class="btn-manual-sync" id="btn-manual-sync" onclick="manualSync()" title="立即与配对设备双向同步">立即同步</button></div></div>
 <div class="nav-item" data-target="year">📊 全年</div>
 <div class="nav-item" data-target="month">📅 月计划</div>
 <div class="nav-item" data-target="week">🗓️ 周计划</div>
 <div class="nav-item" data-target="day" style="justify-content:space-between; padding-right:6px;"><span>📝 日计划</span><span onclick="jumpToToday(event)" style="color:var(--accent-color);font-weight:700;font-size:var(--font-hint);padding:2px 6px;border-radius:4px;background:rgba(35,131,226,.1);" title="回到今天">📍 今天</span></div>
-<div class="nav-item" data-target="methods">📚 学习方法</div>
+<div class="nav-item" data-target="methods">📚 笔记</div>
 <div class="nav-item" data-target="settings">⚙️ 设置</div>
 <div class="sidebar-footer">
-<div class="sidebar-goal-box"><div class="sidebar-goal-title">🎯 我的目标</div><div id="global-timer-sidebar-wrap"></div><div class="goals-list" id="goals-list-sidebar"></div><input type="text" class="goals-input" id="goal-input-sidebar" placeholder="➕ 添加目标，回车保存"></div>
+<div id="global-timer-sidebar-wrap"></div>
+<div class="sidebar-goal-box"><div class="sidebar-goal-title">🎯 我的目标</div><div class="goals-list" id="goals-list-sidebar"></div><input type="text" class="goals-input" id="goal-input-sidebar" placeholder="➕ 添加目标，回车保存"></div>
 <div class="fixed-progress-bars">
 <div class="prog-row" onclick="openStatsModal('year')"><div class="prog-label-row"><span>年完成度</span><span id="prog-year-text">0%</span></div><div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-year-fill" style="background:#2383e2;"></div></div></div>
 <div class="prog-row" onclick="openStatsModal('month')"><div class="prog-label-row"><span>月完成度</span><span id="prog-month-text">0%</span></div><div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-month-fill" style="background:#f2994a;"></div></div></div>
@@ -693,10 +694,14 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 </div>
 </div>
 <div class="rpg-card-main" onclick="handleRpgCardClick(event)">
-<div class="rpg-header"><span class="rpg-level" id="rpg-level" title="点击查看详情" style="cursor:pointer;">Lv.1</span><span class="rpg-title" id="rpg-title">新手</span></div>
-<div class="rpg-exp-bar" id="rpg-exp-bar-wrap" onclick="toggleRPGExpand(event)" title="点击展开属性" style="cursor:pointer;position:relative;overflow:visible;">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+<span class="rpg-level" id="rpg-level" title="点击查看详情" style="cursor:pointer;flex-shrink:0;">Lv.1</span>
+<span class="rpg-title" id="rpg-title" style="flex-shrink:0;">新手</span>
+<div class="rpg-exp-bar" id="rpg-exp-bar-wrap" onclick="toggleRPGExpand(event)" title="点击展开属性" style="cursor:pointer;position:relative;overflow:visible;flex:1;margin-bottom:0;">
 <div class="rpg-exp-fill" id="rpg-exp-fill" style="width:0%;"></div>
 <div id="rpg-exp-text" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);pointer-events:none;white-space:nowrap;line-height:1;">0 / 100 EXP</div>
+</div>
+</div>
 </div>
 <div class="rpg-attrs" id="rpg-attrs-wrap" style="display:none;">
 <div class="rpg-attr"><span>📚 智力</span><b id="rpg-int">0</b></div>
@@ -705,7 +710,6 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="rpg-attr"><span>🎯 专注</span><b id="rpg-foc">0</b></div>
 <div class="rpg-attr"><span>🔥 毅力</span><b id="rpg-wil">0</b></div>
 </div>
-<div class="rpg-tip" id="rpg-tip" onclick="openRPGModal()" title="打开详细面板" style="cursor:pointer;display:none;">👉 点击查看详细属性</div>
 </div>
 </div>
 </div>
@@ -716,6 +720,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="view-container" id="view-year">
 <div class="year-header"><h1>📊 全年总览</h1><div class="time-nav" style="margin-bottom:0;"><button onclick="changeYear(-1)">← 上一年</button><span id="year-display" style="font-size:var(--font-content);">2025年</span><button onclick="changeYear(1)">下一年 →</button></div></div>
 <div class="year-heatmap" id="year-heatmap"></div>
+<div id="global-timer-main-wrap"></div>
 <div class="year-goal-box bottom-summary"><h2>🎯 我的目标</h2><div class="goals-list" id="goals-list-main"></div><input type="text" class="goals-input" id="goal-input-main" placeholder="➕ 添加目标，回车保存"></div>
 </div>
 <div class="view-container active" id="view-month">
@@ -760,6 +765,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="section-box" data-panel="other"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 🧺 其他</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div><div class="panel-content"><div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="按回车添加 (如：跳绳 * 500)" id="other-input"></div><div id="other-list" class="task-drop-zone" data-type="other" data-completed="false"></div><div id="other-completed" class="task-drop-zone" data-type="other" data-completed="true"></div></div></div>
 <div class="section-box" data-panel="exercise"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 💪 锻炼</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span><button class="btn btn-sm btn-primary" onclick="addExerciseCategory()">➕ 添加</button></div></div><div class="panel-content"><div class="exercise-grid" id="exercise-grid"></div></div></div>
 </div>
+<div id="day-reflection-hint" class="reflection-preview" style="margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--font-hint);color:var(--text-muted);background:var(--bg-sidebar);border-left:2px solid var(--border-color);padding:4px 8px;border-radius:4px;cursor:help;" title="">📋 今日暂无操作记录</div>
 <details class="bottom-summary" id="day-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;"><summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">💭 今日反思 (点击展开/收起)</summary><textarea id="daily-reflection-textarea" placeholder="今天过得怎么样？有什么想记录的？" oninput="handleReflectionInput(this.value)" style="margin-top:8px;"></textarea></details>
 </div>
 <div class="view-container" id="view-methods">
@@ -971,7 +977,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="stats-modal-overlay" id="stats-modal" onclick="if(event.target===this)closeStatsModal()">
 <div class="stats-modal">
 <div class="stats-modal-header"><h3 id="stats-modal-title">统计</h3><button class="stats-modal-close" onclick="closeStatsModal()">×</button></div>
-<div class="stats-layout"><div class="stats-left" id="stats-left-content"></div><div class="stats-right"><div class="chart-title" id="stats-chart-title">三大类累计</div><div class="bar-chart" id="stats-chart-content"></div></div></div>
+<div class="stats-layout"><div class="stats-left" id="stats-left-content"></div><div class="stats-right"><div class="chart-title" id="stats-chart-title">三大类累计</div><div style="text-align:center;margin-bottom:8px;"><button class="btn btn-sm" id="stats-mode-times" onclick="switchStatsMode('times')" style="margin-right:4px;">📊 次数</button><button class="btn btn-sm" id="stats-mode-exp" onclick="switchStatsMode('exp')">⭐ 经验</button></div><div class="bar-chart" id="stats-chart-content"></div></div></div>
 </div>
 </div>
 <div class="task-detail-modal-overlay" id="task-detail-modal" onclick="if(event.target===this)closeTaskDetailModal()">
@@ -1085,6 +1091,12 @@ function checkVersionUpdate() {
         // 注意：不在这里写 localStorage，等用户关闭弹窗时再写
     } catch (e) { console.warn('[版本弹窗]', e); }
 }
+window.saveWorkspaceTitle = function(el) {
+    const v = (el.innerText || '').trim() || '🚀 我的工作台';
+    appData.workspaceTitle = v;
+    el.innerText = v;
+    saveDataToFile(appData);
+};
 window.closeVersionUpdateModal = function() {
     const ov = document.getElementById('version-update-overlay');
     if (ov) ov.classList.remove('active');
@@ -1161,6 +1173,11 @@ function _stampChanges(data) {
 }
 // ============ 双向同步时间戳合并 END ============
 
+window.switchStatsMode = function(mode) {
+    appData.statsChartMode = mode === 'exp' ? 'exp' : 'times';
+    saveDataToFile(appData);
+    if (window._currentStatsType) window.openStatsModal(window._currentStatsType);
+};
 function getTodayString() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1459,12 +1476,13 @@ function ensureEnergyData() {
             if (f.updatedAt === undefined) f.updatedAt = 0;
         }
     });
-    if (!appData.activeMethodsFileId || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId)) {
-        const firstFile = appData.methodsFiles.find(f => f.type === 'file') || appData.methodsFiles[0];
+    if (!appData.activeMethodsFileId || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId && !f.deleted)) {
+        const firstFile = appData.methodsFiles.find(f => f.type === 'file' && !f.deleted) || appData.methodsFiles.find(f => !f.deleted);
         appData.activeMethodsFileId = firstFile ? firstFile.id : null;
     }
-    if (!appData.activeMethodsFileId2 || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId2)) {
-        const secondFile = appData.methodsFiles.filter(f => f.type === 'file')[1] || appData.methodsFiles.find(f => f.type === 'file') || appData.methodsFiles[0];
+    if (!appData.activeMethodsFileId2 || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId2 && !f.deleted)) {
+        const activeFiles = appData.methodsFiles.filter(f => f.type === 'file' && !f.deleted);
+        const secondFile = activeFiles[1] || activeFiles[0];
         appData.activeMethodsFileId2 = secondFile ? secondFile.id : null;
     }
     appData.tasks.forEach(t => {
@@ -1615,6 +1633,15 @@ window._getGlobalElapsed = function() {
     if (t.running && Number(t.startedAt) > 0) s += Math.floor((Date.now() - Number(t.startedAt)) / 1000);
     return s;
 };
+function _addTimerToStats(dateStr, seconds, label) {
+    if (!appData.dailyLogs) appData.dailyLogs = {};
+    if (!appData.dailyLogs[dateStr]) appData.dailyLogs[dateStr] = {};
+    const key = '__globalTimer__';
+    const baseName = '⏱ 圆盘计时' + (label ? ' · ' + label : '');
+    if (!appData.dailyLogs[dateStr][key]) appData.dailyLogs[dateStr][key] = { name: baseName, delta: 0, completed: 0, seconds: 0 };
+    appData.dailyLogs[dateStr][key].seconds = (appData.dailyLogs[dateStr][key].seconds || 0) + seconds;
+    appData.dailyLogs[dateStr][key].name = baseName;
+}
 window.renderGlobalTimer = function() {
     ensureGoals();
     const t = appData.globalTimer;
@@ -1668,8 +1695,10 @@ window._gtPauseGlobal = function() {
     ensureGoals();
     const t = appData.globalTimer;
     if (t.running && Number(t.startedAt) > 0) {
-        t.seconds = (Number(t.seconds) || 0) + Math.floor((Date.now() - Number(t.startedAt)) / 1000);
+        const addSec = Math.floor((Date.now() - Number(t.startedAt)) / 1000);
+        t.seconds = (Number(t.seconds) || 0) + addSec;
         t.startedAt = 0; t.running = false;
+        if (addSec > 0) _addTimerToStats(getTodayString(), addSec, t.taskLabel);
         saveDataToFile(appData);
         window.renderGlobalTimer();
     }
@@ -1677,6 +1706,10 @@ window._gtPauseGlobal = function() {
 window._gtStopGlobal = function() {
     ensureGoals();
     const t = appData.globalTimer;
+    if (t.running && Number(t.startedAt) > 0) {
+        const addSec = Math.floor((Date.now() - Number(t.startedAt)) / 1000);
+        if (addSec > 0) _addTimerToStats(getTodayString(), addSec, t.taskLabel);
+    }
     t.seconds = 0; t.startedAt = 0; t.running = false;
     saveDataToFile(appData);
     window.renderGlobalTimer();
@@ -2568,7 +2601,7 @@ function getFileFullPath(fileId) {
     while (current) { path.unshift(current.name); current = appData.methodsFiles.find(f => f.id === current.parentId); }
     return path.join('/');
 }
-function buildFileTree(parentId = null) { return appData.methodsFiles.filter(f => (f.parentId || null) === parentId); }
+function buildFileTree(parentId = null) { return appData.methodsFiles.filter(f => (f.parentId || null) === parentId && !f.deleted); }
 let draggedMethodsFileId = null;
 function moveMethodsFileToFolder(fileId, folderId) {
     if (!fileId || !folderId) { showMiniToast('❌ 未识别到拖拽的文件'); return; }
@@ -2677,7 +2710,7 @@ function renderMethodsFileList() {
     if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) { list.innerHTML = '<div class="methods-file-empty">暂无文件<br>点右上角 ➕ 新建</div>'; return; }
     const roots = buildFileTree(null);
     renderMethodsFileTree(roots, list);
-    const files = appData.methodsFiles.filter(f => f.type === 'file');
+    const files = appData.methodsFiles.filter(f => f.type === 'file' && !f.deleted);
     const leftSel = document.getElementById('split-left-select');
     const rightSel = document.getElementById('split-right-select');
     if (leftSel && rightSel) {
@@ -2746,19 +2779,27 @@ function deleteMethodsFile(id) {
     const f = appData.methodsFiles.find(x => x.id === id);
     if (!f) return;
     if (f.type === 'folder') {
-        const children = appData.methodsFiles.filter(x => x.parentId === id);
+        const children = appData.methodsFiles.filter(x => x.parentId === id && !x.deleted);
         if (children.length > 0) { alert('文件夹不为空，请先删除内部的文件/文件夹。'); return; }
     }
-    if (appData.methodsFiles.filter(x => x.type === 'file').length <= 1 && f.type === 'file') { alert('至少保留一个文件'); return; }
+    if (appData.methodsFiles.filter(x => x.type === 'file' && !x.deleted).length <= 1 && f.type === 'file') { alert('至少保留一个文件'); return; }
     if (!confirm(`删除「${f.name}」？内容将永久丢失。`)) return;
     const deleteRecursive = (delId) => {
-        const children = appData.methodsFiles.filter(x => x.parentId === delId);
+        const children = appData.methodsFiles.filter(x => x.parentId === delId && !x.deleted);
         children.forEach(c => deleteRecursive(c.id));
-        appData.methodsFiles = appData.methodsFiles.filter(x => x.id !== delId);
+        const item = appData.methodsFiles.find(x => x.id === delId);
+        if (item) { item.deleted = true; item.updatedAt = Date.now(); }
     };
     deleteRecursive(id);
-    if (appData.activeMethodsFileId === id) { const firstFile = appData.methodsFiles.find(x => x.type === 'file'); appData.activeMethodsFileId = firstFile ? firstFile.id : null; }
-    if (appData.activeMethodsFileId2 === id) { const secondFile = appData.methodsFiles.filter(x => x.type === 'file')[1] || appData.methodsFiles.find(x => x.type === 'file'); appData.activeMethodsFileId2 = secondFile ? secondFile.id : null; }
+    if (appData.activeMethodsFileId === id || !appData.methodsFiles.find(x => x.id === appData.activeMethodsFileId && !x.deleted)) {
+        const firstFile = appData.methodsFiles.find(x => x.type === 'file' && !x.deleted);
+        appData.activeMethodsFileId = firstFile ? firstFile.id : null;
+    }
+    if (appData.activeMethodsFileId2 === id || !appData.methodsFiles.find(x => x.id === appData.activeMethodsFileId2 && !x.deleted)) {
+        const activeFiles = appData.methodsFiles.filter(x => x.type === 'file' && !x.deleted);
+        const secondFile = activeFiles[1] || activeFiles[0];
+        appData.activeMethodsFileId2 = secondFile ? secondFile.id : null;
+    }
     renderMethodsFileList(); refreshMethodsEditorContent(); saveDataToFile(appData);
     showMiniToast('🗑️ 已删除');
 }
@@ -3038,11 +3079,13 @@ window.changeRadius = function(v) {
 function updateSyncUI() {
     const badge = document.getElementById('sync-status-badge');
     const text = document.getElementById('sync-status-text');
-    badge.className = 'sync-status-badge ' + syncStatus;
-    if (syncStatus === 'connected') text.innerText = '已同步';
-    else if (syncStatus === 'syncing') text.innerText = '同步中...';
-    else if (syncStatus === 'conflict') text.innerText = '存在冲突';
-    else text.innerText = '离线模式';
+    if (badge) badge.className = 'sync-status-badge ' + syncStatus;
+    if (text) {
+        if (syncStatus === 'connected') text.innerText = '已同步';
+        else if (syncStatus === 'syncing') text.innerText = '同步中...';
+        else if (syncStatus === 'conflict') text.innerText = '存在冲突';
+        else text.innerText = '离线模式';
+    }
 }
 let _manualSyncInProgress = false;
 let _manualSyncTimer = null;
@@ -3386,7 +3429,10 @@ function handleIncomingOp(op) {
         const ae1 = document.activeElement;
         if (!paperEl1 || !paperEl1.contains(ae1)) refreshMethodsEditorContent();
     } else if (op.action === 'DELETE_METHODS') {
-        appData.methodsFiles = appData.methodsFiles.filter(x => x.id !== op.id);
+        const _dm = appData.methodsFiles.find(x => x.id === op.id);
+        if (_dm) { _dm.deleted = true; _dm.updatedAt = Date.now(); }
+        renderMethodsFileList(); refreshMethodsEditorContent();
+    }
         renderMethodsFileList(); refreshMethodsEditorContent();
     }
     syncStatus = 'connected'; updateSyncUI();
@@ -3534,6 +3580,8 @@ function calcProgress(dateStr, type) {
 }
 window.openStatsModal = function(type) {
     ensureEnergyData();
+    window._currentStatsType = type;
+    if (!appData.statsChartMode) appData.statsChartMode = 'times';
     let title = '', s = '', e = '';
     if (type === 'year') { const y = appData.viewYear; title = `${y}年 统计`; s = formatDate(y, 0, 1); e = formatDate(y, 11, 31); }
     else if (type === 'month') { const y = appData.viewYear, m = appData.viewMonth; title = `${y}年 ${m+1}月 统计`; s = formatDate(y, m, 1); e = formatDate(y, m, new Date(y, m+1, 0).getDate()); }
@@ -3548,13 +3596,19 @@ window.openStatsModal = function(type) {
     } else { const d = appData.selectedDate; title = `${getDateLabel(d)} 统计`; s = d; e = d; }
     document.getElementById('stats-modal-title').innerText = title;
     let ld = 0, od = 0, ed = 0;
+    let lExp = 0, oExp = 0, eExp = 0;
     let cur = new Date(s + 'T00:00:00');
     const end = new Date(e + 'T00:00:00');
     let logHtml = '<div style="margin-top:16px; border-top:1px dashed var(--border-color); padding-top:12px;"><h4 style="font-size:var(--font-content);margin-bottom:8px;">📋 操作记录</h4><div style="max-height:240px;overflow-y:auto;font-size:var(--font-hint);display:flex;flex-direction:column;gap:6px;">';
     let hasLogs = false;
     while (cur <= end) {
         const d = formatDate(cur.getFullYear(), cur.getMonth(), cur.getDate());
-        getTasksForDate(d).forEach(t => { const pr = getTaskProgress(t, d); if (t.type === 'learning') ld += pr.done; if (t.type === 'other') od += pr.done; });
+        getTasksForDate(d).forEach(t => {
+            const pr = getTaskProgress(t, d);
+            const ec = (t.energyCost !== undefined ? t.energyCost : (t.target ? 1 : 10));
+            if (t.type === 'learning') { ld += pr.done; lExp += pr.done * ec * appData.expRatio; }
+            if (t.type === 'other') { od += pr.done; oExp += pr.done * ec * appData.expRatio; }
+        });
         const checks = appData.dailyExerciseChecks[d] || {};
         const manual = appData.exerciseSchedule[d] || [];
         const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[d]) || {};
@@ -3573,6 +3627,7 @@ window.openStatsModal = function(type) {
             const parts = [];
             if (l.completed) parts.push('✅ 完成');
             if (l.delta !== 0) parts.push(`🔄 计数 ${l.delta > 0 ? '+' : ''}${l.delta}`);
+            if (l.seconds) parts.push(`⏱ ${Math.floor(l.seconds / 60)}分${Math.floor(l.seconds % 60)}秒`);
             if (parts.length > 0) logItems.push(`<span style="display:inline-block;margin-right:10px;margin-bottom:2px;background:var(--bg-sidebar);padding:2px 6px;border-radius:4px;">${escapeHtml(l.name)} (${parts.join(', ')})</span>`);
         });
         if (logItems.length > 0) { hasLogs = true; logHtml += `<div><b style="color:var(--accent-color);">${d}</b><br><div style="margin-top:4px;">${logItems.join('')}</div></div>`; }
@@ -3588,20 +3643,30 @@ window.openStatsModal = function(type) {
         <div class="stat-bar-row" style="margin-top:auto; border-top:1px dashed var(--border-color); padding-top:12px;"><div class="stat-bar-label">总计</div><div class="stat-bar-track"></div><div class="stat-bar-val" style="font-size:1.2em;">${ld+od+ed}</div></div>
         ${logHtml}`;
     // 柱状图展示当前周期三大类（学习/其他/锻炼）累计
+    const _chartMode = appData.statsChartMode || 'times';
+    const vL = _chartMode === 'exp' ? Math.round(lExp) : ld;
+    const vO = _chartMode === 'exp' ? Math.round(oExp) : od;
+    const vE = _chartMode === 'exp' ? Math.round(eExp) : ed;
     const chartData = [
-        { label: '📚 学习', val: ld, color: '#2383e2' },
-        { label: '🧺 其他', val: od, color: '#f2994a' },
-        { label: '💪 锻炼', val: ed, color: '#27ae60' }
+        { label: '📚 学习', val: vL, color: '#2383e2' },
+        { label: '🧺 其他', val: vO, color: '#f2994a' },
+        { label: '💪 锻炼', val: vE, color: '#27ae60' }
     ];
-    const maxVal2 = Math.max(ld, od, ed, 1);
+    const maxVal2 = Math.max(vL, vO, vE, 1);
     let chartHtml = chartData.map(d => {
         const hPct = (d.val / maxVal2) * 100;
         return `<div class="chart-col"><div class="chart-bar" style="height:${hPct}%;background:${d.color};" data-val="${d.val}"></div><div class="chart-label">${d.label}</div></div>`;
     }).join('');
     document.getElementById('stats-chart-content').innerHTML = chartHtml;
+    const _unitLabel = _chartMode === 'exp' ? '经验' : '次数';
     const _chartTitleMap = { 'year': '本年三大类累计', 'month': '本月三大类累计', 'week': '本周三大类累计', 'day': '本日三大类累计' };
     const _ct = document.getElementById('stats-chart-title');
-    if (_ct) _ct.innerText = _chartTitleMap[type] || '三大类累计';
+    if (_ct) _ct.innerText = (_chartTitleMap[type] || '三大类累计') + ' · ' + _unitLabel;
+    // 切换按钮高亮
+    const _btnT = document.getElementById('stats-mode-times');
+    const _btnE = document.getElementById('stats-mode-exp');
+    if (_btnT) _btnT.classList.toggle('btn-primary', _chartMode === 'times');
+    if (_btnE) _btnE.classList.toggle('btn-primary', _chartMode === 'exp');
     document.getElementById('stats-modal').classList.add('active');
 };
 window.closeStatsModal = function() { document.getElementById('stats-modal').classList.remove('active'); };
@@ -4540,14 +4605,23 @@ function renderDayPlan() {
         const val = appData.dailyReflections[ds] || '';
         rt.value = val;
         if (rDetails) rDetails.open = !!val;
-        // 本日累计操作项：完成的任务 + 已打勾的锻炼
-        const items = [];
-        getTasksForDate(ds).filter(t => t.type !== 'todo' && isTaskDone(t, ds)).forEach(t => items.push(t.text));
-        const checks = appData.dailyExerciseChecks[ds] || {};
-        appData.exercises.forEach(ex => {
-            if (isCategoryAllCheckedForDate(ex.id, ds)) items.push('💪 ' + ex.name);
+        // 本日累计操作项（与统计面板同源：读 dailyLogs）
+        const logs = appData.dailyLogs[ds] || {};
+        const logItems = [];
+        Object.values(logs).forEach(l => {
+            const parts = [];
+            if (l.completed) parts.push('✅ 完成');
+            if (l.delta !== 0) parts.push(`🔄 ${l.delta > 0 ? '+' : ''}${l.delta}`);
+            if (l.seconds) parts.push(`⏱ ${Math.floor(l.seconds / 60)}分${Math.floor(l.seconds % 60)}秒`);
+            if (parts.length > 0) logItems.push(l.name + ' (' + parts.join('，') + ')');
         });
-        rt.title = items.length > 0 ? '本日完成：' + items.join('、') : '本日暂无完成项';
+        const fullText = logItems.length > 0 ? '今日操作：' + logItems.join('；') : '今日暂无操作记录';
+        rt.title = fullText;
+        const hintEl = document.getElementById('day-reflection-hint');
+        if (hintEl) {
+            hintEl.textContent = '📋 ' + fullText;
+            hintEl.title = fullText;
+        }
     }
     renderTodoList(); renderDayExercises(); updateFixedProgressBars(); saveDataToFile(appData);
     if (currentTaskModalCategory) renderTaskListModalContent(currentTaskModalCategory);
@@ -4588,6 +4662,22 @@ function renderTaskListModalContent(type) {
     }
     setTimeout(initTaskAndSubTaskDrag, 0);
 }
+function _cleanupDragGhosts() {
+    document.querySelectorAll('.sortable-ghost, .sortable-chosen, .sortable-fallback').forEach(el => {
+        if (el && el.parentNode && el.parentNode.classList && el.parentNode.classList.contains('task-drop-zone')) return;
+        if (el && el.classList && el.classList.contains('sortable-ghost')) { try { el.remove(); } catch(e) {} }
+    });
+    // 清理每个 zone 内重复的 data-task-id
+    document.querySelectorAll('.task-drop-zone').forEach(zone => {
+        const seen = new Set();
+        Array.from(zone.querySelectorAll('.main-task-item[data-task-id]')).forEach(el => {
+            const id = el.dataset.taskId;
+            if (!id) return;
+            if (seen.has(id)) { try { el.remove(); } catch(e) {} } else seen.add(id);
+        });
+    });
+    isDraggingActive = false;
+}
 function initTaskAndSubTaskDrag() {
     document.querySelectorAll('.task-drop-zone').forEach(zone => {
         if (zone._sortable) { try { zone._sortable.destroy(); } catch(e) {} zone._sortable = null; }
@@ -4597,21 +4687,24 @@ function initTaskAndSubTaskDrag() {
             group: groupConfig, animation: 150, ghostClass: 'sortable-ghost', draggable: '.main-task-item',
             onStart: function() { isDraggingActive = true; },
             onMove: function(evt) {
-                // ✅ 拖拽禁止进入已完成区（只出不进），避免 DOM 临时副本残留
                 if (evt.to && evt.to.dataset && evt.to.dataset.completed === 'true') return false;
                 return true;
+            },
+            onCancel: function() {
+                _cleanupDragGhosts();
+                setTimeout(renderDayPlan, 30);
             },
             onEnd: function(evt) {
                 isDraggingActive = false;
                 const item = evt.item, taskId = item.dataset.taskId;
-                if (!taskId) { setTimeout(renderDayPlan, 30); return; }
+                if (!taskId) { _cleanupDragGhosts(); setTimeout(renderDayPlan, 30); return; }
                 const task = appData.tasks.find(t => t.id === taskId);
-                if (!task) { setTimeout(renderDayPlan, 30); return; }
+                if (!task) { _cleanupDragGhosts(); setTimeout(renderDayPlan, 30); return; }
                 const fromType = task.type || '';
                 const toType = evt.to && evt.to.dataset ? evt.to.dataset.type : null;
                 const toCompleted = evt.to && evt.to.dataset ? evt.to.dataset.completed === 'true' : false;
                 const validTypes = ['todo', 'learning', 'other'];
-                if (!toType || !validTypes.includes(toType) || toCompleted) { setTimeout(renderDayPlan, 30); return; }
+                if (!toType || !validTypes.includes(toType) || toCompleted) { _cleanupDragGhosts(); setTimeout(renderDayPlan, 30); return; }
                 // ✅ 同 zone 内拖动仅是排序，不改完成状态；跨 zone 从已完成拖出才取消完成
                 const fromZoneId = evt.from && evt.from.id;
                 const toZoneId = evt.to && evt.to.id;
@@ -4643,6 +4736,7 @@ function initTaskAndSubTaskDrag() {
                 if (insertIndex !== -1) appData.tasks.splice(insertIndex, 0, task);
                 else appData.tasks.push(task);
                 saveDataToFile(appData);
+                _cleanupDragGhosts();
                 setTimeout(renderDayPlan, 30);
             }
         });
@@ -5351,6 +5445,10 @@ window.confirmImport = function() {
     if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
     renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
     renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool(); renderFixedBlockEnergyConfig();
+    expandedMethodFolders.clear();
+    appData.methodsFiles.forEach(f => {
+        if (f.type === 'folder' && !f.deleted && appData.methodsFiles.some(x => x.parentId === f.id && !x.deleted)) expandedMethodFolders.add(f.id);
+    });
     renderMethodsFileList(); refreshMethodsEditorContent();
     saveDataToFile(appData);
     resetSyncedBaseline(appData);
@@ -5502,11 +5600,14 @@ window.restoreFromFolder = async function() {
         if (appData.radius) document.documentElement.style.setProperty('--radius', appData.radius);
         renderCalendar(); renderYearHeatmap(); renderDayPlan(); updateFixedProgressBars(); renderEnergyAndRPG();
         renderLevelConfig(); renderTimeSlotConfig(); renderWeekBoard(); renderFixedBlockPool(); renderFixedBlockEnergyConfig();
+        expandedMethodFolders.clear();
+        appData.methodsFiles.forEach(f => {
+            if (f.type === 'folder' && !f.deleted && appData.methodsFiles.some(x => x.parentId === f.id && !x.deleted)) expandedMethodFolders.add(f.id);
+        });
         renderMethodsFileList(); refreshMethodsEditorContent();
         saveDataToFile(appData);
         resetSyncedBaseline(appData);
         alert('✅ 已恢复选中的 ' + checked.length + ' 个模块');
-    } catch(e) { alert('恢复失败：' + e.message); }
 };
 function updateBackupUI() {
     const s = document.getElementById('backup-status-text');
@@ -5700,9 +5801,11 @@ function mergeData(local, remote) {
                 const lf = localFileMap.get(rf.id);
                 const rAt = rf.updatedAt || 0;
                 const lAt = lf.updatedAt || 0;
-                if (rAt > lAt) { lf.name = rf.name; lf.type = rf.type; lf.parentId = rf.parentId; if (rf.type === 'file') { lf.contentHtml = rf.contentHtml; lf.contentText = rf.contentText; } lf.updatedAt = rf.updatedAt; }
+                if (rAt > lAt) Object.assign(lf, JSON.parse(JSON.stringify(rf)));
             }
         });
+        // 注意：不物理移除 deleted 项，保留在数组中靠渲染层过滤
+        // 否则下次合并时会把远端旧文件当作"新增"重新 push 回来
     }
     if (!Array.isArray(merged.methodsFiles) || merged.methodsFiles.length === 0) merged.methodsFiles = [{ id: 'file_default', name: '我的学习方法', type: 'file', parentId: null, contentHtml: '', contentText: '', updatedAt: 0 }];
     if (!merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId)) merged.activeMethodsFileId = merged.methodsFiles.find(f => f.type === 'file')?.id;
@@ -6099,6 +6202,7 @@ window.addEventListener('beforeunload', () => {
     initDragAndDrop(); renderTimeSlotConfig(); updateBackupUI(); renderEnergyAndRPG();
     renderLevelConfig(); renderFixedBlockEnergyConfig();
     renderP2PHistory(); renderFixedBlockPool();
+    if (appData.workspaceTitle) { const _wt = document.getElementById('workspace-title'); if (_wt) _wt.innerText = appData.workspaceTitle; }
     bindGoalInputs(); renderGoals(); window.renderGlobalTimer();
     initMethodsEditor();
     const sh = localStorage.getItem('my_p2p_host_id');
