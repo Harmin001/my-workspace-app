@@ -1346,11 +1346,20 @@ function ensureEnergyData() {
     if (!appData.commonBtns) appData.commonBtns = ['skip', 'target', 'loop', 'deadline', 'delete'];
     if (!appData.fonts) appData.fonts = { title: "18px", content: "14px", hint: "12px", small: "10px" };
     ['title','content','hint','small'].forEach(k => { if (!appData.fonts[k]) appData.fonts[k] = ({ title: "18px", content: "14px", hint: "12px", small: "10px" })[k]; });
-    if (!Array.isArray(appData.timeSlots) || appData.timeSlots.length === 0) appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
-    if (appData.timeSlotsLastModified === undefined) appData.timeSlotsLastModified = 0;
-    // 若本地时间段与默认不同但时间戳为 0，补一个时间戳，防止同步时被远端旧数据覆盖
+    // ✅ 课表时间段保护：已保存的用户配置绝不覆盖，只有完全没数据时才用默认值
+    if (appData.timeSlotsLastModified === undefined || appData.timeSlotsLastModified === null) appData.timeSlotsLastModified = 0;
+    const _tsExists = Array.isArray(appData.timeSlots);
+    const _tsHasUserData = _tsExists && (appData.timeSlots.length > 0 || appData.timeSlotsLastModified > 0);
+    if (!_tsExists) {
+        // 完全没字段 → 首次使用，用默认
+        appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
+    } else if (!_tsHasUserData) {
+        // 数组存在但空且从未改过 → 首次使用，用默认
+        appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
+    }
+    // 用户数据与默认不同但时间戳为 0 → 补时间戳（老数据兼容，不会覆盖数据）
     if (!appData.timeSlotsLastModified && JSON.stringify(appData.timeSlots) !== JSON.stringify(DEFAULT_TIMESLOTS)) appData.timeSlotsLastModified = Date.now();
-    // 去重，防止多次初始化或同步后出现重复/错乱的时间段
+    // 去重，防止同步后出现重复 id 的时间段（仅去除完全相同重复项）
     const _tsSeen = new Set();
     appData.timeSlots = appData.timeSlots.filter(ts => {
         if (!ts || !ts.id) return false;
@@ -3417,9 +3426,9 @@ function removeExerciseFromDate(name, ds) {
 function isExerciseAllChecked(ds, ex) { if (!ex) return false; return isCategoryAllCheckedForDate(ex.id, ds); }
 function renderWeekBoard() {
     ensureEnergyData();
-    if (!Array.isArray(appData.timeSlots) || appData.timeSlots.length === 0) {
-        appData.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));
-        appData.timeSlotsLastModified = Date.now();
+    // ✅ 渲染时不再自动重置时间段，避免历史 bug 覆盖用户自定义配置
+    if (!Array.isArray(appData.timeSlots)) {
+        appData.timeSlots = [];
     }
     const board = document.getElementById('week-board');
     if (!board) return;
@@ -5676,7 +5685,18 @@ window.addEventListener('beforeunload', () => {
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
-            if (parsed && typeof parsed === 'object') appData = Object.assign(appData, parsed);
+            if (parsed && typeof parsed === 'object') {
+                // ✅ 优先保留本地已保存的课表时间段，防止被初始默认值覆盖
+                const savedTimeSlots = parsed.timeSlots;
+                const savedTSMod = parsed.timeSlotsLastModified;
+                appData = Object.assign(appData, parsed);
+                if (Array.isArray(savedTimeSlots)) {
+                    appData.timeSlots = savedTimeSlots;
+                    if (savedTSMod !== undefined && savedTSMod !== null) {
+                        appData.timeSlotsLastModified = savedTSMod;
+                    }
+                }
+            }
         } catch (e) {
             console.error('[加载本地数据失败]', e);
             showMiniToast('⚠️ 本地数据读取异常，已使用默认数据');
