@@ -201,9 +201,22 @@ h2 { font-size: var(--font-title); font-weight: 600; margin-bottom: 0; display: 
 .time-nav button:hover { background: var(--hover-bg); }
 .calendar-wrapper { background-color: #fee2e2; padding: 16px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; border-radius: var(--radius); margin-bottom: 24px; transition: background .3s; }
 body.dark-mode .calendar-wrapper { background-color: #2c1e1e; }
-.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; position: relative; }
 .calendar-header-cell { text-align: center; font-weight: bold; color: var(--text-muted); padding-bottom: 8px; font-size: var(--font-hint); }
-.day-box { background: var(--bg-card); border-radius: 6px; padding: 8px; cursor: pointer; border: 2px solid transparent; min-height: 100px; display: flex; flex-direction: column; transition: all .2s ease; position: relative; overflow: hidden; }
+.cal-legend { grid-column: 1 / -1; display: flex; gap: 14px; align-items: center; padding: 6px 4px 10px; font-size: var(--font-hint); flex-wrap: wrap; border-bottom: 1px dashed var(--border-color); margin-bottom: 4px; }
+.cal-legend-item { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: var(--text-main); }
+.cal-legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+.cal-section { display: flex; flex-direction: column; gap: 2px; margin-bottom: 3px; }
+.cal-task-chip { font-size: 10px; padding: 2px 5px; border-radius: 3px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; position: relative; }
+.cal-task-learning { background: #e3f2fd; color: #0d47a1; border-left: 2px solid #1976d2; }
+.cal-task-other { background: #fff3e0; color: #bf360c; border-left: 2px solid #f57c00; }
+.cal-task-exercise { background: #e8f5e9; color: #1b5e20; border-left: 2px solid #43a047; }
+.cal-task-done { opacity: 0.55; text-decoration: line-through; }
+.cal-task-more { font-size: 9px; color: var(--text-muted); text-align: center; }
+body.dark-mode .cal-task-learning { background: #1a2a3a; color: #90caf9; border-left-color: #64b5f6; }
+body.dark-mode .cal-task-other { background: #2a1e10; color: #ffb74d; border-left-color: #ff9800; }
+body.dark-mode .cal-task-exercise { background: #1b3322; color: #a5d6a7; border-left-color: #66bb6a; }
+.day-box { background: var(--bg-card); border-radius: 6px; padding: 6px; cursor: pointer; border: 2px solid transparent; min-height: 160px; display: flex; flex-direction: column; transition: all .2s ease; position: relative; overflow: hidden; }
 .day-box:hover { border-color: var(--text-muted); }
 .day-box.active { border-color: var(--accent-color); }
 .day-box.all-done { background-color: #e8f5e9; border-color: #a5d6a7; }
@@ -770,7 +783,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 </div>
 <div class="view-container" id="view-methods">
 <div class="year-header">
-    <h1>📚 学习方法</h1>
+    <h1>📚 笔记</h1>
     <div style="font-size:var(--font-hint);color:var(--text-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:4px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:4px;padding:2px 6px;"><input type="text" id="methods-search-input" placeholder="检索文本..." style="border:none;padding:2px;background:transparent;font-size:var(--font-hint);outline:none;width:80px;"><span id="search-count" style="font-size:10px;color:var(--text-muted);min-width:24px;text-align:center;">0/0</span><span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="prevSearch()" title="上一处">↑</span><span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="nextSearch()" title="下一处">↓</span><span style="cursor:pointer;font-weight:bold;color:var(--text-muted);padding:0 4px;font-size:12px;" onclick="clearSearch()" title="清除">✕</span></div>
         <label style="display:flex;align-items:center;gap:2px;font-size:11px;cursor:pointer;"><input type="checkbox" id="search-both-sides" onchange="performSearch()"> 双栏均搜</label>
@@ -808,7 +821,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
         <div id="methods-split-controls" class="methods-split-controls" style="display:none;"><label>左侧: <select id="split-left-select" onchange="switchMethodsFile(this.value)"></select></label><label>右侧: <select id="split-right-select" onchange="switchMethodsFile2(this.value)"></select></label></div>
         <div class="methods-paper" id="methods-paper-container">
             <div class="methods-page-stack" id="methods-stack-1">
-                <div class="methods-content" id="methods-content" contenteditable="true" data-page-index="0" data-placeholder="在这里记录你的学习方法… 支持 $公式$ 和 $$公式$$。"></div>
+                <div class="methods-content" id="methods-content" contenteditable="true" data-page-index="0" data-placeholder="在这里记录你的笔记… 支持 $公式$ 和 $$公式$$。"></div>
             </div>
             <div class="methods-page-stack" id="methods-stack-2" style="display:none;">
                 <div class="methods-content" id="methods-content-2" contenteditable="true" data-page-index="0" data-placeholder="第二篇文档对比区..."></div>
@@ -890,7 +903,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
         <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="exercises" checked> 锻炼数据</label>
         <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="rpg" checked> RPG与精力</label>
         <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="settings" checked> 系统设置</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="methods" checked> 学习方法</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="methods" checked> 笔记</label>
     </div>
     <button class="btn btn-sm btn-primary" onclick="exportSelectedModules()" style="margin-top:8px;">📦 导出选中模块</button>
 </div>
@@ -911,7 +924,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
         <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="exercises" checked> 锻炼数据</label>
         <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="rpg" checked> RPG与精力</label>
         <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="settings" checked> 系统设置</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="methods" checked> 学习方法</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:var(--font-hint);"><input type="checkbox" value="methods" checked> 笔记</label>
     </div>
     <button class="btn btn-sm btn-primary" onclick="restoreFromFolder()" style="margin-top:8px;">📥 从备份文件夹恢复选中模块</button>
 </div>
@@ -1016,12 +1029,12 @@ const APP_CHANGELOG = {
         '📊 完成度弹窗柱状图改为展示当前周期学习/其他/锻炼累计',
         '📋 周计划固定块防丢失保护',
         '💭 日/周计划反思区悬浮提示本周期完成项',
-        '📚 学习方法支持导出 Word / 导入 HTML 文件',
-        '🗂 学习方法文件夹支持拖拽排序',
+        '📚 笔记支持导出 Word / 导入 HTML 文件',
+        '🗂 笔记文件夹支持拖拽排序',
         '🔤 对齐按钮改为 Word 图标',
-        '📑 学习方法编辑器支持插入表格',
-        '📄 学习方法编辑区改为标准 A4 纸张',
-        '🖼 学习方法编辑器支持插入图片并同步',
+        '📑 笔记编辑器支持插入表格',
+        '📄 笔记编辑区改为标准 A4 纸张',
+        '🖼 笔记编辑器支持插入图片并同步',
         '🎮 RPG 面板默认收缩，点击展开 3 分钟',
         '🔄 计数任务完成后不再随日计划刷新重置'
     ]
@@ -1044,7 +1057,7 @@ const BACKUP_MODULES = {
     tasks:     { name: '核心任务',  fields: ['tasks','dailyLogs','dailyReflections','weeklyReflections','monthlyReflections','yearlyGoals','fixedBlockSchedule'] },
     exercises: { name: '锻炼数据',  fields: ['exercises','exerciseSchedule','exerciseTimeSlotSchedule','dailyExerciseChecks'] },
     rpg:       { name: 'RPG与精力', fields: ['rpg','dailyEnergy','panelLayout'] },    settings:  { name: '系统设置',  fields: ['themeColor','themeMode','fonts','radius','energyMax','energyWarnThreshold','expRatio','napEnergy','breakEnergy','levelConfig','commonBtns','timeSlots','timeSlotsLastModified','fixedBlocks','maxVisible','animationEnabled','goals'] },
-    methods:   { name: '学习方法',  fields: ['methodsFiles','learningMethods','learningMethodsHtml','activeMethodsFileId','activeMethodsFileId2','splitScreenMode'] }
+    methods:   { name: '笔记',  fields: ['methodsFiles','learningMethods','learningMethodsHtml','activeMethodsFileId','activeMethodsFileId2','splitScreenMode'] }
 };
 let appData = {
     tasks: [],
@@ -1472,7 +1485,7 @@ function ensureEnergyData() {
     if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) {
         const oldHtml = appData.learningMethodsHtml || '';
         const oldText = appData.learningMethods || '';
-        appData.methodsFiles = [{ id: 'file_default', name: '我的学习方法', type: 'file', parentId: null, contentHtml: oldHtml, contentText: oldText, updatedAt: (oldHtml || oldText) ? Date.now() : 0 }];
+        appData.methodsFiles = [{ id: 'file_default', name: '我的笔记', type: 'file', parentId: null, contentHtml: oldHtml, contentText: oldText, updatedAt: (oldHtml || oldText) ? Date.now() : 0 }];
     }
     appData.methodsFiles.forEach(f => {
         if (!f.id) f.id = 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
@@ -2286,7 +2299,7 @@ function getCurrentMethodsFile(idStr) {
     const f = appData.methodsFiles.find(f => f.id === targetId && !f.deleted);
     return (f && f.type === 'file') ? f : appData.methodsFiles.find(f => f.type === 'file' && !f.deleted);
 }
-/* ===== 学习方法多纸张支持 ===== */
+/* ===== 笔记多纸张支持 ===== */
 const METHODS_PAGE_BREAK_HTML = '<div class="methods-page-break" data-page-break="1"></div>';
 const METHODS_PAGE_BREAK_RE = /<div[^>]*data-page-break\s*=\s*["']1["'][^>]*>\s*<\/div>/gi;
 function splitMethodsHtml(html) {
@@ -2318,7 +2331,7 @@ function createMethodsPageEl(isSecond, stack, idx) {
     div.contentEditable = 'true';
     div.id = makeMethodsPageId(isSecond, stack, idx);
     div.dataset.pageIndex = idx;
-    div.setAttribute('data-placeholder', idx === 0 ? (isSecond ? '第二篇文档对比区...' : '在这里记录你的学习方法… 支持 $公式$ 和 $$公式$$。') : '续页…');
+    div.setAttribute('data-placeholder', idx === 0 ? (isSecond ? '第二篇文档对比区...' : '在这里记录你的笔记… 支持 $公式$ 和 $$公式$$。') : '续页…');
     return div;
 }
 function renderMethodsStack(stackId, html, isSecond) {
@@ -2765,7 +2778,7 @@ window.createMethodsFolder = function() {
     showMiniToast('✅ 已创建文件夹「' + newFolder.name + '」');
 };
 window.createMethodsFile = function() {
-    const name = prompt('新文件名：', '新学习方法');
+    const name = prompt('新文件名：', '新笔记');
     if (name === null || !name.trim()) return;
     commitMethodsEditorToFile();
     let parentId = null;
@@ -3738,6 +3751,16 @@ function renderCalendar() {
     grid.innerHTML = '';
     const y = appData.viewYear, m = appData.viewMonth;
     document.getElementById('month-display').innerText = `${y}年 ${m+1}月`;
+
+    const legend = document.createElement('div');
+    legend.className = 'cal-legend';
+    legend.innerHTML = '<span style="font-weight:700;color:var(--text-muted);">🎨 图例：</span>' +
+        '<span class="cal-legend-item"><span class="cal-legend-swatch" style="background:#e3f2fd;border:1px solid #1976d2;"></span>📚 学习</span>' +
+        '<span class="cal-legend-item"><span class="cal-legend-swatch" style="background:#fff3e0;border:1px solid #f57c00;"></span>🧺 其他</span>' +
+        '<span class="cal-legend-item"><span class="cal-legend-swatch" style="background:#e8f5e9;border:1px solid #43a047;"></span>💪 锻炼</span>' +
+        '<span style="margin-left:auto;font-size:var(--font-small);color:var(--text-muted);">虚线 = 同一任务跨日期重复出现</span>';
+    grid.appendChild(legend);
+
     ['一','二','三','四','五','六','日'].forEach(d => {
         const h = document.createElement('div'); h.className = 'calendar-header-cell'; h.innerText = '周' + d; grid.appendChild(h);
     });
@@ -3746,6 +3769,8 @@ function renderCalendar() {
     if (fd === 0) fd = 7;
     for (let i = 1; i < fd; i++) grid.appendChild(document.createElement('div'));
     const todayStr = getTodayString();
+    const taskOccurrences = {};
+
     for (let i = 1; i <= dim; i++) {
         const ds = formatDate(y, m, i);
         const div = document.createElement('div');
@@ -3755,47 +3780,108 @@ function renderCalendar() {
         const isToday = ds === todayStr;
         const isActive = ds === appData.selectedDate;
         div.className = 'day-box' + (isActive ? ' active' : '') + (allDone ? ' all-done' : '') + (isToday ? ' is-today' : '');
-        let sHtml = '<div class="day-summary">';
-        if (lp.total > 0) { const p = Math.round((lp.done/lp.total)*100); sHtml += `<div class="mini-bar-row"><span>📚学习</span><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${p}%;background:#2383e2;"></div></div><span>${p}%</span></div>`; }
-        if (op.total > 0) { const p = Math.round((op.done/op.total)*100); sHtml += `<div class="mini-bar-row"><span>🧺其他</span><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${p}%;background:#f2994a;"></div></div><span>${p}%</span></div>`; }
-        if (ep.total > 0) { const p = Math.round((ep.done/ep.total)*100); sHtml += `<div class="mini-bar-row"><span>💪锻炼</span><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${p}%;background:#27ae60;"></div></div><span>${p}%</span></div>`; }
-        if (tot === 0) sHtml += '<div style="color:var(--text-muted);font-size:var(--font-small);text-align:center;margin-top:8px;">🌸 无任务</div>';
-        sHtml += '</div>';
-        let refl = '';
-        if (appData.dailyReflections[ds] && appData.dailyReflections[ds].trim()) {
-            const t = appData.dailyReflections[ds].trim();
-            refl = `<div class="reflection-preview" title="${t}">📝 ${t.length > 6 ? t.substring(0,6)+'...' : t}</div>`;
+        div.dataset.date = ds;
+
+        let html = `<div class="day-number">${i}${isToday ? '<span class="today-badge">今天</span>' : ''}</div>`;
+
+        const lt = getTasksForDate(ds).filter(t => t.type === 'learning' && t.date !== 'pool').sort((a, b) => String(a.id).localeCompare(String(b.id)));
+        if (lt.length > 0) {
+            html += '<div class="cal-section">';
+            lt.slice(0, 3).forEach(t => {
+                const isDone = isTaskDone(t, ds);
+                html += `<div class="cal-task-chip cal-task-learning${isDone ? ' cal-task-done' : ''}" data-task-id="${t.id}" title="${escapeHtml(t.text)}">${escapeHtml(t.text)}</div>`;
+            });
+            if (lt.length > 3) html += `<div class="cal-task-more">+${lt.length - 3} 项</div>`;
+            html += '</div>';
         }
-        const dl = appData.tasks.filter(t => t.deadline === ds && !t.completed && !t.countOnly && t.type !== 'todo');
-        let dHtml = '';
-        if (dl.length > 0) { const dt = dl.map(t => t.text).join(', '); dHtml = `<div class="deadline-preview" title="截止任务: ${dt}">⏰ ${dt.length > 6 ? dt.substring(0,6)+'...' : dt}</div>`; }
-        const todayBadge = isToday ? '<span class="today-badge">今天</span>' : '';
-        div.innerHTML = `<div class="day-number">${i}${todayBadge}</div>${sHtml}${refl}${dHtml}`;
-        const completedTasks = getTasksForDate(ds).filter(t => !t.countOnly && isTaskDone(t, ds));
-        const learning = completedTasks.filter(t => t.type === 'learning').map(t => t.text);
-        const other = completedTasks.filter(t => t.type === 'other').map(t => t.text);
-        const logs = (appData.dailyLogs && appData.dailyLogs[ds]) ? appData.dailyLogs[ds] : {};
-        const countLogs = [];
-        Object.values(logs).forEach(l => { if (l.delta !== 0) countLogs.push(`${l.name}: ${l.delta > 0 ? '+' : ''}${l.delta}`); });
-        let tooltipArr = [];
-        if (learning.length > 0) tooltipArr.push(`📚 学习:\n - ${learning.join('\n - ')}`);
-        if (other.length > 0) tooltipArr.push(`🧺 其他:\n - ${other.join('\n - ')}`);
-        const exCompleted = [];
+
+        const ot = getTasksForDate(ds).filter(t => t.type === 'other' && t.date !== 'pool').sort((a, b) => String(a.id).localeCompare(String(b.id)));
+        if (ot.length > 0) {
+            html += '<div class="cal-section">';
+            ot.slice(0, 3).forEach(t => {
+                const isDone = isTaskDone(t, ds);
+                html += `<div class="cal-task-chip cal-task-other${isDone ? ' cal-task-done' : ''}" data-task-id="${t.id}" title="${escapeHtml(t.text)}">${escapeHtml(t.text)}</div>`;
+            });
+            if (ot.length > 3) html += `<div class="cal-task-more">+${ot.length - 3} 项</div>`;
+            html += '</div>';
+        }
+
         const manualEx = appData.exerciseSchedule[ds] || [];
         const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds]) || {};
         let allSlotExs = [];
         Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
-        [...new Set([...manualEx, ...allSlotExs, ...appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex=>ex.name)])].forEach(n => {
-            const ex = appData.exercises.find(e => e.name === n);
-            if (ex && isCategoryAllCheckedForDate(ex.id, ds)) exCompleted.push(n);
-        });
-        if (exCompleted.length > 0) tooltipArr.push(`💪 锻炼:\n - ${exCompleted.join('\n - ')}`);
-        if (countLogs.length > 0) tooltipArr.push(`\n🔄 计数记录:\n - ${countLogs.join('\n - ')}`);
-        if (tooltipArr.length === 0) tooltipArr.push('当日暂无已完成任务');
-        div.title = tooltipArr.join('\n');
+        const recEx = appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex => ex.name);
+        const exNames = [...new Set([...manualEx, ...allSlotExs, ...recEx])];
+        if (exNames.length > 0) {
+            html += '<div class="cal-section">';
+            exNames.slice(0, 3).forEach(n => {
+                const ex = appData.exercises.find(e => e.name === n);
+                const isDone = ex && isCategoryAllCheckedForDate(ex.id, ds);
+                const key = ex ? 'ex_' + ex.id : 'ex_name_' + n;
+                html += `<div class="cal-task-chip cal-task-exercise${isDone ? ' cal-task-done' : ''}" data-task-id="${key}" title="${escapeHtml(n)}">💪 ${escapeHtml(n)}</div>`;
+            });
+            if (exNames.length > 3) html += `<div class="cal-task-more">+${exNames.length - 3} 项</div>`;
+            html += '</div>';
+        }
+
+        const dl = appData.tasks.filter(t => t.deadline === ds && !t.completed && !t.countOnly && t.type !== 'todo');
+        if (dl.length > 0) {
+            const dt = dl.map(t => t.text).join(', ');
+            html += `<div class="deadline-preview" title="截止任务: ${escapeHtml(dt)}">⏰ ${escapeHtml(dt.length > 8 ? dt.substring(0, 8) + '...' : dt)}</div>`;
+        }
+
+        if (tot === 0 && lt.length === 0 && ot.length === 0 && exNames.length === 0) {
+            html += '<div style="color:var(--text-muted);font-size:var(--font-small);text-align:center;margin-top:8px;">🌸 无任务</div>';
+        }
+
+        div.innerHTML = html;
         div.onclick = () => { jumpToDay(ds); };
+        div.querySelectorAll('.cal-task-chip[data-task-id]').forEach(chip => {
+            const tid = chip.getAttribute('data-task-id');
+            if (!tid) return;
+            if (!taskOccurrences[tid]) taskOccurrences[tid] = [];
+            taskOccurrences[tid].push(chip);
+        });
         grid.appendChild(div);
     }
+
+    setTimeout(() => {
+        try {
+            grid.querySelectorAll('.cal-link-svg').forEach(el => el.remove());
+            const links = [];
+            Object.keys(taskOccurrences).forEach(tid => {
+                const chips = taskOccurrences[tid].filter(c => c.isConnected);
+                if (chips.length < 2) return;
+                for (let i = 0; i < chips.length - 1; i++) {
+                    links.push({ from: chips[i], to: chips[i + 1] });
+                }
+            });
+            if (links.length === 0) return;
+            const gridRect = grid.getBoundingClientRect();
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.classList.add('cal-link-svg');
+            svg.setAttribute('style', 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible;');
+            links.forEach(link => {
+                const fr = link.from.getBoundingClientRect();
+                const tr = link.to.getBoundingClientRect();
+                const x1 = fr.right - gridRect.left;
+                const y1 = fr.top + fr.height / 2 - gridRect.top;
+                const x2 = tr.left - gridRect.left;
+                const y2 = tr.top + tr.height / 2 - gridRect.top;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', 'rgba(120,120,120,0.45)');
+                line.setAttribute('stroke-width', '1.2');
+                line.setAttribute('stroke-dasharray', '3,4');
+                svg.appendChild(line);
+            });
+            grid.appendChild(svg);
+        } catch (e) { console.warn('[calendar links]', e); }
+    }, 80);
+
     const mDetails = document.getElementById('month-summary-details');
     const mText = document.getElementById('month-summary-textarea');
     if (mText && mDetails) {
@@ -5894,7 +5980,7 @@ function mergeData(local, remote) {
             }
         });
     }
-    if (!Array.isArray(merged.methodsFiles) || merged.methodsFiles.length === 0) merged.methodsFiles = [{ id: 'file_default', name: '我的学习方法', type: 'file', parentId: null, contentHtml: '', contentText: '', updatedAt: 0 }];
+    if (!Array.isArray(merged.methodsFiles) || merged.methodsFiles.length === 0) merged.methodsFiles = [{ id: 'file_default', name: '我的笔记', type: 'file', parentId: null, contentHtml: '', contentText: '', updatedAt: 0 }];
     if (!merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId)) merged.activeMethodsFileId = merged.methodsFiles.find(f => f.type === 'file')?.id;
     const curFile = merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId);
     merged.learningMethodsHtml = curFile ? curFile.contentHtml || '' : '';
