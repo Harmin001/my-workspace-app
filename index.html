@@ -211,7 +211,7 @@ body.dark-mode .calendar-wrapper { background-color: #2c1e1e; }
 .cal-task-learning { background: #e3f2fd; color: #0d47a1; border-left: 2px solid #1976d2; }
 .cal-task-other { background: #fff3e0; color: #bf360c; border-left: 2px solid #f57c00; }
 .cal-task-exercise { background: #e8f5e9; color: #1b5e20; border-left: 2px solid #43a047; }
-.cal-task-done { opacity: 0.45; text-decoration: line-through solid currentColor; }
+.cal-task-done, .cal-task-linked { opacity: 0.45; text-decoration: line-through solid currentColor; }
 .cal-task-more { font-size: 9px; color: var(--text-muted); text-align: center; }
 body.dark-mode .cal-task-learning { background: #1a2a3a; color: #90caf9; border-left-color: #64b5f6; }
 body.dark-mode .cal-task-other { background: #2a1e10; color: #ffb74d; border-left-color: #ff9800; }
@@ -3862,13 +3862,19 @@ function renderCalendar() {
                 const text = (chip.textContent || '').trim().replace(/^💪\s*/, '');
                 const gKey = cat + '|' + yKey + '|' + text;
                 if (!groups[gKey]) groups[gKey] = [];
-                groups[gKey].push({ rect: r, yCenter });
+                groups[gKey].push({ chip, rect: r, yCenter });
             });
 
             const lines = [];
             Object.keys(groups).forEach(gKey => {
                 const arr = groups[gKey].sort((a, b) => a.rect.left - b.rect.left);
                 if (arr.length < 2) return;
+                
+                // ✅ 只要匹配成功（同名、同类、同层），就给组内所有任务文本加上删除线并变淡
+                arr.forEach(item => {
+                    if (item.chip) item.chip.classList.add('cal-task-linked');
+                });
+
                 for (let i = 0; i < arr.length - 1; i++) {
                     const a = arr[i], b = arr[i + 1];
                     // ✅ 严格水平：y 中心差超过 3px 就不画（禁止斜线、错位）
