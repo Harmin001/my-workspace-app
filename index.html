@@ -211,8 +211,8 @@ body.dark-mode .calendar-wrapper { background-color: #2c1e1e; }
 .cal-task-learning { background: #e3f2fd; color: #0d47a1; border-left: 2px solid #1976d2; }
 .cal-task-other { background: #fff3e0; color: #bf360c; border-left: 2px solid #f57c00; }
 .cal-task-exercise { background: #e8f5e9; color: #1b5e20; border-left: 2px solid #43a047; }
-.cal-task-done, .cal-task-linked { opacity: 0.45; position: relative; }
-.cal-task-done::after, .cal-task-linked::after {
+.cal-task-done { opacity: 0.45; position: relative; }
+.cal-task-done::after {
     content: '';
     position: absolute;
     left: 0;
@@ -3861,7 +3861,8 @@ function renderCalendar() {
         try {
             grid.querySelectorAll('.cal-link-svg').forEach(el => el.remove());
             const gridRect = grid.getBoundingClientRect();
-            const allChips = Array.from(grid.querySelectorAll('.cal-task-chip')).filter(c => c.isConnected);
+            // ✅ 仅抓取已完成的（带 cal-task-done 的）任务，未完成的不参与连线和淡化
+            const allChips = Array.from(grid.querySelectorAll('.cal-task-chip.cal-task-done')).filter(c => c.isConnected);
             // 🎯 按「大类 + 行位置(y坐标) + 任务名」分组：只有同类同层同名的才连
             const groups = {};
             allChips.forEach(chip => {
@@ -3882,10 +3883,7 @@ function renderCalendar() {
                 const arr = groups[gKey].sort((a, b) => a.rect.left - b.rect.left);
                 if (arr.length < 2) return;
                 
-                // ✅ 只要匹配成功（同名、同类、同层），就给组内所有任务文本加上删除线并变淡
-                arr.forEach(item => {
-                    if (item.chip) item.chip.classList.add('cal-task-linked');
-                });
+                // 样式已经在渲染时由 cal-task-done 自动提供，这里只需处理连线
 
                 for (let i = 0; i < arr.length - 1; i++) {
                     const a = arr[i], b = arr[i + 1];
