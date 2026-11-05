@@ -211,7 +211,7 @@ body.dark-mode .calendar-wrapper { background-color: #2c1e1e; }
 .cal-task-learning { background: #e3f2fd; color: #0d47a1; border-left: 2px solid #1976d2; }
 .cal-task-other { background: #fff3e0; color: #bf360c; border-left: 2px solid #f57c00; }
 .cal-task-exercise { background: #e8f5e9; color: #1b5e20; border-left: 2px solid #43a047; }
-.cal-task-done { opacity: 0.55; text-decoration: line-through; }
+.cal-task-done { opacity: 0.45; text-decoration: line-through solid currentColor; }
 .cal-task-more { font-size: 9px; color: var(--text-muted); text-align: center; }
 body.dark-mode .cal-task-learning { background: #1a2a3a; color: #90caf9; border-left-color: #64b5f6; }
 body.dark-mode .cal-task-other { background: #2a1e10; color: #ffb74d; border-left-color: #ff9800; }
@@ -3893,9 +3893,8 @@ function renderCalendar() {
                 line.setAttribute('y1', l.y);
                 line.setAttribute('x2', l.x2);
                 line.setAttribute('y2', l.y);
-                line.setAttribute('stroke', 'rgba(120,120,120,0.45)');
-                line.setAttribute('stroke-width', '1.2');
-                line.setAttribute('stroke-dasharray', '3,4');
+                line.setAttribute('stroke', 'rgba(120,120,120,0.65)');
+                line.setAttribute('stroke-width', '1');
                 line.setAttribute('shape-rendering', 'crispEdges');
                 svg.appendChild(line);
             });
