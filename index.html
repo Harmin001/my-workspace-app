@@ -211,7 +211,19 @@ body.dark-mode .calendar-wrapper { background-color: #2c1e1e; }
 .cal-task-learning { background: #e3f2fd; color: #0d47a1; border-left: 2px solid #1976d2; }
 .cal-task-other { background: #fff3e0; color: #bf360c; border-left: 2px solid #f57c00; }
 .cal-task-exercise { background: #e8f5e9; color: #1b5e20; border-left: 2px solid #43a047; }
-.cal-task-done, .cal-task-linked { opacity: 0.45; text-decoration: line-through solid currentColor; }
+.cal-task-done, .cal-task-linked { opacity: 0.45; position: relative; }
+.cal-task-done::after, .cal-task-linked::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background-color: currentColor;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 1;
+}
 .cal-task-more { font-size: 9px; color: var(--text-muted); text-align: center; }
 body.dark-mode .cal-task-learning { background: #1a2a3a; color: #90caf9; border-left-color: #64b5f6; }
 body.dark-mode .cal-task-other { background: #2a1e10; color: #ffb74d; border-left-color: #ff9800; }
