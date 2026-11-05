@@ -1371,7 +1371,10 @@ function setTaskCurrent(task, dateStr, val) {
 function isSubTaskDone(sub, dateStr) {
     if (sub.countOnly) return !!sub.countEnded;
     if (sub.completions && sub.completions[dateStr] !== undefined) return sub.completions[dateStr];
-    return !!sub.completed;
+    // 如果老数据没有 completions 历史，保留原有 completed 状态兼容
+    if (!sub.completions && sub.completed) return true;
+    // 新数据：如果当前查看的日期没有完成记录（比如新的一天），则自动重置为未完成
+    return false;
 }
 function setSubTaskDone(sub, dateStr, val) {
     if (sub.countOnly) { sub.countEnded = val; return; }
@@ -1717,6 +1720,7 @@ window.renderGlobalTimer = function() {
                 (t.running
                     ? '<button class="global-timer-btn" onclick="event.stopPropagation(); _gtPauseGlobal()" title="暂停">⏸</button>'
                     : '<button class="global-timer-btn go" onclick="event.stopPropagation(); _gtStartGlobal()" title="开始">▶</button>') +
+                '<button class="global-timer-btn" onclick="event.stopPropagation(); _gtCompleteGlobal()" title="完成并记录" style="color:#2e7d32;border-color:#2e7d32;">✔️</button>' +
                 '<button class="global-timer-btn reset" onclick="event.stopPropagation(); _gtStopGlobal()" title="重置">⏹</button>' +
             '</div>' +
         '</div>';
@@ -1740,7 +1744,6 @@ window._gtPauseGlobal = function() {
         const addSec = Math.floor((Date.now() - Number(t.startedAt)) / 1000);
         t.seconds = (Number(t.seconds) || 0) + addSec;
         t.startedAt = 0; t.running = false;
-        if (addSec > 0) _addTimerToStats(getTodayString(), addSec, t.taskLabel);
         saveDataToFile(appData);
         window.renderGlobalTimer();
     }
@@ -1748,11 +1751,26 @@ window._gtPauseGlobal = function() {
 window._gtStopGlobal = function() {
     ensureGoals();
     const t = appData.globalTimer;
-    if (t.running && Number(t.startedAt) > 0) {
-        const addSec = Math.floor((Date.now() - Number(t.startedAt)) / 1000);
-        if (addSec > 0) _addTimerToStats(getTodayString(), addSec, t.taskLabel);
-    }
     t.seconds = 0; t.startedAt = 0; t.running = false;
+    saveDataToFile(appData);
+    window.renderGlobalTimer();
+};
+window._gtCompleteGlobal = function() {
+    ensureGoals();
+    const t = appData.globalTimer;
+    let totalSec = Number(t.seconds) || 0;
+    if (t.running && Number(t.startedAt) > 0) {
+        totalSec += Math.floor((Date.now() - Number(t.startedAt)) / 1000);
+    }
+    if (totalSec > 0) {
+        _addTimerToStats(getTodayString(), totalSec, t.taskLabel);
+        showMiniToast('✅ 计时已计入今日统计');
+    } else {
+        showMiniToast('⏱ 计时为 0，未记录');
+    }
+    t.seconds = 0;
+    t.startedAt = 0;
+    t.running = false;
     saveDataToFile(appData);
     window.renderGlobalTimer();
 };
