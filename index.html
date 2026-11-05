@@ -745,13 +745,10 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="view-container" id="view-year">
 <div class="year-header"><h1>📊 全年总览</h1><div class="time-nav" style="margin-bottom:0;"><button onclick="changeYear(-1)">← 上一年</button><span id="year-display" style="font-size:var(--font-content);">2025年</span><button onclick="changeYear(1)">下一年 →</button></div></div>
 <div class="year-heatmap" id="year-heatmap"></div>
-<div id="global-timer-main-wrap"></div>
-<div class="year-goal-box bottom-summary"><h2>🎯 我的目标</h2><div class="goals-list" id="goals-list-main"></div><input type="text" class="goals-input" id="goal-input-main" placeholder="➕ 添加目标，回车保存"></div>
 </div>
 <div class="view-container active" id="view-month">
-<h1>📅 月计划</h1>
-<div class="calendar-wrapper" id="calendar-wrapper">
-<div class="time-nav"><button onclick="changeMonth(-1)">← 上月</button><span id="month-display">2025年 10月</span><button onclick="changeMonth(1)">下月 →</button></div>
+<div class="calendar-wrapper" id="calendar-wrapper" style="margin-top:16px;">
+<div class="time-nav" style="display:flex;align-items:center;justify-content:flex-start;gap:12px;margin-bottom:12px;"><h1 style="margin:0;font-size:var(--font-title);">📅 月计划</h1><button onclick="changeMonth(-1)">← 上月</button><span id="month-display" style="font-size:var(--font-content);flex:1;text-align:center;">2025年 10月</span><button onclick="changeMonth(1)">下月 →</button></div>
 <div class="calendar-grid" id="calendar-grid"></div>
 </div>
 <details class="bottom-summary" id="month-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:12px;"><summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">📝 本月总结 (点击展开/收起)</summary><textarea id="month-summary-textarea" placeholder="写点什么记录这个月吧..." style="margin-top:8px;"></textarea></details>
@@ -790,7 +787,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="section-box" data-panel="other"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 🧺 其他</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div><div class="panel-content"><div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="按回车添加 (如：跳绳 * 500)" id="other-input"></div><div id="other-list" class="task-drop-zone" data-type="other" data-completed="false"></div><div id="other-completed" class="task-drop-zone" data-type="other" data-completed="true"></div></div></div>
 <div class="section-box" data-panel="exercise"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 💪 锻炼</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span><button class="btn btn-sm btn-primary" onclick="addExerciseCategory()">➕ 添加</button></div></div><div class="panel-content"><div class="exercise-grid" id="exercise-grid"></div></div></div>
 </div>
-<div id="day-reflection-hint" class="reflection-preview" style="display:block;box-sizing:border-box;width:100%;max-width:100%;margin-bottom:8px;height:24px;line-height:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--font-hint);color:var(--text-muted);background:var(--bg-sidebar);border-left:2px solid var(--border-color);padding:0 10px;border-radius:4px;cursor:help;" title="">📋 今日暂无操作记录</div>
+<div id="day-reflection-hint" class="reflection-preview" style="margin-bottom:8px;display:block;box-sizing:border-box;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:24px;height:24px;font-size:var(--font-hint);color:var(--text-muted);background:var(--bg-sidebar);border-left:2px solid var(--border-color);padding:0 10px;border-radius:4px;cursor:help;" title="今日暂无操作记录">📋 今日暂无操作记录</div>
 <details class="bottom-summary" id="day-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;"><summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">💭 今日反思 (点击展开/收起)</summary><textarea id="daily-reflection-textarea" placeholder="今天过得怎么样？有什么想记录的？" oninput="handleReflectionInput(this.value)" style="margin-top:8px;"></textarea></details>
 </div>
 <div class="view-container" id="view-methods">
@@ -896,7 +893,6 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <label><input type="checkbox" value="loop" onchange="updateCommonBtn('loop', this.checked)"> 🔁 循环</label>
 <label><input type="checkbox" value="count" onchange="updateCommonBtn('count', this.checked)"> 🔄 计数</label>
 <label><input type="checkbox" value="deadline" onchange="updateCommonBtn('deadline', this.checked)"> 📅 截止日期</label>
-<label><input type="checkbox" value="view" onchange="updateCommonBtn('view', this.checked)"> 👁️ 查看详情（可选）</label>
 <label><input type="checkbox" value="delete" onchange="updateCommonBtn('delete', this.checked)"> 🗑️ 删除</label>
 </div></div></div>
 <div class="section-box span-full" style="border-color:#90caf9;">
@@ -6189,7 +6185,7 @@ function mergeData(local, remote) {
     const curFile = merged.methodsFiles.find(f => f.id === merged.activeMethodsFileId);
     merged.learningMethodsHtml = curFile ? curFile.contentHtml || '' : '';
     merged.learningMethods = curFile ? curFile.contentText || '' : '';
-    merged.methodsFiles.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    // 保持用户手动拖拽的顺序，不再按 ID 强制重排，防止刷新后顺序复原
     const localTasksMap = new Map(merged.tasks.map(t => [t.id, t]));
     (remote.tasks || []).forEach(rt => {
         if (!localTasksMap.has(rt.id)) { merged.tasks.push(rt); return; }
