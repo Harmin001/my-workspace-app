@@ -3959,8 +3959,13 @@ function renderCalendar() {
         if (lt.length > 0) {
             html += '<div class="cal-section">';
             lt.slice(0, 3).forEach(t => {
-                const isDone = isTaskDone(t, ds);
-                html += `<div class="cal-task-chip cal-task-learning${isDone ? ' cal-task-done' : ''}" data-task-id="${t.id}" title="${escapeHtml(t.text)}">${escapeHtml(t.text)}</div>`;
+                let isDone = isTaskDone(t, ds);
+                let extra = '';
+                if (t.countOnly) {
+                    const dayDelta = (appData.dailyLogs[ds] && appData.dailyLogs[ds][t.id]) ? (appData.dailyLogs[ds][t.id].delta || 0) : 0;
+                    if (dayDelta > 0) { isDone = true; extra = ` <span style="float:right;font-weight:800;color:#e53935;">+${dayDelta}</span>`; }
+                }
+                html += `<div class="cal-task-chip cal-task-learning${isDone ? ' cal-task-done' : ''}" data-task-id="${t.id}" title="${escapeHtml(t.text)}">${escapeHtml(t.text)}${extra}</div>`;
             });
             if (lt.length > 3) html += `<div class="cal-task-more">+${lt.length - 3} 项</div>`;
             html += '</div>';
@@ -3970,19 +3975,23 @@ function renderCalendar() {
         if (ot.length > 0) {
             html += '<div class="cal-section">';
             ot.slice(0, 3).forEach(t => {
-                const isDone = isTaskDone(t, ds);
-                html += `<div class="cal-task-chip cal-task-other${isDone ? ' cal-task-done' : ''}" data-task-id="${t.id}" title="${escapeHtml(t.text)}">${escapeHtml(t.text)}</div>`;
+                let isDone = isTaskDone(t, ds);
+                let extra = '';
+                if (t.countOnly) {
+                    const dayDelta = (appData.dailyLogs[ds] && appData.dailyLogs[ds][t.id]) ? (appData.dailyLogs[ds][t.id].delta || 0) : 0;
+                    if (dayDelta > 0) { isDone = true; extra = ` <span style="float:right;font-weight:800;color:#e53935;">+${dayDelta}</span>`; }
+                }
+                html += `<div class="cal-task-chip cal-task-other${isDone ? ' cal-task-done' : ''}" data-task-id="${t.id}" title="${escapeHtml(t.text)}">${escapeHtml(t.text)}${extra}</div>`;
             });
             if (ot.length > 3) html += `<div class="cal-task-more">+${ot.length - 3} 项</div>`;
             html += '</div>';
         }
 
-        const manualEx = appData.exerciseSchedule[ds] || [];
+        // 只有手动拖入周计划时间池内的锻炼内容，才在月计划日期块中渲染
         const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds]) || {};
         let allSlotExs = [];
-        Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
-        const recEx = appData.exercises.filter(ex => isRecurringMatch(ex.recurringType, ds)).map(ex => ex.name);
-        const exNames = [...new Set([...manualEx, ...allSlotExs, ...recEx])];
+        Object.values(slotSched).forEach(arr => { allSlotExs = allExs.concat(arr); });
+        const exNames = [...new Set(allSlotExs)];
         if (exNames.length > 0) {
             html += '<div class="cal-section">';
             exNames.slice(0, 3).forEach(n => {
