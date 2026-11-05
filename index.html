@@ -1002,7 +1002,10 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="stats-modal-overlay" id="stats-modal" onclick="if(event.target===this)closeStatsModal()">
 <div class="stats-modal">
 <div class="stats-modal-header"><h3 id="stats-modal-title">统计</h3><button class="stats-modal-close" onclick="closeStatsModal()">×</button></div>
-<div class="stats-layout"><div class="stats-left" id="stats-left-content"></div><div class="stats-right"><div class="chart-title" id="stats-chart-title">三大类累计</div><div style="text-align:center;margin-bottom:8px;"><button class="btn btn-sm" id="stats-mode-times" onclick="switchStatsMode('times')" style="margin-right:4px;">📊 次数</button><button class="btn btn-sm" id="stats-mode-exp" onclick="switchStatsMode('exp')">⭐ 经验</button></div><div class="bar-chart" id="stats-chart-content"></div></div></div>
+<div class="stats-layout"><div class="stats-left" id="stats-left-content"></div><div class="stats-right"><div class="chart-title" id="stats-chart-title">三大类累计</div><div style="text-align:center;margin-bottom:8px;"><button class="btn btn-sm" id="stats-mode-times" onclick="switchStatsMode('times')" style="margin-right:4px;">📊 次数</button><button class="btn btn-sm" id="stats-mode-exp" onclick="switchStatsMode('exp')">⭐ 经验</button></div><div class="bar-chart" id="stats-chart-content"></div>
+<div class="chart-title" style="margin-top:24px;" id="stats-line-title">📊 学习时长趋势 (分钟)</div>
+<canvas id="stats-line-canvas" style="width:100%; height:180px;"></canvas>
+</div></div>
 </div>
 </div>
 <div class="task-detail-modal-overlay" id="task-detail-modal" onclick="if(event.target===this)closeTaskDetailModal()">
@@ -1781,12 +1784,13 @@ window.openGlobalTimer = function() {
     const taskOptsHtml = [];
     (appData.tasks || []).filter(x => x.type !== 'todo').forEach(mainTask => {
         const subs = mainTask.subTasks || [];
-        if (subs.length === 0) return;
         const label = (mainTask.type === 'learning' ? '📚 ' : '🧺 ') + mainTask.text;
         taskOptsHtml.push('<optgroup label="' + escapeHtml(label) + '">');
+        // ✅ 新增：展示母任务并支持直接选中
+        taskOptsHtml.push('<option value="' + mainTask.id + '"' + (t.taskId === mainTask.id ? ' selected' : '') + '>📌 ' + escapeHtml(mainTask.text) + '</option>');
         subs.forEach(sub => {
             const subVal = mainTask.id + '::' + sub.id;
-            taskOptsHtml.push('<option value="' + subVal + '"' + (t.taskId === subVal ? ' selected' : '') + '>' + escapeHtml(sub.text) + '</option>');
+            taskOptsHtml.push('<option value="' + subVal + '"' + (t.taskId === subVal ? ' selected' : '') + '>　└ ' + escapeHtml(sub.text) + '</option>');
         });
         taskOptsHtml.push('</optgroup>');
     });
@@ -3733,7 +3737,144 @@ window.openStatsModal = function(type) {
     if (_btnT) _btnT.classList.toggle('btn-primary', _chartMode === 'times');
     if (_btnE) _btnE.classList.toggle('btn-primary', _chartMode === 'exp');
     window._currentStatsType = type;
+
+    // ====== 折线图数据处理 ======
+    const getLineTime = (dateStr) => {
+        let mins = 0;
+        // 1. 计时器记录
+        const logs = (appData.dailyLogs && appData.dailyLogs[dateStr]) ? appData.dailyLogs[dateStr] : {};
+        Object.values(logs).forEach(l => { if (l.seconds) mins += Math.round(l.seconds / 60); });
+        // 2. 学习类固定块时长
+        const wd = new Date(dateStr + 'T00:00:00').getDay() || 7;
+        const fbSch = appData.fixedBlockSchedule['W' + wd] || {};
+        Object.keys(fbSch).forEach(tsId => {
+            const ts = appData.timeSlots.find(x => x.id === tsId);
+            if (ts) {
+                const match = ts.label.match(/(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})/);
+                if (match) {
+                    const h1 = parseInt(match[1]), m1 = parseInt(match[2]);
+                    const h2 = parseInt(match[3]), m2 = parseInt(match[4]);
+                    const dur = (h2 * 60 + m2) - (h1 * 60 + m1);
+                    if (dur > 0) {
+                        const hasLearning = fbSch[tsId].some(fb => /课|学|习|读|培训/.test(fb.name));
+                        if (hasLearning) mins += dur;
+                    }
+                }
+            }
+        });
+        return mins;
+    };
+    
+    let lineLabels = [];
+    let lineData = [];
+    if (type === 'year') {
+        const y2 = appData.viewYear;
+        for(let mm=0; mm<12; mm++) {
+            let mTotal = 0;
+            const dDim = new Date(y2, mm+1, 0).getDate();
+            for(let dd=1; dd<=dDim; dd++) {
+                const ds = `${y2}-${String(mm+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+                mTotal += getLineTime(ds);
+            }
+            lineLabels.push((mm+1) + '月');
+            lineData.push(mTotal);
+        }
+    } else if (type === 'month') {
+        const dim2 = new Date(appData.viewYear, appData.viewMonth+1, 0).getDate();
+        for(let dd=1; dd<=dim2; dd++) {
+            const ds = `${appData.viewYear}-${String(appData.viewMonth+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+            lineLabels.push(dd);
+            lineData.push(getLineTime(ds));
+        }
+    } else if (type === 'week') {
+        const b2 = new Date(s + 'T00:00:00');
+        for(let i=0; i<7; i++) {
+            const d = new Date(b2); d.setDate(d.getDate()+i);
+            const ds = formatDate(d.getFullYear(), d.getMonth(), d.getDate());
+            lineLabels.push((d.getMonth()+1)+'/'+d.getDate());
+            lineData.push(getLineTime(ds));
+        }
+    } else {
+        lineLabels.push('当日');
+        lineData.push(getLineTime(s));
+    }
+
     document.getElementById('stats-modal').classList.add('active');
+    
+    // ====== 绘制折线图 ======
+    setTimeout(() => {
+        const canvas = document.getElementById('stats-line-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        const w = rect.width;
+        const h = rect.height;
+        ctx.clearRect(0, 0, w, h);
+        if (lineData.length === 0) return;
+        
+        const maxVal = Math.max(...lineData, 1);
+        const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+        const chartW = w - padding.left - padding.right;
+        const chartH = h - padding.top - padding.bottom;
+
+        ctx.beginPath();
+        ctx.moveTo(padding.left, padding.top);
+        ctx.lineTo(padding.left, h - padding.bottom);
+        ctx.strokeStyle = '#ccc';
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(padding.left, h - padding.bottom);
+        ctx.lineTo(w - padding.right, h - padding.bottom);
+        ctx.stroke();
+
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#888';
+        ctx.font = '10px sans-serif';
+        for(let i=0; i<=4; i++) {
+            const val = maxVal * (i/4);
+            const y = h - padding.bottom - (i/4)*chartH;
+            ctx.fillText(Math.round(val), padding.left - 5, y);
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(w - padding.right, y);
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.stroke();
+        }
+
+        const points = lineData.map((val, i) => {
+            const x = padding.left + (i / (lineData.length - 1 || 1)) * chartW;
+            const y = h - padding.bottom - (val / maxVal) * chartH;
+            return {x, y, val, label: lineLabels[i]};
+        });
+
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for(let i=1; i<points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.strokeStyle = '#2383e2';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#2383e2';
+        const skip = Math.ceil(points.length / 15);
+        points.forEach((p, idx) => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+            if (idx % skip === 0 || idx === points.length - 1) {
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillStyle = '#888';
+                ctx.fillText(p.label, p.x, h - padding.bottom + 5);
+            }
+        });
+    }, 50);
 };
 window.switchStatsMode = function(mode) {
     appData.statsChartMode = mode === 'exp' ? 'exp' : 'times';
