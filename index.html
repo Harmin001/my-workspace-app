@@ -128,7 +128,7 @@ body.dark-mode .rpg-tip { color: var(--text-muted); }
 .rpg-modal, .task-list-modal, .stats-modal, .task-detail-modal { background: var(--bg-card); color: var(--text-main); border-radius: 16px; max-height: 92vh; overflow-y: auto; padding: 20px; position: relative; }
 .rpg-modal { max-width: 560px; width: 100%; }
 .task-list-modal { max-width: 640px; width: 100%; }
-.stats-modal { max-width: 700px; width: 95%; }
+.stats-modal { max-width: 980px; width: 96%; max-height: 92vh; padding: 24px 28px; }
 .task-detail-modal { max-width: 900px; width: 95%; }
 .rpg-modal-header { text-align: center; margin-bottom: 16px; }
 .rpg-modal-level { font-size: 2.2em; font-weight: 800; color: #b45309; }
@@ -186,11 +186,11 @@ body.dark-mode .levelup-exp { color: #fbbf24; }
 .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
 .stat-bar-val { width: 40px; text-align: right; font-size: var(--font-content); font-weight: bold; flex-shrink: 0; }
 .chart-title { text-align: center; font-size: var(--font-hint); color: var(--text-muted); margin-bottom: 8px; }
-.bar-chart { display: flex; align-items: flex-end; justify-content: space-between; height: 150px; border-bottom: 2px solid var(--border-color); padding-bottom: 4px; gap: 4px; }
+.bar-chart { display: flex; align-items: flex-end; justify-content: space-between; height: 240px; border-bottom: 2px solid var(--border-color); padding-bottom: 4px; padding-top: 32px; gap: 14px; }
 .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; }
-.chart-bar { width: 80%; background: var(--accent-color); border-radius: 4px 4px 0 0; transition: height 0.5s ease; min-height: 2px; position: relative; }
-.chart-bar:hover::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; background: var(--bg-card); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-color); white-space: nowrap; }
-.chart-label { font-size: 10px; color: var(--text-muted); text-align: center; }
+.chart-bar { width: 70%; background: var(--accent-color); border-radius: 4px 4px 0 0; transition: height 0.5s ease; min-height: 2px; position: relative; }
+.chart-bar::after { content: attr(data-val); position: absolute; top: -24px; left: 50%; transform: translateX(-50%); font-size: 13px; font-weight: 700; color: var(--text-main); background: transparent; padding: 0; border: none; white-space: nowrap; }
+.chart-label { font-size: 12px; color: var(--text-muted); text-align: center; }
 .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .view-container { flex: 1; padding: 24px; overflow-y: auto; display: none; flex-direction: column; }
 .view-container.active { display: flex; }
@@ -765,7 +765,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="section-box" data-panel="other"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 🧺 其他</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div><div class="panel-content"><div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="按回车添加 (如：跳绳 * 500)" id="other-input"></div><div id="other-list" class="task-drop-zone" data-type="other" data-completed="false"></div><div id="other-completed" class="task-drop-zone" data-type="other" data-completed="true"></div></div></div>
 <div class="section-box" data-panel="exercise"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 💪 锻炼</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span><button class="btn btn-sm btn-primary" onclick="addExerciseCategory()">➕ 添加</button></div></div><div class="panel-content"><div class="exercise-grid" id="exercise-grid"></div></div></div>
 </div>
-<div id="day-reflection-hint" class="reflection-preview" style="margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--font-hint);color:var(--text-muted);background:var(--bg-sidebar);border-left:2px solid var(--border-color);padding:4px 8px;border-radius:4px;cursor:help;" title="">📋 今日暂无操作记录</div>
+<div id="day-reflection-hint" class="reflection-preview" style="margin-bottom:8px;white-space:normal;word-break:break-all;overflow:visible;line-height:1.7;font-size:var(--font-hint);color:var(--text-muted);background:var(--bg-sidebar);border-left:2px solid var(--border-color);padding:8px 10px;border-radius:4px;cursor:help;min-height:24px;" title="">📋 今日暂无操作记录</div>
 <details class="bottom-summary" id="day-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;"><summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">💭 今日反思 (点击展开/收起)</summary><textarea id="daily-reflection-textarea" placeholder="今天过得怎么样？有什么想记录的？" oninput="handleReflectionInput(this.value)" style="margin-top:8px;"></textarea></details>
 </div>
 <div class="view-container" id="view-methods">
@@ -2667,52 +2667,51 @@ function renderMethodsFileTree(node, listElement, depth = 0) {
         item.onclick = (e) => { if (e.target === delSpan || e.target === toggle) return; if (isFolder) { if (isExpanded) expandedMethodFolders.delete(f.id); else expandedMethodFolders.add(f.id); renderMethodsFileList(); } else switchMethodsFile(f.id); };
         item.ondblclick = (e) => { if (e.target === delSpan || e.target === toggle) return; renameMethodsFile(f.id); };
         delSpan.onclick = (e) => { e.stopPropagation(); deleteMethodsFile(f.id); };
-        // —— 拖拽支持：文件可拖入文件夹 ——
-        if (!isFolder) {
-            item.draggable = true;
-            item.ondragstart = (e) => {
-                draggedMethodsFileId = f.id;
-                try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', f.id); } catch (err) {}
-            };
-            item.ondragend = () => { draggedMethodsFileId = null; item.classList.remove('drag-over-folder'); };
-            // 拖到另一个文件上 → 同级排序（插到该文件前）
-            item.ondragover = (e) => { e.preventDefault(); e.stopPropagation(); try { e.dataTransfer.dropEffect = 'move'; } catch (err) {} item.classList.add('drag-over-folder'); };
-            item.ondragleave = (e) => { e.stopPropagation(); if (!item.contains(e.relatedTarget)) item.classList.remove('drag-over-folder'); };
-            item.ondrop = (e) => {
-                e.preventDefault(); e.stopPropagation();
-                item.classList.remove('drag-over-folder');
-                let fid = draggedMethodsFileId;
-                try { if (!fid) fid = e.dataTransfer.getData('text/plain'); } catch (err) {}
-                if (!fid || fid === f.id) return;
-                try {
-                    const moving = appData.methodsFiles.find(x => x.id === fid);
-                    if (!moving) return;
-                    // 先移除再插入到目标前
-                    const idx = appData.methodsFiles.findIndex(x => x.id === fid);
-                    if (idx !== -1) appData.methodsFiles.splice(idx, 1);
-                    const ti = appData.methodsFiles.findIndex(x => x.id === f.id);
-                    moving.parentId = f.parentId || null;
-                    if (ti !== -1) appData.methodsFiles.splice(ti, 0, moving);
-                    else appData.methodsFiles.push(moving);
-                    if (moving.type === 'file') moving.updatedAt = Date.now();
-                    renderMethodsFileList();
-                    saveDataToFile(appData);
-                    showMiniToast('✅ 顺序已更新');
-                } catch (err) { console.error('[排序失败]', err); showMiniToast('❌ 排序失败'); }
-            };
-        } else {
-            item.ondragover = (e) => { e.preventDefault(); e.stopPropagation(); try { e.dataTransfer.dropEffect = 'move'; } catch (err) {} item.classList.add('drag-over-folder'); };
-            item.ondragenter = (e) => { e.preventDefault(); e.stopPropagation(); item.classList.add('drag-over-folder'); };
-            item.ondragleave = (e) => { e.stopPropagation(); if (!item.contains(e.relatedTarget)) item.classList.remove('drag-over-folder'); };
-            item.ondrop = (e) => {
-                e.preventDefault(); e.stopPropagation();
-                item.classList.remove('drag-over-folder');
-                let fid = draggedMethodsFileId;
-                try { if (!fid) fid = e.dataTransfer.getData('text/plain'); } catch (err) {}
-                try { moveMethodsFileToFolder(fid, f.id); }
-                catch (err) { console.error('[拖拽移动失败]', err); showMiniToast('❌ 移动失败'); }
-            };
-        }
+        // —— 拖拽支持：文件和文件夹都可拖拽排序；文件拖到文件夹上可移入 ——
+        item.draggable = true;
+        item.ondragstart = (e) => {
+            draggedMethodsFileId = f.id;
+            try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', f.id); } catch (err) {}
+        };
+        item.ondragend = () => { draggedMethodsFileId = null; item.classList.remove('drag-over-folder'); };
+        item.ondragover = (e) => { e.preventDefault(); e.stopPropagation(); try { e.dataTransfer.dropEffect = 'move'; } catch (err) {} item.classList.add('drag-over-folder'); };
+        item.ondragenter = (e) => { e.preventDefault(); e.stopPropagation(); item.classList.add('drag-over-folder'); };
+        item.ondragleave = (e) => { e.stopPropagation(); if (!item.contains(e.relatedTarget)) item.classList.remove('drag-over-folder'); };
+        item.ondrop = (e) => {
+            e.preventDefault(); e.stopPropagation();
+            item.classList.remove('drag-over-folder');
+            let fid = draggedMethodsFileId;
+            try { if (!fid) fid = e.dataTransfer.getData('text/plain'); } catch (err) {}
+            if (!fid || fid === f.id) return;
+            const moving = appData.methodsFiles.find(x => x.id === fid);
+            if (!moving) return;
+            try {
+                // 场景1：把「文件」拖到「文件夹」上 → 移入文件夹
+                if (isFolder && moving.type === 'file' && moving.parentId !== f.id) {
+                    let p = f;
+                    let isInside = false;
+                    while (p) {
+                        if (p.id === moving.id) { isInside = true; break; }
+                        p = appData.methodsFiles.find(x => x.id === p.parentId);
+                    }
+                    if (!isInside) {
+                        moveMethodsFileToFolder(fid, f.id);
+                        return;
+                    }
+                }
+                // 场景2：同级排序（拖拽源移到目标项前面）
+                const idx = appData.methodsFiles.findIndex(x => x.id === fid);
+                if (idx !== -1) appData.methodsFiles.splice(idx, 1);
+                const ti = appData.methodsFiles.findIndex(x => x.id === f.id);
+                moving.parentId = f.parentId || null;
+                if (ti !== -1) appData.methodsFiles.splice(ti, 0, moving);
+                else appData.methodsFiles.push(moving);
+                if (moving.type === 'file') moving.updatedAt = Date.now();
+                renderMethodsFileList();
+                saveDataToFile(appData);
+                showMiniToast('✅ 顺序已更新');
+            } catch (err) { console.error('[排序/移动失败]', err); showMiniToast('❌ 操作失败'); }
+        };
         listElement.appendChild(item);
         if (isFolder && isExpanded) {
             const children = buildFileTree(f.id);
@@ -3205,7 +3204,7 @@ function broadcastDiffs(data) {
     }
     const _curEnergyBundle = { e: data.dailyEnergy || {}, t: data.dailyEnergyTS || {} };
     if (jstr(lastSyncedEnergy) !== jstr(_curEnergyBundle)) {
-        conn.send({ type: 'OP', data: { action: 'UPDATE_ENERGY', energy: data.dailyEnergy, ts: data.dailyEnergyTS, clientId: CLIENT_ID, time: Date.now() } });
+        conn.send({ type: 'OP', data: { action: 'UPDATE_ENERGY', energy: data.dailyEnergy, ts: data.dailyEnergyTS, today: getTodayString(), clientId: CLIENT_ID, time: Date.now() } });
         lastSyncedEnergy = JSON.parse(jstr(_curEnergyBundle));
     }
     const currentTasks = data.tasks || [];
@@ -3397,9 +3396,13 @@ function handleIncomingOp(op) {
     } else if (op.action === 'UPDATE_ENERGY') {
         const _remoteEnergy = op.energy || {};
         const _remoteEnergyTS = op.ts || {};
+        const _remoteToday = op.today || '';
+        const _localToday = getTodayString();
         if (!appData.dailyEnergy) appData.dailyEnergy = {};
         if (!appData.dailyEnergyTS) appData.dailyEnergyTS = {};
         Object.keys(_remoteEnergy).forEach(dateStr => {
+            // 🛡 远端日期落后于本地时，不用它的“今天”数据覆盖本地的“今天”
+            if (dateStr === _localToday && _remoteToday && _remoteToday !== _localToday) return;
             const _lTS = appData.dailyEnergyTS[dateStr] || 0;
             const _rDateTS = _remoteEnergyTS[dateStr] || 0;
             if (_rDateTS >= _lTS) {
@@ -5556,6 +5559,43 @@ function startAutoBackupTimer() {
     autoBackupTimer = setInterval(() => performBackup(true), autoBackupIntervalMin * 60 * 1000);
     updateBackupUI();
 }
+async function _exportMethodsTreeToFolder(rootHandle) {
+    try {
+        const allItems = (appData.methodsFiles || []).filter(f => !f.deleted);
+        const folders = allItems.filter(f => f.type === 'folder');
+        const files = allItems.filter(f => f.type === 'file');
+        const handleCache = new Map();
+        handleCache.set(null, rootHandle);
+        const _sanitize = (name) => String(name || '未命名').replace(/[\\/:*?"<>|]/g, '_').slice(0, 60) || '未命名';
+        async function _ensureFolder(folderId) {
+            if (handleCache.has(folderId)) return handleCache.get(folderId);
+            const folder = folders.find(f => f.id === folderId);
+            if (!folder) return rootHandle;
+            const parentHandle = await _ensureFolder(folder.parentId || null);
+            const dirHandle = await parentHandle.getDirectoryHandle(_sanitize(folder.name), { create: true });
+            handleCache.set(folderId, dirHandle);
+            return dirHandle;
+        }
+        for (const folder of folders) {
+            try { await _ensureFolder(folder.id); } catch (e) { console.warn('[备份] 建目录失败', folder.name, e); }
+        }
+        for (const file of files) {
+            try {
+                const parentHandle = await _ensureFolder(file.parentId || null);
+                const safeName = _sanitize(file.name);
+                const docHtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>' + escapeHtml(file.name) + '</title><style>body{font-family:"Microsoft YaHei",sans-serif;font-size:14px;line-height:1.8;}table{border-collapse:collapse;}td{border:1px solid #999;padding:6px;}img{max-width:100%;}</style></head><body>' + (file.contentHtml || '') + '</body></html>';
+                const fhDoc = await parentHandle.getFileHandle(safeName + '.doc', { create: true });
+                const wDoc = await fhDoc.createWritable();
+                await wDoc.write('\ufeff' + docHtml);
+                await wDoc.close();
+                const fhMd = await parentHandle.getFileHandle(safeName + '.md', { create: true });
+                const wMd = await fhMd.createWritable();
+                await wMd.write('# ' + (file.name || '未命名') + '\n\n' + (file.contentText || ''));
+                await wMd.close();
+            } catch (e) { console.warn('[备份] 写笔记失败', file.name, e); }
+        }
+    } catch (e) { console.warn('[备份] 导出笔记树失败', e); }
+}
 window.performBackup = async function(silent) {
     if (!backupDirHandle) { if (!silent) alert('请先选择文件夹'); return false; }
     if (isBackingUp) return false;
@@ -5576,6 +5616,11 @@ window.performBackup = async function(silent) {
             await w.write(JSON.stringify(payload, null, 2));
             await w.close();
         }
+        // 📁 额外：把笔记按目录结构导出为独立文件夹 + .doc/.md 文件
+        try {
+            const methodsRoot = await backupDirHandle.getDirectoryHandle('methods_files', { create: true });
+            await _exportMethodsTreeToFolder(methodsRoot);
+        } catch (e) { console.warn('[备份] 笔记文件夹导出失败', e); }
         try {
             const coreData = {
                 tasks: appData.tasks, exercises: appData.exercises, exerciseSchedule: appData.exerciseSchedule,
@@ -6157,6 +6202,17 @@ document.addEventListener('visibilitychange', () => {
         persistNow(appData);
     } else {
         document.body.classList.remove('invisible-anim');
+        // 🛡 跨天自动恢复精力：从后台切回前台时检查日期
+        if (appData._energyDate !== getTodayString()) {
+            appData._energyDate = getTodayString();
+            appData.selectedDate = getTodayString();
+            userPickedDate = false;
+            renderEnergyAndRPG();
+            renderDayPlan();
+            renderCalendar();
+        } else {
+            renderEnergyAndRPG();
+        }
     }
 });
 window.addEventListener('pagehide', () => { persistNow(appData); });
@@ -6212,6 +6268,7 @@ window.addEventListener('beforeunload', () => {
     }
     ensureEnergyData();
     if (!appData._lastModified) appData._lastModified = 1;
+    appData._energyDate = getTodayString();
     appData.selectedDate = getTodayString();
     appData.viewYear = new Date().getFullYear();
     appData.viewMonth = new Date().getMonth();
@@ -6245,6 +6302,7 @@ window.addEventListener('beforeunload', () => {
     renderLevelConfig(); renderFixedBlockEnergyConfig();
     renderP2PHistory(); renderFixedBlockPool();
     bindGoalInputs(); renderGoals();
+    window.renderGlobalTimer();
     if (appData.workspaceTitle) { const _wt = document.getElementById('workspace-title'); if (_wt) _wt.innerText = appData.workspaceTitle; }
     initMethodsEditor();
     const sh = localStorage.getItem('my_p2p_host_id');
