@@ -778,7 +778,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="section-box" data-panel="other"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 🧺 其他</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div><div class="panel-content"><div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="按回车添加 (如：跳绳 * 500)" id="other-input"></div><div id="other-list" class="task-drop-zone" data-type="other" data-completed="false"></div><div id="other-completed" class="task-drop-zone" data-type="other" data-completed="true"></div></div></div>
 <div class="section-box" data-panel="exercise"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 💪 锻炼</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span><button class="btn btn-sm btn-primary" onclick="addExerciseCategory()">➕ 添加</button></div></div><div class="panel-content"><div class="exercise-grid" id="exercise-grid"></div></div></div>
 </div>
-<div id="day-reflection-hint" class="reflection-preview" style="margin-bottom:8px;white-space:normal;word-break:break-all;overflow:visible;line-height:1.7;font-size:var(--font-hint);color:var(--text-muted);background:var(--bg-sidebar);border-left:2px solid var(--border-color);padding:8px 10px;border-radius:4px;cursor:help;min-height:24px;" title="">📋 今日暂无操作记录</div>
+<div id="day-reflection-hint" class="reflection-preview" style="display:block;box-sizing:border-box;width:100%;max-width:100%;margin-bottom:8px;height:24px;line-height:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--font-hint);color:var(--text-muted);background:var(--bg-sidebar);border-left:2px solid var(--border-color);padding:0 10px;border-radius:4px;cursor:help;" title="">📋 今日暂无操作记录</div>
 <details class="bottom-summary" id="day-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;"><summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">💭 今日反思 (点击展开/收起)</summary><textarea id="daily-reflection-textarea" placeholder="今天过得怎么样？有什么想记录的？" oninput="handleReflectionInput(this.value)" style="margin-top:8px;"></textarea></details>
 </div>
 <div class="view-container" id="view-methods">
@@ -3848,34 +3848,55 @@ function renderCalendar() {
     setTimeout(() => {
         try {
             grid.querySelectorAll('.cal-link-svg').forEach(el => el.remove());
-            const links = [];
-            Object.keys(taskOccurrences).forEach(tid => {
-                const chips = taskOccurrences[tid].filter(c => c.isConnected);
-                if (chips.length < 2) return;
-                for (let i = 0; i < chips.length - 1; i++) {
-                    links.push({ from: chips[i], to: chips[i + 1] });
+            const gridRect = grid.getBoundingClientRect();
+            const allChips = Array.from(grid.querySelectorAll('.cal-task-chip')).filter(c => c.isConnected);
+            // 🎯 按「大类 + 行位置(y坐标) + 任务名」分组：只有同类同层同名的才连
+            const groups = {};
+            allChips.forEach(chip => {
+                let cat = 'other';
+                if (chip.classList.contains('cal-task-learning')) cat = 'learning';
+                else if (chip.classList.contains('cal-task-exercise')) cat = 'exercise';
+                const r = chip.getBoundingClientRect();
+                const yCenter = r.top + r.height / 2;
+                const yKey = Math.round((yCenter - gridRect.top) / 4); // 4px 容差取整，避免微差导致分组断裂
+                const text = (chip.textContent || '').trim().replace(/^💪\s*/, '');
+                const gKey = cat + '|' + yKey + '|' + text;
+                if (!groups[gKey]) groups[gKey] = [];
+                groups[gKey].push({ rect: r, yCenter });
+            });
+
+            const lines = [];
+            Object.keys(groups).forEach(gKey => {
+                const arr = groups[gKey].sort((a, b) => a.rect.left - b.rect.left);
+                if (arr.length < 2) return;
+                for (let i = 0; i < arr.length - 1; i++) {
+                    const a = arr[i], b = arr[i + 1];
+                    // ✅ 严格水平：y 中心差超过 3px 就不画（禁止斜线、错位）
+                    if (Math.abs(a.yCenter - b.yCenter) > 3) continue;
+                    // ✅ y1 === y2 —— 保证是水平线，不是斜线
+                    const yFixed = Math.round(((a.yCenter + b.yCenter) / 2 - gridRect.top) * 10) / 10;
+                    lines.push({
+                        x1: a.rect.right - gridRect.left,
+                        x2: b.rect.left - gridRect.left,
+                        y: yFixed
+                    });
                 }
             });
-            if (links.length === 0) return;
-            const gridRect = grid.getBoundingClientRect();
+
+            if (lines.length === 0) return;
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             svg.classList.add('cal-link-svg');
             svg.setAttribute('style', 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible;');
-            links.forEach(link => {
-                const fr = link.from.getBoundingClientRect();
-                const tr = link.to.getBoundingClientRect();
-                const x1 = fr.right - gridRect.left;
-                const y1 = fr.top + fr.height / 2 - gridRect.top;
-                const x2 = tr.left - gridRect.left;
-                const y2 = tr.top + tr.height / 2 - gridRect.top;
+            lines.forEach(l => {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', x1);
-                line.setAttribute('y1', y1);
-                line.setAttribute('x2', x2);
-                line.setAttribute('y2', y2);
+                line.setAttribute('x1', l.x1);
+                line.setAttribute('y1', l.y);
+                line.setAttribute('x2', l.x2);
+                line.setAttribute('y2', l.y);
                 line.setAttribute('stroke', 'rgba(120,120,120,0.45)');
                 line.setAttribute('stroke-width', '1.2');
                 line.setAttribute('stroke-dasharray', '3,4');
+                line.setAttribute('shape-rendering', 'crispEdges');
                 svg.appendChild(line);
             });
             grid.appendChild(svg);
