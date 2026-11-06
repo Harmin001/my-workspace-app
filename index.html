@@ -58,6 +58,8 @@ body.dark-mode .locked-by-remote::after { background: #333; border-color: #555; 
 .p2p-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; transition: background .3s; cursor: pointer; }
 .p2p-dot.connected { background: #27ae60; box-shadow: 0 0 5px #27ae60; }
 .p2p-dot.connecting { background: #f2994a; box-shadow: 0 0 5px #f2994a; animation: pulse 1s infinite; }
+.p2p-dot.conflict { background: #eb5757; box-shadow: 0 0 6px #eb5757; animation: pulseConflict 0.6s infinite alternate; }
+@keyframes pulseConflict { 0% { opacity: 1; transform: scale(1); } 100% { opacity: .5; transform: scale(1.2); } }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
 .nav-item { padding: 8px 12px; margin-bottom: 2px; border-radius: var(--radius); cursor: pointer; transition: all .1s; display: flex; align-items: center; gap: 8px; font-weight: 500; font-size: var(--font-content); }
 .nav-item:hover { background-color: var(--hover-bg); transform: translateX(2px); }
@@ -1026,6 +1028,30 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
         <div class="conflict-actions"><button class="btn btn-sm" onclick="resolveConflict('local')">保留本地</button><button class="btn btn-sm btn-danger" onclick="resolveConflict('remote')">采用远端</button></div>
     </div>
 </div>
+<div class="conflict-modal-overlay" id="merge-conflict-modal">
+    <div class="conflict-modal" style="max-width:760px;">
+        <div class="conflict-title">⚠️ 同步冲突，需要你手动选择</div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+            检测到 <b id="merge-conflict-total">1</b> 处冲突，第 <b id="merge-conflict-index">1</b> 项。<br>
+            <span style="color:#2e7d32;">✅ 无冲突的数据已自动合并，只有下面这些需要你选择。</span>
+        </p>
+        <div id="merge-conflict-module" style="display:inline-block;padding:4px 12px;background:var(--bg-sidebar);border:1px solid var(--border-color);border-radius:12px;font-size:12px;font-weight:700;margin-bottom:12px;"></div>
+        <div class="conflict-body">
+            <div class="conflict-box" style="border-color:var(--accent-color);border-style:solid;">
+                <h4>🖥 本地版本（这台设备）</h4>
+                <div id="merge-conflict-local-val" style="margin-top:8px;max-height:260px;overflow-y:auto;"></div>
+            </div>
+            <div class="conflict-box" style="border-color:var(--danger-color);border-style:solid;">
+                <h4>📱 另一端版本（云端/配对设备）</h4>
+                <div id="merge-conflict-remote-val" style="margin-top:8px;max-height:260px;overflow-y:auto;"></div>
+            </div>
+        </div>
+        <div class="conflict-actions">
+            <button class="btn btn-sm" onclick="resolveMergeConflict('local')" style="border:2px solid var(--accent-color);color:var(--accent-color);font-weight:700;">✅ 保留本地，覆盖另一端</button>
+            <button class="btn btn-sm btn-danger" onclick="resolveMergeConflict('remote')" style="font-weight:700;">📱 使用另一端版本，覆盖本地</button>
+        </div>
+    </div>
+</div>
 <div class="conflict-modal-overlay" id="import-confirm-modal">
     <div class="conflict-modal" style="border-color:var(--accent-color);">
         <div class="conflict-title" style="color:var(--accent-color);">📥 选择要恢复的模块</div>
@@ -1177,6 +1203,8 @@ function _clearBackupTimers() { _backupTimerRegistry.forEach(id => { clearInterv
 // ============ 双向同步时间戳合并 ============
 let _syncSnapshot = null;
 let _conflictCount = 0;
+let _mergeConflicts = [];
+let _pendingSyncReply = null;
 
 function _taskContentChanged(a, b) {
     const strip = (t) => {
@@ -3235,12 +3263,13 @@ window.changeRadius = function(v) {
     if (!isSyncing) saveDataToFile(appData);
 };
 function updateSyncUI() {
-    // 同步状态文字已从 UI 移除，仅保留 p2p-dot 圆点指示
     const dot = document.getElementById('p2p-indicator');
     if (!dot) return;
-    if (syncStatus === 'connected') { dot.classList.add('connected'); dot.classList.remove('connecting'); dot.title = '已同步'; }
-    else if (syncStatus === 'syncing') { dot.classList.add('connecting'); dot.classList.remove('connected'); dot.title = '同步中'; }
-    else { dot.classList.remove('connected', 'connecting'); dot.title = syncStatus === 'conflict' ? '存在冲突' : '未连接'; }
+    dot.classList.remove('connected', 'connecting', 'conflict');
+    if (syncStatus === 'connected') { dot.classList.add('connected'); dot.title = '✅ 同步成功'; }
+    else if (syncStatus === 'syncing') { dot.classList.add('connecting'); dot.title = '🔄 同步中'; }
+    else if (syncStatus === 'conflict') { dot.classList.add('conflict'); dot.title = '⚠️ 存在冲突待选择'; }
+    else { dot.title = '⚪ 未连接'; }
 }
 let _manualSyncInProgress = false;
 let _manualSyncTimer = null;
@@ -3273,7 +3302,7 @@ window.manualSync = function() {
     }
     if (_manualSyncTimer) clearTimeout(_manualSyncTimer);
     _manualSyncTimer = setTimeout(() => {
-        // 本地数据已完整推送出去，未收到回执也视为推送成功
+        if (_mergeConflicts.length > 0) { _manualSyncTimer = null; return; }
         finishManualSync(true);
     }, 8000);
 };
@@ -6269,12 +6298,44 @@ function mergeData(local, remote) {
     if (remote.methodsFiles && Array.isArray(remote.methodsFiles)) {
         if (!Array.isArray(merged.methodsFiles)) merged.methodsFiles = [];
         const localFileMap = new Map(merged.methodsFiles.map(f => [f.id, f]));
+        const _baseMethodsMap = new Map((lastSyncedMethods || []).map(f => [f.id, f]));
         remote.methodsFiles.forEach(rf => {
             if (!localFileMap.has(rf.id)) merged.methodsFiles.push(JSON.parse(JSON.stringify(rf)));
             else {
                 const lf = localFileMap.get(rf.id);
                 const rAt = rf.updatedAt || 0;
                 const lAt = lf.updatedAt || 0;
+                const base = _baseMethodsMap.get(rf.id);
+                let isConflict = false;
+                if (base && rf.type === 'file' && lf.type === 'file') {
+                    const lChanged = (lf.contentHtml !== base.contentHtml) || (lf.contentText !== base.contentText) || (lf.name !== base.name);
+                    const rChanged = (rf.contentHtml !== base.contentHtml) || (rf.contentText !== base.contentText) || (rf.name !== base.name);
+                    const lDiffR = (lf.contentHtml !== rf.contentHtml) || (lf.contentText !== rf.contentText) || (lf.name !== rf.name);
+                    if (lChanged && rChanged && lDiffR) isConflict = true;
+                }
+                if (isConflict) {
+                    _mergeConflicts.push({
+                        type: 'methods',
+                        id: rf.id,
+                        label: '📚 笔记：' + (lf.name || rf.name || rf.id),
+                        local: { name: lf.name, contentHtml: lf.contentHtml, contentText: lf.contentText },
+                        remote: { name: rf.name, contentHtml: rf.contentHtml, contentText: rf.contentText },
+                        applyLocal: () => {
+                            const f = merged.methodsFiles.find(x => x.id === rf.id);
+                            if (f) f.updatedAt = Date.now();
+                        },
+                        applyRemote: () => {
+                            const f = merged.methodsFiles.find(x => x.id === rf.id);
+                            if (f) {
+                                f.name = rf.name;
+                                f.contentHtml = rf.contentHtml;
+                                f.contentText = rf.contentText;
+                                f.updatedAt = Date.now();
+                            }
+                        }
+                    });
+                    return;
+                }
                 if (rAt > lAt) {
                     lf.name = rf.name; lf.type = rf.type; lf.parentId = rf.parentId;
                     lf.deleted = !!rf.deleted;
@@ -6291,18 +6352,46 @@ function mergeData(local, remote) {
     merged.learningMethods = curFile ? curFile.contentText || '' : '';
     // 保持用户手动拖拽的顺序，不再按 ID 强制重排，防止刷新后顺序复原
     const localTasksMap = new Map(merged.tasks.map(t => [t.id, t]));
+    const _baselineTasksMap = new Map((lastSyncedTasks || []).map(t => [t.id, t]));
     (remote.tasks || []).forEach(rt => {
         if (!localTasksMap.has(rt.id)) { merged.tasks.push(rt); return; }
         const lt = localTasksMap.get(rt.id);
         const lTime = Number(lt._lastModified || 0);
         const rTime = Number(rt._lastModified || 0);
-        // 冲突检测：时间戳相近（2 秒内）且内容不同 → 保留本地并计数
-        if (lTime > 0 && rTime > 0 && Math.abs(lTime - rTime) < 2000 && _taskContentChanged(lt, rt)) {
-            _conflictCount++;
-            console.warn('[同步冲突] 任务「' + (rt.text || rt.id) + '」时间戳相近，保留本地版本', lt, rt);
+        const bt = _baselineTasksMap.get(rt.id);
+        let isConflict = false;
+        if (bt) {
+            const localChanged = _taskContentChanged(bt, lt);
+            const remoteChanged = _taskContentChanged(bt, rt);
+            if (localChanged && remoteChanged && _taskContentChanged(lt, rt)) isConflict = true;
+            if (!isConflict && lTime > 0 && rTime > 0 && Math.abs(lTime - rTime) < 1500 && _taskContentChanged(lt, rt) && Math.max(lTime, rTime) > (bt._lastModified || 0) + 500) isConflict = true;
+        }
+        if (isConflict) {
+            _mergeConflicts.push({
+                type: 'task',
+                id: rt.id,
+                label: '📋 任务：' + (lt.text || rt.text || rt.id),
+                local: JSON.parse(JSON.stringify(lt)),
+                remote: JSON.parse(JSON.stringify(rt)),
+                applyLocal: () => {
+                    const t = merged.tasks.find(x => x.id === rt.id);
+                    if (t) { t._lastModified = Date.now(); }
+                },
+                applyRemote: () => {
+                    const t = merged.tasks.find(x => x.id === rt.id);
+                    if (t) {
+                        const localSubs = JSON.parse(JSON.stringify(t.subTasks || []));
+                        Object.assign(t, JSON.parse(JSON.stringify(rt)));
+                        if (!Array.isArray(t.subTasks)) t.subTasks = [];
+                        const rsMap = new Map(t.subTasks.map(s => [s.id, s]));
+                        localSubs.forEach(ls => { if (!rsMap.has(ls.id)) t.subTasks.push(ls); });
+                        t._lastModified = Date.now();
+                    }
+                }
+            });
+            return;
         }
         if (rTime > lTime) {
-            // 远端时间戳更新 → 用远端覆盖主字段，但保留本地新增的子任务
             const localSubs = JSON.parse(JSON.stringify(lt.subTasks || []));
             Object.assign(lt, rt);
             if (!Array.isArray(lt.subTasks)) lt.subTasks = [];
@@ -6310,7 +6399,6 @@ function mergeData(local, remote) {
             localSubs.forEach(ls => { if (!remoteSubMap.has(ls.id)) lt.subTasks.push(ls); });
             lt._lastModified = rTime;
         } else {
-            // 本地时间戳更新或相等 → 保留本地主字段，仅补充本地没有的远端子任务
             if (rt.subTasks) {
                 if (!lt.subTasks) lt.subTasks = [];
                 const localSubMap = new Map(lt.subTasks.map(s => [s.id, s]));
@@ -6368,11 +6456,30 @@ function mergeData(local, remote) {
         if (!merged.dailyEnergy) merged.dailyEnergy = {};
         if (!merged.dailyEnergyTS) merged.dailyEnergyTS = {};
         const _rTS = remote.dailyEnergyTS || {};
+        const _baseEnergy = (lastSyncedEnergy && lastSyncedEnergy.e) || {};
+        const _baseEnergyTS = (lastSyncedEnergy && lastSyncedEnergy.t) || {};
         Object.keys(remote.dailyEnergy).forEach(dateStr => {
             const _lTS = merged.dailyEnergyTS[dateStr] || 0;
             const _rDateTS = _rTS[dateStr] || 0;
+            const _baseTS = _baseEnergyTS[dateStr] || 0;
+            const lVal = merged.dailyEnergy[dateStr];
+            const rVal = remote.dailyEnergy[dateStr];
+            const lChanged = _baseTS > 0 ? (_lTS > _baseTS) : (lVal !== undefined && lVal !== _baseEnergy[dateStr]);
+            const rChanged = _baseTS > 0 ? (_rDateTS > _baseTS) : (rVal !== undefined && rVal !== _baseEnergy[dateStr]);
+            if (_baseTS > 0 && lChanged && rChanged && lVal !== rVal && lVal !== undefined && rVal !== undefined) {
+                _mergeConflicts.push({
+                    type: 'energy',
+                    date: dateStr,
+                    label: '⚡ 精力消耗记录（' + dateStr + '）',
+                    local: lVal,
+                    remote: rVal,
+                    applyLocal: () => { merged.dailyEnergy[dateStr] = lVal; merged.dailyEnergyTS[dateStr] = Date.now(); },
+                    applyRemote: () => { merged.dailyEnergy[dateStr] = rVal; merged.dailyEnergyTS[dateStr] = Date.now(); }
+                });
+                return;
+            }
             if (_rDateTS >= _lTS) {
-                merged.dailyEnergy[dateStr] = remote.dailyEnergy[dateStr];
+                merged.dailyEnergy[dateStr] = rVal;
                 if (_rDateTS > 0) merged.dailyEnergyTS[dateStr] = _rDateTS;
             }
         });
@@ -6395,8 +6502,24 @@ function mergeData(local, remote) {
     }
     const localTSMod = merged.timeSlotsLastModified || 0;
     const remoteTSMod = remote.timeSlotsLastModified || 0;
+    const _baseTSMod = (lastSyncedTimeSlots && lastSyncedTimeSlots.mod) || 0;
     if (remote.timeSlots && Array.isArray(remote.timeSlots)) {
-        if (remoteTSMod > localTSMod) {
+        const lChanged = localTSMod > _baseTSMod;
+        const rChanged = remoteTSMod > _baseTSMod;
+        const lDiffR = JSON.stringify(merged.timeSlots) !== JSON.stringify(remote.timeSlots);
+        if (_baseTSMod > 0 && lChanged && rChanged && lDiffR) {
+            _mergeConflicts.push({
+                type: 'timeSlots',
+                label: '🗓️ 时间池配置（课表时间段）',
+                local: merged.timeSlots,
+                remote: remote.timeSlots,
+                applyLocal: () => { merged.timeSlotsLastModified = Date.now(); },
+                applyRemote: () => {
+                    merged.timeSlots = JSON.parse(JSON.stringify(remote.timeSlots));
+                    merged.timeSlotsLastModified = Date.now();
+                }
+            });
+        } else if (remoteTSMod > localTSMod) {
             merged.timeSlots = JSON.parse(JSON.stringify(remote.timeSlots));
             merged.timeSlotsLastModified = remoteTSMod;
         } else if (remoteTSMod === localTSMod && !merged.timeSlots) {
@@ -6498,11 +6621,137 @@ function applyRemoteData(payload, oldData) {
     renderGoals();
     renderEnergyAndRPG();
     if (_conflictCount > 0) {
-        showMiniToast('⚠️ 检测到 ' + _conflictCount + ' 项冲突，已保留本地最新版本');
         _conflictCount = 0;
+    }
+    if (_mergeConflicts.length > 0) {
+        showMergeConflictDialog();
     }
     setTimeout(() => { isSyncing = false; }, 100);
 }
+function _formatMergeConflictValue(c, v) {
+    const wrap = (h) => '<div style="font-size:12px;">' + h + '</div>';
+    if (c.type === 'task') {
+        if (!v) return wrap('(空)');
+        let h = '<div style="font-size:14px;font-weight:700;margin-bottom:6px;">📝 ' + escapeHtml(v.text || '') + '</div>';
+        const meta = [];
+        if (v.countOnly) meta.push('🔄 计数任务 · 累计 ' + (v.countTotal || 0) + ' 次');
+        else if (v.completed) meta.push('✅ 已完成');
+        if (v.target) meta.push('🎯 目标 ' + v.target + ' 次');
+        if (v.recurringType) meta.push('🔁 ' + v.recurringType);
+        if (v.energyCost !== undefined) meta.push('⚡ ' + v.energyCost);
+        if (v.note) meta.push('📝 ' + String(v.note).substring(0, 40));
+        if (meta.length) h += '<div style="color:var(--text-muted);font-size:11px;line-height:1.7;">' + meta.join('<br>') + '</div>';
+        if (v.subTasks && v.subTasks.length > 0) {
+            h += '<div style="color:var(--text-muted);font-size:11px;margin-top:6px;border-top:1px dashed var(--border-color);padding-top:4px;">子任务：' + v.subTasks.map(s => escapeHtml(s.text || '')).join('、') + '</div>';
+        }
+        return wrap(h);
+    }
+    if (c.type === 'energy') {
+        return '<div style="font-size:26px;font-weight:800;color:var(--accent-color);text-align:center;padding:8px 0;">' + v + ' <span style="font-size:14px;color:var(--text-muted);">点已消耗</span></div>';
+    }
+    if (c.type === 'methods') {
+        if (!v) return wrap('(空)');
+        const t = (v.contentText || '').trim();
+        let h = '<div style="font-size:13px;font-weight:700;margin-bottom:6px;">📄 ' + escapeHtml(v.name || '') + '</div>';
+        if (t) h += '<div style="color:var(--text-muted);font-size:11px;white-space:pre-wrap;max-height:180px;overflow-y:auto;background:var(--bg-sidebar);padding:6px;border-radius:4px;">' + escapeHtml(t.substring(0, 400)) + (t.length > 400 ? '...' : '') + '</div>';
+        else h += '<div style="color:var(--text-muted);font-size:11px;">(空内容)</div>';
+        return wrap(h);
+    }
+    if (c.type === 'timeSlots') {
+        if (!Array.isArray(v)) return wrap('(空)');
+        let h = '<div style="color:var(--text-muted);font-size:11px;margin-bottom:6px;">共 ' + v.length + ' 个时间段</div>';
+        h += '<div style="max-height:200px;overflow-y:auto;">' + v.map(ts => '<div style="padding:2px 0;font-size:12px;">⏰ ' + escapeHtml(ts.label || '') + '</div>').join('') + '</div>';
+        return wrap(h);
+    }
+    return wrap(escapeHtml(String(v)));
+}
+
+function renderCurrentMergeConflict() {
+    if (_mergeConflicts.length === 0) return;
+    const c = _mergeConflicts[0];
+    document.getElementById('merge-conflict-module').innerHTML = c.label || '未知模块';
+    document.getElementById('merge-conflict-local-val').innerHTML = _formatMergeConflictValue(c, c.local);
+    document.getElementById('merge-conflict-remote-val').innerHTML = _formatMergeConflictValue(c, c.remote);
+}
+
+function _updateMergeConflictHeader(totalCount) {
+    document.getElementById('merge-conflict-total').innerText = totalCount;
+    document.getElementById('merge-conflict-index').innerText = String(totalCount - _mergeConflicts.length + 1);
+}
+
+function showMergeConflictDialog() {
+    if (_mergeConflicts.length === 0) return;
+    syncStatus = 'conflict';
+    updateSyncUI();
+    _updateMergeConflictHeader(_mergeConflicts.length);
+    renderCurrentMergeConflict();
+    document.getElementById('merge-conflict-modal').classList.add('active');
+}
+
+function _broadcastConflictResolution(c, choice) {
+    if (choice !== 'local') return;
+    if (!conn || !conn.open) return;
+    try {
+        if (c.type === 'task') {
+            const t = appData.tasks.find(x => x.id === c.id);
+            if (t) {
+                t._lastModified = Date.now();
+                conn.send({ type: 'OP', data: { action: 'UPDATE_TASK', task: t, clientId: CLIENT_ID, time: Date.now() } });
+            }
+        } else if (c.type === 'energy') {
+            conn.send({ type: 'OP', data: { action: 'UPDATE_ENERGY', energy: appData.dailyEnergy, ts: appData.dailyEnergyTS, today: getTodayString(), clientId: CLIENT_ID, time: Date.now() } });
+        } else if (c.type === 'methods') {
+            const f = appData.methodsFiles.find(x => x.id === c.id);
+            if (f) {
+                f.updatedAt = Date.now();
+                conn.send({ type: 'OP', data: { action: 'UPDATE_METHODS', method: f, clientId: CLIENT_ID, time: Date.now() } });
+            }
+        } else if (c.type === 'timeSlots') {
+            conn.send({ type: 'OP', data: { action: 'UPDATE_SETTINGS', settings: getSettingsObj(), clientId: CLIENT_ID, time: Date.now() } });
+        }
+    } catch (e) { console.error('[冲突广播失败]', e); }
+}
+
+window.resolveMergeConflict = function(choice) {
+    if (_mergeConflicts.length === 0) return;
+    const totalCount = Number(document.getElementById('merge-conflict-total').innerText) || _mergeConflicts.length;
+    const c = _mergeConflicts.shift();
+    try {
+        if (choice === 'local') c.applyLocal && c.applyLocal();
+        else c.applyRemote && c.applyRemote();
+    } catch (e) { console.error('[应用冲突选择失败]', e); }
+    _broadcastConflictResolution(c, choice);
+    renderEnergyAndRPG();
+    renderDayPlan();
+    renderCalendar();
+    renderWeekBoard();
+    renderMethodsFileList();
+    if (window.refreshMethodsEditorContent) refreshMethodsEditorContent();
+    renderTimeSlotConfig();
+    saveDataToFile(appData);
+    if (_mergeConflicts.length > 0) {
+        _updateMergeConflictHeader(totalCount);
+        renderCurrentMergeConflict();
+    } else {
+        document.getElementById('merge-conflict-modal').classList.remove('active');
+        syncStatus = (conn && conn.open) ? 'connected' : 'offline';
+        updateSyncUI();
+        saveDataToFile(appData);
+        resetSyncedBaseline(appData);
+        if (_pendingSyncReply) {
+            const pr = _pendingSyncReply;
+            _pendingSyncReply = null;
+            if (pr.needReply && pr.connection && pr.connection.open) {
+                try { pr.connection.send({ type: 'SYNC_MERGE', payload: appData, lastModified: appData._lastModified || 1, needReply: false }); } catch (e) {}
+            }
+            if (pr.manual && _manualSyncInProgress) finishManualSync(true);
+        } else if (_manualSyncInProgress) {
+            finishManualSync(true);
+        }
+        showMiniToast('✅ 冲突已全部处理');
+    }
+};
+
 function setupConnection(connection, isHost, targetId) {
     connection.on('open', () => {
         if (conn !== connection) return;
@@ -6530,10 +6779,14 @@ function setupConnection(connection, isHost, targetId) {
             const oldData = JSON.parse(JSON.stringify(appData));
             const merged = mergeData(appData, data.payload);
             applyRemoteData(merged, oldData);
+            if (_mergeConflicts.length > 0) {
+                // 有冲突：暂不广播、不回包，等用户手动选择
+                _pendingSyncReply = { needReply: !!data.needReply, manual: !!_manualSyncInProgress, connection };
+                return;
+            }
             saveDataToFile(appData);
             resetSyncedBaseline(appData);
             if (data.needReply) {
-                // 收到手动同步请求，把合并后的完整数据回传，完成双向同步
                 try {
                     connection.send({ type: 'SYNC_MERGE', payload: appData, lastModified: appData._lastModified || 1, needReply: false });
                 } catch (e) { console.error('[手动同步] 回传失败', e); }
