@@ -1442,10 +1442,10 @@ function ensureEnergyData() {
     if (appData.energyWarnThreshold === undefined || appData.energyWarnThreshold === null) appData.energyWarnThreshold = 30;
     if (appData.expRatio === undefined || appData.expRatio === null) appData.expRatio = 0.6;
     if (appData.napEnergy === undefined || appData.napEnergy === null) appData.napEnergy = 50;
-    if (appData.idleEnergyRate === undefined || appData.idleEnergyRate === null) appData.idleEnergyRate = 5;
+   if (appData.idleEnergyRate === undefined || appData.idleEnergyRate === null) appData.idleEnergyRate = 5;
     if (appData.idleEnergyAccumulator === undefined) appData.idleEnergyAccumulator = 0;
-    if (appData.idleEnergyLastTick === undefined) appData.idleEnergyLastTick = Date.now();
-    if (appData.idleEnergyLastTickDate === undefined) appData.idleEnergyLastTickDate = getTodayString();
+    if (appData.idleEnergyLastCalc === undefined) appData.idleEnergyLastCalc = Date.now();
+    if (appData.idleEnergyLastCalcDate === undefined) appData.idleEnergyLastCalcDate = getTodayString();
     if (appData.breakEnergy === undefined || appData.breakEnergy === null) appData.breakEnergy = 20;
     const def = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
     if (!appData.rpg) appData.rpg = { ...def };
@@ -2199,44 +2199,61 @@ window.restoreEnergy = function(type) {
     showMiniToast(`⚡ 精力 +${targetRemain - shownRemain}`);
 };
 let _idleEnergyTimer = null;
-function tickIdleEnergy() {
+function applyIdleEnergyDeduction() {
     ensureEnergyData();
     const rate = Number(appData.idleEnergyRate) || 0;
     const now = Date.now();
     const today = getTodayString();
-    if (!appData.idleEnergyLastTickDate) appData.idleEnergyLastTickDate = today;
-    if (appData.idleEnergyLastTickDate !== today) {
-        appData.idleEnergyLastTick = now;
-        appData.idleEnergyLastTickDate = today;
+    if (!appData.dailyEnergy) appData.dailyEnergy = {};
+    if (!appData.dailyEnergyTS) appData.dailyEnergyTS = {};
+    if (rate <= 0) {
+        appData.idleEnergyLastCalc = now;
+        appData.idleEnergyLastCalcDate = today;
         appData.idleEnergyAccumulator = 0;
         return;
     }
-    if (rate <= 0) { appData.idleEnergyLastTick = now; return; }
-    let elapsedMs = now - (Number(appData.idleEnergyLastTick) || now);
-    if (elapsedMs < 0) elapsedMs = 0;
-    if (elapsedMs > 60000) elapsedMs = 10000;
-    appData.idleEnergyLastTick = now;
-    const elapsedHours = elapsedMs / 3600000;
-    const cost = rate * elapsedHours;
-    appData.idleEnergyAccumulator = (Number(appData.idleEnergyAccumulator) || 0) + cost;
-    const whole = Math.floor(appData.idleEnergyAccumulator);
-    if (whole < 1) return;
-    const remaining = getTodayEnergyRemaining();
-    if (remaining <= 0) { appData.idleEnergyAccumulator = 0; return; }
-    const actualCost = Math.min(whole, remaining);
-    if (actualCost > 0) {
-        adjustTodayEnergy(actualCost);
-        appData.idleEnergyAccumulator -= actualCost;
-        renderEnergyAndRPG();
-        saveDataToFile(appData);
+    let lastCalc = Number(appData.idleEnergyLastCalc) || 0;
+    const todayTS = Number(appData.dailyEnergyTS[today]) || 0;
+    if (todayTS > lastCalc) lastCalc = todayTS;
+    if (appData.idleEnergyLastCalcDate !== today) {
+        const midnight = new Date(today + 'T00:00:00').getTime();
+        if (lastCalc < midnight) lastCalc = midnight;
+        appData.idleEnergyAccumulator = 0;
     }
+    if (!lastCalc) lastCalc = now;
+    if (now <= lastCalc) {
+        appData.idleEnergyLastCalc = now;
+        appData.idleEnergyLastCalcDate = today;
+        return;
+    }
+    const elapsedMs = now - lastCalc;
+    const elapsedHours = elapsedMs / 3600000;
+    appData.idleEnergyAccumulator = (Number(appData.idleEnergyAccumulator) || 0) + rate * elapsedHours;
+    const whole = Math.floor(appData.idleEnergyAccumulator);
+    if (whole >= 1) {
+        const remaining = getTodayEnergyRemaining();
+        if (remaining > 0) {
+            const actualCost = Math.min(whole, remaining);
+            if (actualCost > 0) {
+                appData.dailyEnergy[today] = (appData.dailyEnergy[today] || 0) + actualCost;
+                appData.dailyEnergyTS[today] = now;
+                appData.idleEnergyAccumulator -= actualCost;
+            }
+        } else {
+            appData.idleEnergyAccumulator = 0;
+        }
+    }
+    appData.idleEnergyLastCalc = now;
+    appData.idleEnergyLastCalcDate = today;
 }
 window.changeIdleEnergyRate = function(val) {
     ensureEnergyData();
     const num = parseFloat(val);
     if (isNaN(num) || num < 0) return;
+    applyIdleEnergyDeduction();
     appData.idleEnergyRate = num;
-    appData.idleEnergyLastTick = Date.now();
+    appData.idleEnergyLastCalc = Date.now();
+    appData.idleEnergyLastCalcDate = getTodayString();
     appData.idleEnergyAccumulator = 0;
     renderEnergyAndRPG();
     saveDataToFile(appData);
@@ -3536,6 +3553,7 @@ function handleIncomingOp(op) {
                 if (_rDateTS > 0) appData.dailyEnergyTS[dateStr] = _rDateTS;
             }
         });
+        applyIdleEnergyDeduction();
         renderEnergyAndRPG();
     } else if (op.action === 'UPDATE_TASK') {
         const t = appData.tasks.find(x => x.id === op.task.id);
@@ -6441,7 +6459,11 @@ function applyRemoteData(payload, oldData) {
         if (ygb && document.activeElement !== ygb) ygb.value = g;
     }
     if (diffs.tasks || diffs.exercises || diffs.exerciseSchedule || diffs.exerciseTimeSlotSchedule || diffs.dailyExerciseChecks) updateFixedProgressBars();
-    if (diffs.rpg || diffs.dailyEnergy || diffs.napEnergy || diffs.breakEnergy) { lastRpgState = null; renderEnergyAndRPG(); }
+    if (diffs.rpg || diffs.dailyEnergy || diffs.napEnergy || diffs.breakEnergy) { 
+        applyIdleEnergyDeduction();
+        lastRpgState = null; 
+        renderEnergyAndRPG(); 
+    }
     if (diffs.methodsFiles) {
         renderMethodsFileList();
         const paperEl2 = document.getElementById('methods-paper-container');
@@ -6579,15 +6601,13 @@ document.addEventListener('visibilitychange', () => {
             appData._energyDate = getTodayString();
             appData.selectedDate = getTodayString();
             userPickedDate = false;
-            appData.idleEnergyLastTick = Date.now();
+            appData.idleEnergyLastCalc = Date.now();
+            appData.idleEnergyLastCalcDate = getTodayString();
             renderEnergyAndRPG();
             renderDayPlan();
             renderCalendar();
         } else {
-            if (appData.idleEnergyLastTick && Date.now() - appData.idleEnergyLastTick > 60000) {
-                appData.idleEnergyLastTick = Date.now();
-            }
-            tickIdleEnergy();
+            applyIdleEnergyDeduction();
             renderEnergyAndRPG();
         }
     }
@@ -6719,8 +6739,12 @@ window.addEventListener('beforeunload', () => {
         renderEnergyAndRPG();
     }, 60000);
     if (_idleEnergyTimer) clearInterval(_idleEnergyTimer);
-    _idleEnergyTimer = setInterval(tickIdleEnergy, 10000);
-    tickIdleEnergy();
+    _idleEnergyTimer = setInterval(() => {
+        if (document.hidden) return;
+        applyIdleEnergyDeduction();
+        renderEnergyAndRPG();
+    }, 60000);
+    applyIdleEnergyDeduction();
 })();
 </script>
 </body>
