@@ -1677,10 +1677,11 @@ window._getGlobalElapsed = function() {
     if (t.running && Number(t.startedAt) > 0) s += Math.floor((Date.now() - Number(t.startedAt)) / 1000);
     return s;
 };
-function _addTimerToStats(dateStr, seconds, label) {
+function _addTimerToStats(dateStr, seconds, taskId, label) {
     if (!appData.dailyLogs) appData.dailyLogs = {};
     if (!appData.dailyLogs[dateStr]) appData.dailyLogs[dateStr] = {};
-    const key = '__globalTimer__';
+    // ✅ 按任务 ID 独立存储，不同任务的计时不会合并
+    const key = '__globalTimer__' + '_' + (taskId || 'none');
     const baseName = '⏱ 圆盘计时' + (label ? ' · ' + label : '');
     if (!appData.dailyLogs[dateStr][key]) appData.dailyLogs[dateStr][key] = { name: baseName, delta: 0, completed: 0, seconds: 0 };
     appData.dailyLogs[dateStr][key].seconds = (appData.dailyLogs[dateStr][key].seconds || 0) + seconds;
@@ -1762,7 +1763,7 @@ window._gtCompleteGlobal = function() {
         totalSec += Math.floor((Date.now() - Number(t.startedAt)) / 1000);
     }
     if (totalSec > 0) {
-        _addTimerToStats(getTodayString(), totalSec, t.taskLabel);
+        _addTimerToStats(getTodayString(), totalSec, t.taskId, t.taskLabel);
         showMiniToast('✅ 计时已计入今日统计');
     } else {
         showMiniToast('⏱ 计时为 0，未记录');
@@ -3779,19 +3780,22 @@ let logHtml = '<div style="margin-top:16px; border-top:1px dashed var(--border-c
         const dim2 = new Date(appData.viewYear, appData.viewMonth+1, 0).getDate();
         for(let dd=1; dd<=dim2; dd++) {
             const ds = `${appData.viewYear}-${String(appData.viewMonth+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
-            lineLabels.push(dd);
+            lineLabels.push(dd + '号');
             lineData.push(getLineTime(ds));
         }
     } else if (type === 'week') {
         const b2 = new Date(s + 'T00:00:00');
+        const wdNames = ['周一','周二','周三','周四','周五','周六','周日'];
         for(let i=0; i<7; i++) {
             const d = new Date(b2); d.setDate(d.getDate()+i);
             const ds = formatDate(d.getFullYear(), d.getMonth(), d.getDate());
-            lineLabels.push((d.getMonth()+1)+'/'+d.getDate());
+            lineLabels.push(wdNames[i]);
             lineData.push(getLineTime(ds));
         }
     } else {
-        lineLabels.push('当日');
+        const now = new Date();
+        const timeLabel = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+        lineLabels.push(timeLabel);
         lineData.push(getLineTime(s));
     }
 
