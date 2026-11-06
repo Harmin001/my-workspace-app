@@ -1800,12 +1800,22 @@ window.openGlobalTimer = function() {
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-weight:700;font-size:var(--font-content);">⏱ 圆盘计时器</div><div style="cursor:pointer;color:var(--text-muted);font-size:1.5em;padding:0 8px;line-height:1;" id="gt-close">×</div></div>' +
         '<div style="margin-bottom:8px;"><div style="font-size:var(--font-hint);font-weight:600;margin-bottom:4px;">计时模式</div><select id="gt-mode" style="width:100%;padding:6px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"><option value="up"' + (t.type !== 'down' ? ' selected' : '') + '>⏱ 正序计时</option><option value="down"' + (t.type === 'down' ? ' selected' : '') + '>⏳ 倒序倒计时</option></select></div>' +
         '<div id="gt-target-wrap" style="margin-bottom:8px;display:' + (t.type === 'down' ? 'block' : 'none') + ';"><div style="font-size:var(--font-hint);font-weight:600;margin-bottom:4px;">倒计时目标（分钟）</div><input id="gt-target" type="number" min="1" max="999" value="' + Math.max(1, Math.round((Number(t.target) || 0) / 60 || 25)) + '" style="width:100%;padding:6px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"></div>' +
-        '<div style="margin-bottom:12px;"><div style="font-size:var(--font-hint);font-weight:600;margin-bottom:4px;">绑定任务（只能选子任务）</div><select id="gt-task" style="width:100%;padding:6px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"><option value="">（不绑定）</option>' + taskOptsHtml.join('') + '</select></div>' +
+        '<div style="margin-bottom:12px;"><div style="font-size:var(--font-hint);font-weight:600;margin-bottom:4px;">绑定任务（可选母任务/子任务）</div><select id="gt-task" style="width:100%;padding:6px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"><option value="">（不绑定）</option>' + taskOptsHtml.join('') + '</select></div>' +
         '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">' +
         '<button class="btn btn-sm btn-primary" id="gt-start" style="background:#27ae60;border-color:#27ae60;">▶ 开始</button>' +
         '<button class="btn btn-sm" id="gt-pause">⏸ 暂停</button>' +
         '<button class="btn btn-sm" id="gt-stop" style="color:var(--danger-color);">⏹ 重置</button>' +
-        '</div></div>';
+        '</div>' +
+        '<div style="margin-top:16px;border-top:1px dashed var(--border-color);padding-top:12px;">' +
+        '<div style="font-weight:700;font-size:var(--font-content);margin-bottom:8px;">📝 补录记录</div>' +
+        '<div style="display:flex;gap:8px;margin-bottom:8px;">' +
+        '<div style="flex:1;"><div style="font-size:var(--font-hint);color:var(--text-muted);margin-bottom:4px;">开始时间</div><input type="time" id="gt-manual-start" style="width:100%;padding:6px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"></div>' +
+        '<div style="flex:1;"><div style="font-size:var(--font-hint);color:var(--text-muted);margin-bottom:4px;">结束时间</div><input type="time" id="gt-manual-end" style="width:100%;padding:6px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"></div>' +
+        '</div>' +
+        '<div style="margin-bottom:12px;"><div style="font-size:var(--font-hint);color:var(--text-muted);margin-bottom:4px;">选择任务</div><select id="gt-manual-task" style="width:100%;padding:6px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"><option value="">（不绑定）</option>' + taskOptsHtml.join('') + '</select></div>' +
+        '<button class="btn btn-sm btn-primary" id="gt-manual-submit" style="width:100%;">提交补录</button>' +
+        '</div>' +
+        '</div>';
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
     document.body.appendChild(modal);
     document.getElementById('gt-close').onclick = () => modal.remove();
@@ -1813,6 +1823,28 @@ window.openGlobalTimer = function() {
     document.getElementById('gt-start').onclick = function() { window._gtApplyGlobal(); };
     document.getElementById('gt-pause').onclick = function() { window._gtPauseGlobal(); };
     document.getElementById('gt-stop').onclick = function() { window._gtStopGlobal(); };
+    document.getElementById('gt-manual-submit').onclick = function() {
+        const startStr = document.getElementById('gt-manual-start').value;
+        const endStr = document.getElementById('gt-manual-end').value;
+        if (!startStr || !endStr) { showMiniToast('❌ 请选择完整的开始和结束时间'); return; }
+        const [sh, sm] = startStr.split(':').map(Number);
+        const [eh, em] = endStr.split(':').map(Number);
+        let startMin = sh * 60 + sm;
+        let endMin = eh * 60 + em;
+        if (endMin <= startMin) endMin += 24 * 60;
+        const diffSec = (endMin - startMin) * 60;
+        if (diffSec <= 0) { showMiniToast('❌ 结束时间必须晚于开始时间'); return; }
+        
+        const taskSel = document.getElementById('gt-manual-task');
+        const taskId = taskSel.value || null;
+        const taskLabel = (taskSel.value && taskSel.selectedOptions[0]) ? taskSel.selectedOptions[0].textContent.trim() : '';
+        
+        _addTimerToStats(getTodayString(), diffSec, taskId, taskLabel);
+        saveDataToFile(appData);
+        showMiniToast('✅ 补录成功');
+        modal.remove();
+        if (window._currentStatsType) window.openStatsModal(window._currentStatsType);
+    };
 };
 window._gtApplyGlobal = function() {
     ensureGoals();
