@@ -870,6 +870,8 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:var(--font-small);color:var(--text-muted);">10%</span><input type="range" id="exp-ratio-slider" min="10" max="100" step="5" value="60" oninput="changeExpRatio(this.value)"><span style="font-size:var(--font-hint);color:var(--text-muted);">100%</span></div>
 <div style="margin-top:12px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">精力恢复值设置</div>
 <div style="display:flex;gap:12px;margin-top:4px;"><label style="font-size:var(--font-hint);color:var(--text-main);display:flex;align-items:center;gap:4px;">😴 小憩: <input type="number" id="set-nap-energy" style="width:50px;padding:4px;" onchange="changeRestoreEnergy('nap', this.value)"> 点</label><label style="font-size:var(--font-hint);color:var(--text-main);display:flex;align-items:center;gap:4px;">☕ 休息: <input type="number" id="set-break-energy" style="width:50px;padding:4px;" onchange="changeRestoreEnergy('break', this.value)"> 点</label></div>
+<div style="margin-top:12px;font-size:var(--font-hint);font-weight:600;color:var(--text-muted);">⏳ 空闲每小时精力消耗</div>
+<div style="display:flex;gap:8px;margin-top:4px;align-items:center;"><input type="number" id="set-idle-energy-rate" min="0" max="999" step="1" value="5" style="width:80px;padding:4px;" onchange="changeIdleEnergyRate(this.value)"><span style="font-size:var(--font-small);color:var(--text-muted);">点 / 小时（页面打开时按时间自动扣减）</span></div>
 </div></div>
 <div class="section-box" style="border-color:#c5cae9;"><div class="panel-content"><h2 style="color:#303f9f;">🎮 RPG 属性编辑</h2>
 <div class="rpg-edit-grid">
@@ -1067,7 +1069,7 @@ const DEFAULT_FIXED_BLOCKS = [
 const BACKUP_MODULES = {
     tasks:     { name: '核心任务',  fields: ['tasks','dailyLogs','dailyReflections','weeklyReflections','monthlyReflections','yearlyGoals','fixedBlockSchedule'] },
     exercises: { name: '锻炼数据',  fields: ['exercises','exerciseSchedule','exerciseTimeSlotSchedule','dailyExerciseChecks'] },
-    rpg:       { name: 'RPG与精力', fields: ['rpg','dailyEnergy','panelLayout'] },    settings:  { name: '系统设置',  fields: ['themeColor','themeMode','fonts','radius','energyMax','energyWarnThreshold','expRatio','napEnergy','breakEnergy','levelConfig','commonBtns','timeSlots','timeSlotsLastModified','fixedBlocks','maxVisible','animationEnabled','goals'] },
+    rpg:       { name: 'RPG与精力', fields: ['rpg','dailyEnergy','panelLayout'] },   settings:  { name: '系统设置',  fields: ['themeColor','themeMode','fonts','radius','energyMax','energyWarnThreshold','expRatio','napEnergy','breakEnergy','idleEnergyRate','levelConfig','commonBtns','timeSlots','timeSlotsLastModified','fixedBlocks','maxVisible','animationEnabled','goals'] },
     methods:   { name: '笔记',  fields: ['methodsFiles','learningMethods','learningMethodsHtml','activeMethodsFileId','activeMethodsFileId2','splitScreenMode'] }
 };
 let appData = {
@@ -1440,6 +1442,10 @@ function ensureEnergyData() {
     if (appData.energyWarnThreshold === undefined || appData.energyWarnThreshold === null) appData.energyWarnThreshold = 30;
     if (appData.expRatio === undefined || appData.expRatio === null) appData.expRatio = 0.6;
     if (appData.napEnergy === undefined || appData.napEnergy === null) appData.napEnergy = 50;
+    if (appData.idleEnergyRate === undefined || appData.idleEnergyRate === null) appData.idleEnergyRate = 5;
+    if (appData.idleEnergyAccumulator === undefined) appData.idleEnergyAccumulator = 0;
+    if (appData.idleEnergyLastTick === undefined) appData.idleEnergyLastTick = Date.now();
+    if (appData.idleEnergyLastTickDate === undefined) appData.idleEnergyLastTickDate = getTodayString();
     if (appData.breakEnergy === undefined || appData.breakEnergy === null) appData.breakEnergy = 20;
     const def = { exp: 0, int: 0, vit: 0, cre: 0, foc: 0, wil: 0, streak: 0, lastDate: '' };
     if (!appData.rpg) appData.rpg = { ...def };
@@ -2084,6 +2090,7 @@ function renderEnergyAndRPG() {
     const warnS = document.getElementById('energy-warn-slider'); if (warnS) warnS.value = appData.energyWarnThreshold;
     const expRS = document.getElementById('exp-ratio-slider'); if (expRS) expRS.value = Math.round(appData.expRatio * 100);
     const setNapV = document.getElementById('set-nap-energy'); if (setNapV) setNapV.value = appData.napEnergy;
+    const setIdleV = document.getElementById('set-idle-energy-rate'); if (setIdleV && document.activeElement !== setIdleV) setIdleV.value = appData.idleEnergyRate;
     const setBreakV = document.getElementById('set-break-energy'); if (setBreakV) setBreakV.value = appData.breakEnergy;
     const btnNap = document.getElementById('btn-nap'); if (btnNap) btnNap.innerText = `😴+${appData.napEnergy}`;
     const btnBreak = document.getElementById('btn-break'); if (btnBreak) btnBreak.innerText = `☕+${appData.breakEnergy}`;
@@ -2190,6 +2197,49 @@ window.restoreEnergy = function(type) {
     renderEnergyAndRPG();
     saveDataToFile(appData);
     showMiniToast(`⚡ 精力 +${targetRemain - shownRemain}`);
+};
+let _idleEnergyTimer = null;
+function tickIdleEnergy() {
+    ensureEnergyData();
+    const rate = Number(appData.idleEnergyRate) || 0;
+    const now = Date.now();
+    const today = getTodayString();
+    if (!appData.idleEnergyLastTickDate) appData.idleEnergyLastTickDate = today;
+    if (appData.idleEnergyLastTickDate !== today) {
+        appData.idleEnergyLastTick = now;
+        appData.idleEnergyLastTickDate = today;
+        appData.idleEnergyAccumulator = 0;
+        return;
+    }
+    if (rate <= 0) { appData.idleEnergyLastTick = now; return; }
+    let elapsedMs = now - (Number(appData.idleEnergyLastTick) || now);
+    if (elapsedMs < 0) elapsedMs = 0;
+    if (elapsedMs > 60000) elapsedMs = 10000;
+    appData.idleEnergyLastTick = now;
+    const elapsedHours = elapsedMs / 3600000;
+    const cost = rate * elapsedHours;
+    appData.idleEnergyAccumulator = (Number(appData.idleEnergyAccumulator) || 0) + cost;
+    const whole = Math.floor(appData.idleEnergyAccumulator);
+    if (whole < 1) return;
+    const remaining = getTodayEnergyRemaining();
+    if (remaining <= 0) { appData.idleEnergyAccumulator = 0; return; }
+    const actualCost = Math.min(whole, remaining);
+    if (actualCost > 0) {
+        adjustTodayEnergy(actualCost);
+        appData.idleEnergyAccumulator -= actualCost;
+        renderEnergyAndRPG();
+        saveDataToFile(appData);
+    }
+}
+window.changeIdleEnergyRate = function(val) {
+    ensureEnergyData();
+    const num = parseFloat(val);
+    if (isNaN(num) || num < 0) return;
+    appData.idleEnergyRate = num;
+    appData.idleEnergyLastTick = Date.now();
+    appData.idleEnergyAccumulator = 0;
+    renderEnergyAndRPG();
+    saveDataToFile(appData);
 };
 window.changeRestoreEnergy = function(type, val) {
     ensureEnergyData();
@@ -3112,7 +3162,7 @@ window.updateFixedBlockEnergy = function(id, val) {
 function getSettingsObj() {
     return {
         energyMax: appData.energyMax, energyWarnThreshold: appData.energyWarnThreshold, expRatio: appData.expRatio,
-        napEnergy: appData.napEnergy, breakEnergy: appData.breakEnergy, themeColor: appData.themeColor, themeMode: appData.themeMode,
+        napEnergy: appData.napEnergy, breakEnergy: appData.breakEnergy, idleEnergyRate: appData.idleEnergyRate, themeColor: appData.themeColor, themeMode: appData.themeMode,
         fonts: appData.fonts, radius: appData.radius, levelConfig: appData.levelConfig, commonBtns: appData.commonBtns,
         timeSlots: appData.timeSlots, timeSlotsLastModified: appData.timeSlotsLastModified || 0,
         fixedBlocks: appData.fixedBlocks, maxVisible: appData.maxVisible,
@@ -6529,10 +6579,15 @@ document.addEventListener('visibilitychange', () => {
             appData._energyDate = getTodayString();
             appData.selectedDate = getTodayString();
             userPickedDate = false;
+            appData.idleEnergyLastTick = Date.now();
             renderEnergyAndRPG();
             renderDayPlan();
             renderCalendar();
         } else {
+            if (appData.idleEnergyLastTick && Date.now() - appData.idleEnergyLastTick > 60000) {
+                appData.idleEnergyLastTick = Date.now();
+            }
+            tickIdleEnergy();
             renderEnergyAndRPG();
         }
     }
@@ -6542,6 +6597,7 @@ window.addEventListener('beforeunload', () => {
     cleanupMethodsTimers();
     if (_opDebounceTimer) clearTimeout(_opDebounceTimer);
     if (_mainLoopInterval) clearInterval(_mainLoopInterval);
+    if (_idleEnergyTimer) clearInterval(_idleEnergyTimer);
     if (window._goalTimerTick) { clearInterval(window._goalTimerTick); window._goalTimerTick = null; }
     _clearBackupTimers();
     if (resizeObserver) { try { resizeObserver.disconnect(); } catch(e) {} }
@@ -6662,6 +6718,9 @@ window.addEventListener('beforeunload', () => {
         }
         renderEnergyAndRPG();
     }, 60000);
+    if (_idleEnergyTimer) clearInterval(_idleEnergyTimer);
+    _idleEnergyTimer = setInterval(tickIdleEnergy, 10000);
+    tickIdleEnergy();
 })();
 </script>
 </body>
