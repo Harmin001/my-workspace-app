@@ -2906,13 +2906,86 @@ function methodsUpdateToolbarState() {
         }
     }
 }
+function methodsGetSelectedBlocks() {
+    const editor = methodsGetEditor();
+    if (!editor) return [];
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return [];
+    const range = sel.getRangeAt(0);
+    if (!editor.contains(range.commonAncestorContainer)) return [];
+    const BLOCK_SELECTOR = 'h1,h2,h3,h4,h5,h6,p,blockquote';
+    function findBlock(node) {
+        let cur = node;
+        while (cur && cur !== editor) {
+            if (cur.nodeType === 1 && /^(H[1-6]|P|BLOCKQUOTE)$/.test(cur.tagName)) return cur;
+            cur = cur.parentNode;
+        }
+        return null;
+    }
+    if (range.collapsed) {
+        const single = findBlock(range.startContainer);
+        return single ? [single] : [];
+    }
+    const startBlock = findBlock(range.startContainer);
+    const endBlock = findBlock(range.endContainer);
+    if (!startBlock && !endBlock) return [];
+    if (startBlock === endBlock) return startBlock ? [startBlock] : [];
+    const allBlocks = Array.from(editor.querySelectorAll(BLOCK_SELECTOR));
+    const startIdx = allBlocks.indexOf(startBlock);
+    const endIdx = allBlocks.indexOf(endBlock);
+    if (startIdx === -1 && endIdx === -1) return [];
+    if (startIdx === -1) return [endBlock];
+    if (endIdx === -1) return [startBlock];
+    const lo = Math.min(startIdx, endIdx);
+    const hi = Math.max(startIdx, endIdx);
+    return allBlocks.slice(lo, hi + 1);
+}
+function methodsSafeSetFormatBlock(targetTag) {
+    const editor = methodsGetEditor();
+    if (!editor) return;
+    const finalTag = (targetTag || 'p').toLowerCase();
+    const blocks = methodsGetSelectedBlocks();
+    if (blocks.length === 0) {
+        try { document.execCommand('formatBlock', false, finalTag); } catch(e) {}
+        return;
+    }
+    const sel = window.getSelection();
+    let newStartNode = null;
+    blocks.forEach(block => {
+        if (!block.parentNode) return;
+        if (block.tagName.toLowerCase() === finalTag) {
+            if (!newStartNode) newStartNode = block;
+            return;
+        }
+        const newEl = document.createElement(finalTag);
+        while (block.firstChild) newEl.appendChild(block.firstChild);
+        block.parentNode.replaceChild(newEl, block);
+        if (!newStartNode) newStartNode = newEl;
+    });
+    if (newStartNode && sel) {
+        try {
+            const r = document.createRange();
+            r.selectNodeContents(newStartNode);
+            r.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(r);
+        } catch(e) {}
+    }
+    editor.focus();
+}
 function methodsExecCommand(cmd, val) {
     const editor = methodsGetEditor();
     if (!editor) return;
     methodsRestoreSelection();
     try {
         if (cmd === 'fontSize') methodsApplyFontSize(parseInt(val) || 14);
-        else if (cmd === 'removeFormat') { document.execCommand('removeFormat', false, null); document.execCommand('formatBlock', false, 'p'); }
+        else if (cmd === 'removeFormat') {
+            try { document.execCommand('removeFormat', false, null); } catch(e) {}
+            methodsSafeSetFormatBlock('p');
+        }
+        else if (cmd === 'formatBlock') {
+            methodsSafeSetFormatBlock(val || 'p');
+        }
         else document.execCommand(cmd, false, val);
     } catch(e) { console.warn(e); }
     editor.focus();
