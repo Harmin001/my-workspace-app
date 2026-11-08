@@ -49,8 +49,9 @@ body.dark-mode .locked-by-remote::after { background: #333; border-color: #555; 
 .conflict-box { flex: 1; background: var(--bg-sidebar); padding: 12px; border-radius: 8px; font-size: var(--font-content); word-break: break-all; border: 1px dashed var(--border-color); }
 .conflict-box h4 { font-size: var(--font-hint); color: var(--text-muted); margin-bottom: 8px; }
 .conflict-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.sidebar { width: 240px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 12px; flex-shrink: 0; overflow-y: auto; }
-.sidebar-title { font-weight: 600; padding: 12px 8px; margin-bottom: 8px; font-size: var(--font-title); display: flex; align-items: center; justify-content: space-between; }
+.sidebar { width: 240px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 8px 8px 4px; flex-shrink: 0; overflow-y: auto; overflow-x: hidden; }
+.sidebar::-webkit-scrollbar { width: 0; height: 0; }
+.sidebar-title { font-weight: 600; padding: 6px 6px; margin-bottom: 4px; font-size: var(--font-title); display: flex; align-items: center; justify-content: space-between; }
 .sync-controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .btn-manual-sync { font-size: var(--font-small); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--accent-color); background: var(--bg-card); color: var(--accent-color); cursor: pointer; font-weight: 600; white-space: nowrap; line-height: 1.4; transition: background .15s, color .15s, opacity .15s; }
 .btn-manual-sync:hover:not(:disabled) { background: var(--accent-color); color: #fff; }
@@ -64,37 +65,37 @@ body.dark-mode .locked-by-remote::after { background: #333; border-color: #555; 
 .p2p-dot.conflict { background: #eb5757; box-shadow: 0 0 6px #eb5757; animation: pulseConflict 0.6s infinite alternate; }
 @keyframes pulseConflict { 0% { opacity: 1; transform: scale(1); } 100% { opacity: .5; transform: scale(1.2); } }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
-.nav-item { padding: 8px 12px; margin-bottom: 2px; border-radius: var(--radius); cursor: pointer; transition: all .1s; display: flex; align-items: center; gap: 8px; font-weight: 500; font-size: var(--font-content); }
+.nav-item { padding: 6px 10px; margin-bottom: 1px; border-radius: var(--radius); cursor: pointer; transition: all .1s; display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: var(--font-content); }
 .nav-item:hover { background-color: var(--hover-bg); transform: translateX(2px); }
 .nav-item.active { background-color: var(--hover-bg); font-weight: bold; }
-.sidebar-footer { margin-top: auto; display: flex; flex-direction: column; border-top: 1px solid var(--border-color); padding-top: 16px; }
-.sidebar-goal-box { margin-bottom: 16px; padding: 0 8px; }
-.sidebar-goal-title { font-size: var(--font-hint); font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
+.sidebar-footer { margin-top: auto; display: flex; flex-direction: column; border-top: 1px solid var(--border-color); padding-top: 8px; }
+.sidebar-goal-box { margin-bottom: 6px; padding: 0 6px; }
+.sidebar-goal-title { font-size: var(--font-hint); font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
 .sidebar-goal-input { width: 100%; min-height: 40px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 8px; font-size: var(--font-content); font-family: inherit; background: var(--bg-input); color: var(--text-main); outline: none; white-space: pre-wrap; word-break: break-word; transition: border .2s; }
 .sidebar-goal-input:focus { border-color: var(--accent-color); }
 .sidebar-goal-input:empty:before { content: attr(placeholder); color: #aaa; pointer-events: none; display: block; }
-.fixed-progress-bars { width: 100%; padding: 0 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
-.prog-row { display: flex; flex-direction: column; gap: 2px; cursor: pointer; padding: 4px; border-radius: 6px; transition: background 0.2s; }
+.fixed-progress-bars { width: 100%; padding: 0 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 4px 0; }
+.prog-row { display: flex; flex-direction: column; gap: 1px; cursor: pointer; padding: 2px 4px; border-radius: 6px; transition: background 0.2s; }
 .prog-row:hover { background: var(--hover-bg); }
 .prog-label-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-weight: 600; }
 .prog-bar-bg { width: 100%; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; }
 .prog-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
-.energy-rpg-panel { padding: 0 8px; margin-top: 10px; padding-bottom: 10px; }
-.rpg-card { background: linear-gradient(135deg, #fff8e7 0%, #ffefc2 100%); border: 1px solid #e8c26a; border-radius: var(--radius); padding: 8px 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,.6); transition: all 0.3s; }
+.energy-rpg-panel { padding: 0 6px; margin-top: 4px; padding-bottom: 2px; }
+.rpg-card { background: linear-gradient(135deg, #fff8e7 0%, #ffefc2 100%); border: 1px solid #e8c26a; border-radius: var(--radius); padding: 6px 8px; box-shadow: inset 0 1px 0 rgba(255,255,255,.6); transition: all 0.3s; }
 body.dark-mode .rpg-card { background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%); border-color: #444; box-shadow: inset 0 1px 0 rgba(0,0,0,.5); }
-.rpg-energy-section { display: flex; gap: 8px; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px dashed rgba(180,83,9,.25); align-items: stretch; }
+.rpg-energy-section { display: flex; gap: 6px; padding-bottom: 4px; margin-bottom: 4px; border-bottom: 1px dashed rgba(180,83,9,.25); align-items: stretch; }
 body.dark-mode .rpg-energy-section { border-bottom-color: #444; }
 .energy-left { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-.energy-right { display: flex; flex-direction: column; gap: 4px; justify-content: center; flex-shrink: 0; }
-.energy-header { font-size: var(--font-hint); font-weight: 700; color: #78350f; margin-bottom: 4px; }
+.energy-right { display: flex; flex-direction: column; gap: 2px; justify-content: center; flex-shrink: 0; }
+.energy-header { font-size: var(--font-hint); font-weight: 700; color: #78350f; margin-bottom: 2px; }
 body.dark-mode .energy-header { color: var(--text-muted); }
-.energy-footer { text-align: right; font-size: var(--font-small); font-weight: 700; margin-top: 3px; line-height: 1.3; min-height: 12px; }
+.energy-footer { text-align: right; font-size: var(--font-small); font-weight: 700; margin-top: 2px; line-height: 1.2; min-height: 10px; }
 .energy-footer #energy-text, .energy-footer #modal-energy-text { color: #b45309; }
 body.dark-mode .energy-footer #energy-text, body.dark-mode .energy-footer #modal-energy-text { color: #fbbf24; }
 .energy-bar-bg { width: 100%; height: 8px; background: rgba(146,64,14,.15); border-radius: 4px; overflow: hidden; }
 body.dark-mode .energy-bar-bg { background: #333; }
 .energy-bar-fill { height: 100%; border-radius: 4px; transition: width .3s, background .3s; background: #27ae60; }
-.btn-energy-restore { padding: 2px 8px; font-size: var(--font-small); font-weight: 700; background: #fff; border: 1px solid #fcd34d; border-radius: var(--radius); color: #b45309; cursor: pointer; transition: all .15s; white-space: nowrap; }
+.btn-energy-restore { padding: 1px 6px; font-size: var(--font-small); font-weight: 700; background: #fff; border: 1px solid #fcd34d; border-radius: var(--radius); color: #b45309; cursor: pointer; transition: all .15s; white-space: nowrap; }
 body.dark-mode .btn-energy-restore { background: #333; border-color: #555; color: #fbbf24; }
 .btn-energy-restore:hover { background: #fef3c7; }
 body.dark-mode .btn-energy-restore:hover { background: #444; }
@@ -106,10 +107,14 @@ body.dark-mode .rpg-card.rpg-critical, body.dark-mode .rpg-modal-energy.rpg-crit
 body:not(.invisible-anim) .rpg-card.rpg-critical { animation: pulseRed 1s infinite alternate; }
 body.invisible-anim .rpg-card.rpg-critical { animation: none; }
 .rpg-card-main { cursor: pointer; }
+.rpg-expand-trigger { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 3px 0; margin-top: 4px; border-top: 1px dashed rgba(180,83,9,.25); cursor: pointer; font-size: var(--font-small); color: #78350f; font-weight: 700; user-select: none; transition: background .15s; }
+body.dark-mode .rpg-expand-trigger { color: var(--text-muted); border-top-color: #444; }
+.rpg-expand-trigger:hover { background: rgba(180,83,9,.08); }
+body.dark-mode .rpg-expand-trigger:hover { background: rgba(255,255,255,.04); }
 .rpg-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.rpg-level { font-size: var(--font-content); font-weight: 800; color: #b45309; letter-spacing: .5px; }
+.rpg-level { font-size: var(--font-hint); font-weight: 800; color: #b45309; letter-spacing: .5px; }
 body.dark-mode .rpg-level { color: #fbbf24; }
-.rpg-title { font-size: var(--font-hint); color: #78350f; background: #fde68a; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
+.rpg-title { font-size: var(--font-small); color: #78350f; background: #fde68a; padding: 1px 5px; border-radius: 10px; font-weight: 700; }
 body.dark-mode .rpg-title { background: #4a3a1a; color: #fbbf24; }
 .rpg-exp-bar { width: 100%; height: 6px; background: rgba(146,64,14,.15); border-radius: 3px; overflow: hidden; margin-bottom: 3px; transition: box-shadow .3s; }
 body.dark-mode .rpg-exp-bar { background: #333; }
@@ -117,8 +122,8 @@ body.dark-mode .rpg-exp-bar { background: #333; }
 .rpg-exp-fill { height: 100%; background: linear-gradient(90deg, #fbbf24, #f59e0b); border-radius: 3px; transition: width .4s; }
 .rpg-exp-text { font-size: var(--font-small); color: #92400e; text-align: right; margin-bottom: 8px; font-weight: 600; }
 body.dark-mode .rpg-exp-text { color: var(--text-muted); }
-.rpg-attrs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: var(--font-hint); }
-.rpg-attr { display: flex; justify-content: space-between; align-items: center; color: #78350f; padding: 1px 0; }
+.rpg-attrs { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; font-size: var(--font-small); margin-top: 2px; }
+.rpg-attr { display: flex; justify-content: space-between; align-items: center; color: #78350f; padding: 0; }
 body.dark-mode .rpg-attr { color: var(--text-muted); }
 .rpg-attr b { color: #b45309; font-weight: 800; display: inline-block; transition: transform .2s; }
 body.dark-mode .rpg-attr b { color: #fbbf24; }
@@ -525,7 +530,7 @@ body.dark-mode .level-badge { background: #4a3a1a; color: #fbbf24; }
 .view-all-btn { display: block; width: 100%; margin-top: 8px; padding: 6px; border: 1px dashed var(--border-color); border-radius: 6px; background: var(--bg-sidebar); color: var(--accent-color); font-size: var(--font-hint); font-weight: 600; cursor: pointer; text-align: center; }
 .view-all-btn:hover { background: var(--hover-bg); }
 .mini-toast { position: fixed; left: 50%; bottom: 120px; transform: translateX(-50%); background: rgba(0,0,0,.8); color: #fff; padding: 8px 18px; border-radius: 20px; font-size: 13px; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity .3s; font-weight: 600; }
-.goals-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; max-height: 220px; overflow-y: auto; }
+.goals-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 4px; max-height: 160px; overflow-y: auto; }
 .goal-item { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px; background: var(--bg-card); border: 1px solid var(--border-color); font-size: var(--font-hint); }
 .goal-item.goal-done .goal-text { text-decoration: line-through; color: var(--text-muted); }
 .goal-item input[type="checkbox"] { accent-color: var(--accent-color); width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; margin: 0; }
@@ -730,7 +735,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
 <span class="rpg-level" id="rpg-level" title="点击查看详情" style="cursor:pointer;flex-shrink:0;">Lv.1</span>
 <span class="rpg-title" id="rpg-title" style="flex-shrink:0;">新手</span>
-<div class="rpg-exp-bar" id="rpg-exp-bar-wrap" onclick="toggleRPGExpand(event)" title="点击展开属性" style="cursor:pointer;position:relative;overflow:visible;flex:1;margin-bottom:0;">
+<div class="rpg-exp-bar" id="rpg-exp-bar-wrap" title="经验条" style="position:relative;overflow:visible;flex:1;margin-bottom:0;">
 <div class="rpg-exp-fill" id="rpg-exp-fill" style="width:0%;"></div>
 <div id="rpg-exp-text" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);pointer-events:none;white-space:nowrap;line-height:1;">0 / 100 EXP</div>
 </div>
@@ -741,6 +746,10 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="rpg-attr"><span>🎨 创造力</span><b id="rpg-cre">0</b></div>
 <div class="rpg-attr"><span>🎯 专注</span><b id="rpg-foc">0</b></div>
 <div class="rpg-attr"><span>🔥 毅力</span><b id="rpg-wil">0</b></div>
+</div>
+<div class="rpg-expand-trigger" onclick="toggleRPGExpand(event)" title="点击展开/收起属性详情">
+    <span id="rpg-expand-arrow" style="display:inline-block;transition:transform .2s;">▼</span>
+    <span>属性详情</span>
 </div>
 </div>
 </div>
@@ -817,21 +826,12 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
         <div class="methods-toolbar" id="methods-toolbar">
             <div class="tb-group">
                 <select id="methods-format-select" data-cmd="formatBlock" title="段落样式"><option value="p">正文</option><option value="h1">标题 1</option><option value="h2">标题 2</option><option value="h3">标题 3</option><option value="blockquote">引用</option></select>
-                <select id="methods-font-select" data-cmd="fontName" title="字体"><option value="">系统默认</option><option value="'Microsoft YaHei', '微软雅黑', sans-serif">微软雅黑</option><option value="SimSun, '宋体', serif">宋体</option><option value="SimHei, '黑体', sans-serif">黑体</option><option value="KaiTi, '楷体', serif">楷体</option><option value="FangSong, '仿宋', serif">仿宋</option><option value="Arial, Helvetica, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Times New Roman', serif">Times New Roman</option><option value="Consolas, Monaco, monospace">等宽 Consolas</option></select>
-                <select id="methods-size-select" data-cmd="fontSize" title="字号"><option value="12">12</option><option value="14" selected>14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="24">24</option><option value="28">28</option><option value="32">32</option><option value="36">36</option><option value="48">48</option></select>
             </div>
-            <div class="tb-group"><button type="button" data-cmd="bold" title="加粗 (Ctrl+B)" style="font-weight:900;">B</button><button type="button" data-cmd="italic" title="斜体 (Ctrl+I)" style="font-style:italic;font-family:Georgia,serif;">I</button><button type="button" data-cmd="underline" title="下划线 (Ctrl+U)" style="text-decoration:underline;">U</button><button type="button" data-cmd="strikeThrough" title="删除线" style="text-decoration:line-through;">S</button></div>
-            <div class="tb-group"><label class="tb-color-wrap" title="文字颜色"><span class="tb-color-swatch" id="forecolor-swatch" style="background:#333333;"></span><input type="color" id="methods-forecolor" data-cmd="foreColor" value="#333333"></label><label class="tb-color-wrap" title="高亮颜色"><span class="tb-color-swatch" id="hilitecolor-swatch" style="background:#ffe066;"></span><input type="color" id="methods-hilitecolor" data-cmd="hiliteColor" value="#ffe066"></label></div>
+            <div class="tb-group"><button type="button" data-cmd="bold" title="加粗 (Ctrl+B)" style="font-weight:900;">B</button><button type="button" data-cmd="italic" title="斜体 (Ctrl+I)" style="font-style:italic;font-family:Georgia,serif;">I</button><button type="button" data-cmd="strikeThrough" title="删除线" style="text-decoration:line-through;">S</button></div>
             <div class="tb-group"><button type="button" data-cmd="insertUnorderedList" title="无序列表">☰</button><button type="button" data-cmd="insertOrderedList" title="有序列表" style="font-family:monospace;">1.</button></div>
-            <div class="tb-group">
-                <button type="button" data-cmd="justifyLeft" title="左对齐"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="3" width="12" height="1.5"/><rect x="2" y="7" width="8" height="1.5"/><rect x="2" y="11" width="12" height="1.5"/></svg></button>
-                <button type="button" data-cmd="justifyCenter" title="居中"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="3" width="12" height="1.5"/><rect x="4" y="7" width="8" height="1.5"/><rect x="2" y="11" width="12" height="1.5"/></svg></button>
-                <button type="button" data-cmd="justifyRight" title="右对齐"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="3" width="12" height="1.5"/><rect x="6" y="7" width="8" height="1.5"/><rect x="2" y="11" width="12" height="1.5"/></svg></button>
-                <button type="button" data-cmd="justifyFull" title="两端对齐"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="3" width="12" height="1.5"/><rect x="2" y="7" width="12" height="1.5"/><rect x="2" y="11" width="12" height="1.5"/></svg></button>
-            </div>
-            <div class="tb-group"><button type="button" data-cmd="undo" title="撤销 (Ctrl+Z)">↶</button><button type="button" data-cmd="redo" title="重做 (Ctrl+Y)">↷</button></div>
             <div class="tb-group"><button type="button" onclick="insertMethodsTable()" title="插入表格">📑 表格</button><button type="button" onclick="insertMethodsImage()" title="插入图片">🖼 图片</button></div>
             <div class="tb-group"><button type="button" onclick="insertMethodsLink()" title="插入链接">🔗 链接</button><button type="button" onclick="insertInlineCode()" title="行内代码">「」 代码</button><button type="button" onclick="insertCodeBlock()" title="代码块">⌨️ 代码块</button></div>
+            <div class="tb-group"><button type="button" data-cmd="undo" title="撤销 (Ctrl+Z)">↶</button><button type="button" data-cmd="redo" title="重做 (Ctrl+Y)">↷</button></div>
             <div class="tb-group"><button type="button" data-cmd="removeFormat" title="清除格式" style="font-style:italic;">T<sub style="font-size:9px;">x</sub></button><button type="button" data-cmd="insertHorizontalRule" title="插入分隔线" style="font-weight:900;">—</button></div>
             <div class="tb-group"><button type="button" onclick="addMethodsPage()" title="在当前栏末尾增加一张纸">📄+ 纸张</button><button type="button" onclick="removeLastMethodsPage()" title="删除当前栏最后一张纸">🗑 纸张</button></div>
             <div class="tb-group"><button type="button" id="btn-toggle-mindmap" onclick="toggleMindmapView()" title="切换普通/思维导图视图">🧠 思维导图</button></div>
@@ -2408,27 +2408,21 @@ let _rpgExpandTimer = null;
 window.handleRpgCardClick = function(e) {
     const t = e.target;
     if (!t || !t.closest) return;
-    if (t.closest('button, input, select, textarea, a, .btn-energy-restore, .rpg-exp-bar')) return;
+    if (t.closest('button, input, select, textarea, a, .btn-energy-restore, .rpg-exp-bar, .rpg-expand-trigger')) return;
     openRPGModal();
 };
 window.toggleRPGExpand = function(e) {
     if (e) e.stopPropagation();
     const wrap = document.getElementById('rpg-attrs-wrap');
-    const tip = document.getElementById('rpg-tip');
+    const arrow = document.getElementById('rpg-expand-arrow');
     if (!wrap) return;
     const hidden = !wrap.style.display || wrap.style.display === 'none';
     if (hidden) {
         wrap.style.display = 'grid';
-        if (tip) tip.style.display = 'block';
-        clearTimeout(_rpgExpandTimer);
-        _rpgExpandTimer = setTimeout(() => {
-            wrap.style.display = 'none';
-            if (tip) tip.style.display = 'none';
-        }, 3 * 60 * 1000);
+        if (arrow) arrow.style.transform = 'rotate(180deg)';
     } else {
         wrap.style.display = 'none';
-        if (tip) tip.style.display = 'none';
-        clearTimeout(_rpgExpandTimer);
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
     }
 };
 window.openRPGModal = function() {
