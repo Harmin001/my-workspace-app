@@ -12,6 +12,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/turndown@7.1.3/dist/turndown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/turndown-plugin-gfm@1.0.2/dist/turndown-plugin-gfm.js"></script>
 <style>
 :root {
     --bg-main: #ffffff; --bg-sidebar: #f7f7f5; --bg-card: #ffffff; --bg-panel-header: #fafafa; --bg-input: #ffffff;
@@ -828,10 +831,12 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
             </div>
             <div class="tb-group"><button type="button" data-cmd="undo" title="撤销 (Ctrl+Z)">↶</button><button type="button" data-cmd="redo" title="重做 (Ctrl+Y)">↷</button></div>
             <div class="tb-group"><button type="button" onclick="insertMethodsTable()" title="插入表格">📑 表格</button><button type="button" onclick="insertMethodsImage()" title="插入图片">🖼 图片</button></div>
+            <div class="tb-group"><button type="button" onclick="insertMethodsLink()" title="插入链接">🔗 链接</button><button type="button" onclick="insertInlineCode()" title="行内代码">「」 代码</button><button type="button" onclick="insertCodeBlock()" title="代码块">⌨️ 代码块</button></div>
             <div class="tb-group"><button type="button" data-cmd="removeFormat" title="清除格式" style="font-style:italic;">T<sub style="font-size:9px;">x</sub></button><button type="button" data-cmd="insertHorizontalRule" title="插入分隔线" style="font-weight:900;">—</button></div>
             <div class="tb-group"><button type="button" onclick="addMethodsPage()" title="在当前栏末尾增加一张纸">📄+ 纸张</button><button type="button" onclick="removeLastMethodsPage()" title="删除当前栏最后一张纸">🗑 纸张</button></div>
             <div class="tb-group"><button type="button" id="btn-toggle-mindmap" onclick="toggleMindmapView()" title="切换普通/思维导图视图">🧠 思维导图</button></div>
-            <div class="tb-group"><button type="button" onclick="exportMethodsFile()" title="导出为 Word (.doc) 文件">📤 导出</button><button type="button" onclick="importMethodsFile()" title="从 HTML / Word 文件导入">📥 导入</button></div>
+            <div class="tb-group"><button type="button" onclick="exportMethodsFile()" title="导出为 Markdown (.md) 文件">📤 导出</button><button type="button" onclick="importMethodsFile()" title="从 Markdown / HTML / Word 文件导入">📥 导入</button></div>
+            <div class="tb-group"><button type="button" onclick="openMarkdownHelp()" title="Markdown 语法说明" style="font-weight:900;color:var(--accent-color);min-width:auto;padding:0 10px;">❓ 说明</button></div>
         </div>
         <div id="methods-split-controls" class="methods-split-controls" style="display:none;"><label>左侧: <select id="split-left-select" onchange="switchMethodsFile(this.value)"></select></label><label>右侧: <select id="split-right-select" onchange="switchMethodsFile2(this.value)"></select></label></div>
         <div class="methods-paper" id="methods-paper-container">
@@ -1055,6 +1060,34 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
             <button class="btn btn-sm" onclick="resolveMergeConflict('local')" style="border:2px solid var(--accent-color);color:var(--accent-color);font-weight:700;">✅ 保留本地，覆盖另一端</button>
             <button class="btn btn-sm btn-danger" onclick="resolveMergeConflict('remote')" style="font-weight:700;">📱 使用另一端版本，覆盖本地</button>
         </div>
+    </div>
+</div>
+<div class="conflict-modal-overlay" id="md-help-modal" onclick="if(event.target===this)closeMarkdownHelp()" style="z-index:10000;">
+    <div class="conflict-modal" style="max-width:740px;border-color:var(--accent-color);">
+        <div class="conflict-title" style="color:var(--accent-color);">📖 Markdown 语法说明</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">点击工具栏按钮即可插入对应语法，无需手写代码。所有笔记以 CommonMark 标准 Markdown 存储。</p>
+        <div style="max-height:55vh;overflow-y:auto;font-size:13px;line-height:1.8;">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead><tr style="background:var(--bg-sidebar);"><th style="text-align:left;padding:6px 10px;border-bottom:1px solid var(--border-color);">按钮</th><th style="text-align:left;padding:6px 10px;border-bottom:1px solid var(--border-color);">功能</th><th style="text-align:left;padding:6px 10px;border-bottom:1px solid var(--border-color);">语法</th></tr></thead>
+                <tbody>
+                    <tr><td style="padding:6px 10px;"><b>B</b></td><td>加粗</td><td><code>**粗体**</code></td></tr>
+                    <tr><td style="padding:6px 10px;"><i>I</i></td><td>斜体</td><td><code>*斜体*</code></td></tr>
+                    <tr><td style="padding:6px 10px;"><s>S</s></td><td>删除线</td><td><code>~~删除~~</code></td></tr>
+                    <tr><td style="padding:6px 10px;">H1 / H2 / H3</td><td>标题</td><td><code># 一级</code> / <code>## 二级</code> / <code>### 三级</code></td></tr>
+                    <tr><td style="padding:6px 10px;">引用</td><td>引用块</td><td><code>&gt; 引用内容</code></td></tr>
+                    <tr><td style="padding:6px 10px;">☰</td><td>无序列表</td><td><code>- 项目</code></td></tr>
+                    <tr><td style="padding:6px 10px;">1.</td><td>有序列表</td><td><code>1. 项目</code></td></tr>
+                    <tr><td style="padding:6px 10px;">「」</td><td>行内代码</td><td><code>`代码`</code></td></tr>
+                    <tr><td style="padding:6px 10px;">⌨️</td><td>代码块</td><td>三个反引号包裹</td></tr>
+                    <tr><td style="padding:6px 10px;">🔗</td><td>链接</td><td><code>[文字](https://...)</code></td></tr>
+                    <tr><td style="padding:6px 10px;">🖼</td><td>图片</td><td><code>![alt](图片地址)</code></td></tr>
+                    <tr><td style="padding:6px 10px;">📑</td><td>表格</td><td>GFM 表格语法</td></tr>
+                    <tr><td style="padding:6px 10px;">—</td><td>分隔线</td><td><code>---</code></td></tr>
+                </tbody>
+            </table>
+            <p style="margin-top:12px;color:var(--text-muted);font-size:12px;">💡 <b>说明：</b>CommonMark 标准不包括颜色、对齐、下划线，这 3 类按钮在编辑时可见效果，但保存为 Markdown 后会丢失。建议优先使用上表中的标准语法。<br>🔒 所有笔记内容最终以 .md 文件形式备份，与线上笔记保持完全一致。</p>
+        </div>
+        <div class="conflict-actions" style="margin-top:16px;"><button class="btn btn-sm btn-primary" onclick="closeMarkdownHelp()">知道了</button></div>
     </div>
 </div>
 <div class="conflict-modal-overlay" id="import-confirm-modal">
@@ -1547,6 +1580,9 @@ function ensureEnergyData() {
         if (f.type === 'file') {
             if (f.contentHtml === undefined) f.contentHtml = '';
             if (f.contentText === undefined) f.contentText = '';
+            if (f.contentMarkdown === undefined) {
+                f.contentMarkdown = f.contentHtml ? htmlToMarkdown(f.contentHtml) : '';
+            }
             if (f.updatedAt === undefined) f.updatedAt = 0;
         }
     });
@@ -2497,10 +2533,11 @@ function createMethodsPageEl(isSecond, stack, idx) {
     div.setAttribute('data-placeholder', idx === 0 ? (isSecond ? '第二篇文档对比区...' : '在这里记录你的笔记… 支持 $公式$ 和 $$公式$$。') : '续页…');
     return div;
 }
-function renderMethodsStack(stackId, html, isSecond) {
+function renderMethodsStack(stackId, markdown, isSecond) {
     const stack = document.getElementById(stackId);
     if (!stack) return;
-    const pages = splitMethodsHtml(html || '');
+    const pages = String(markdown || '').split(/<!--\s*pagebreak\s*-->/i).map(s => s.trim());
+    if (pages.length === 0) pages.push('');
     const need = Math.max(pages.length, 1);
     let editors = getStackEditors(stackId);
     while (editors.length < need) {
@@ -2514,7 +2551,8 @@ function renderMethodsStack(stackId, html, isSecond) {
         last.remove();
     }
     editors.forEach((ed, i) => {
-        const newHtml = pages[i] !== undefined ? pages[i] : '';
+        const md = pages[i] !== undefined ? pages[i] : '';
+        const newHtml = markdownToHtml(md);
         if (ed.innerHTML !== newHtml) {
             ed.innerHTML = newHtml;
             renderKaTeX(ed);
@@ -2583,20 +2621,20 @@ window.exportMethodsFile = function() {
     const f = getCurrentMethodsFile();
     if (!f) { showMiniToast('❌ 没有可导出的文件'); return; }
     try {
-        const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>' + escapeHtml(f.name) + '</title><style>body{font-family:"Microsoft YaHei",sans-serif;font-size:14px;line-height:1.8;}table{border-collapse:collapse;}td{border:1px solid #999;padding:6px;}img{max-width:100%;}</style></head><body>' + (f.contentHtml || '') + '</body></html>';
-        const blob = new Blob(['\ufeff', html], { type: 'application/msword;charset=utf-8' });
+        const md = f.contentMarkdown || '';
+        const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = f.name + '.doc';
+        a.href = url; a.download = (f.name || '笔记') + '.md';
         document.body.appendChild(a); a.click(); a.remove();
         URL.revokeObjectURL(url);
-        showMiniToast('📤 已导出为 Word');
+        showMiniToast('📤 已导出为 Markdown');
     } catch (e) { console.error('[导出失败]', e); showMiniToast('❌ 导出失败'); }
 };
 window.importMethodsFile = function() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.html,.htm,.doc,.txt';
+    input.accept = '.md,.markdown,.txt,.html,.htm,.doc';
     input.onchange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -2604,21 +2642,87 @@ window.importMethodsFile = function() {
         reader.onload = (ev) => {
             try {
                 let content = String(ev.target.result || '');
-                const m = content.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-                if (m) content = m[1];
-                if (!/<\w+/.test(content)) content = escapeHtml(content).replace(/\n/g, '<br>');
-                const editor = methodsGetEditor();
-                if (!editor) { showMiniToast('❌ 编辑器未就绪'); return; }
-                editor.innerHTML = content;
-                renderKaTeX(editor);
-                commitMethodsEditorToFile();
+                if (/<\w+[\s>]/.test(content)) {
+                    const m = content.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+                    if (m) content = m[1];
+                    content = htmlToMarkdown(content);
+                }
+                const f = getCurrentMethodsFile();
+                if (!f) { showMiniToast('❌ 没有当前文件'); return; }
+                f.contentMarkdown = content;
+                f.contentHtml = markdownToHtml(content);
+                f.contentText = content.replace(/[#*_`>\-\[\]\(\)]/g, '');
+                f.updatedAt = Date.now();
+                refreshMethodsEditorContent();
                 saveDataToFile(appData);
-                showMiniToast('📥 已导入');
+                showMiniToast('📥 已导入 Markdown');
             } catch (err) { console.error('[导入失败]', err); showMiniToast('❌ 导入失败'); }
         };
         reader.readAsText(file);
     };
     input.click();
+};
+function htmlToMarkdown(html) {
+    if (!html) return '';
+    if (!window.TurndownService) return String(html);
+    const t = new TurndownService({ headingStyle: 'atx', hr: '---', bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '*', strongDelimiter: '**', linkStyle: 'inlined' });
+    if (window.turndownPluginGfm) { try { t.use(turndownPluginGfm.tables); } catch(e) {} }
+    return t.turndown(html);
+}
+function markdownToHtml(md) {
+    if (!md) return '';
+    if (window.marked) {
+        try { marked.setOptions({ gfm: true, breaks: false }); return marked.parse(md); } catch (e) { console.warn('[md→html]', e); }
+    }
+    return escapeHtml(md).replace(/\n/g, '<br>');
+}
+function cleanHTMLForMarkdown(html) {
+    if (!html) return html;
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    const topKatex = [...temp.querySelectorAll('.katex, .katex-display')].filter(n => {
+        let p = n.parentElement;
+        while (p && p !== temp) {
+            if (p.classList && (p.classList.contains('katex') || p.classList.contains('katex-display'))) return false;
+            p = p.parentElement;
+        }
+        return true;
+    });
+    topKatex.forEach(node => {
+        const ann = node.querySelector('annotation');
+        if (!ann) return;
+        const tex = (ann.textContent || '').trim();
+        if (!tex) return;
+        const isDisplay = node.classList.contains('katex-display');
+        const replacement = document.createTextNode(isDisplay ? '$$' + tex + '$$' : '$' + tex + '$');
+        node.parentNode.replaceChild(replacement, node);
+    });
+    return temp.innerHTML;
+}
+window.openMarkdownHelp = function() { const m = document.getElementById('md-help-modal'); if (m) m.classList.add('active'); };
+window.closeMarkdownHelp = function() { const m = document.getElementById('md-help-modal'); if (m) m.classList.remove('active'); };
+window.insertInlineCode = function() {
+    methodsSaveSelection();
+    const sel = window.getSelection();
+    const txt = sel ? sel.toString() : '';
+    methodsRestoreSelection();
+    methodsExecCommand('insertHTML', '<code>' + (txt ? escapeHtml(txt) : '代码') + '</code>');
+};
+window.insertCodeBlock = function() {
+    methodsSaveSelection();
+    const sel = window.getSelection();
+    const txt = sel ? sel.toString() : '';
+    methodsRestoreSelection();
+    methodsExecCommand('insertHTML', '<pre><code>' + (txt ? escapeHtml(txt) : '代码块') + '</code></pre><p><br></p>');
+};
+window.insertMethodsLink = function() {
+    methodsSaveSelection();
+    const sel = window.getSelection();
+    const txt = sel ? sel.toString() : '';
+    methodsRestoreSelection();
+    const url = prompt('输入链接地址：', 'https://');
+    if (!url) return;
+    methodsExecCommand('insertHTML', '<a href="' + escapeHtml(url) + '">' + escapeHtml(txt || '链接文字') + '</a>');
 };
 function renderKaTeX(el) {
     if (!el || typeof renderMathInElement === 'undefined') return;
@@ -2643,14 +2747,24 @@ function clearSearchHighlight() {
 function commitMethodsEditorToFile() {
     let changed = false;
     const cleanHTML = (html) => html.replace(/<mark class="search-hl[^"]*">/g, '').replace(/<\/mark>/g, '');
+    const collectMarkdown = (eds) => eds.map(ed => {
+        const raw = cleanHTML(ed.innerHTML).trim();
+        if (!raw) return '';
+        const cleaned = cleanHTMLForMarkdown(raw);
+        let md = htmlToMarkdown(cleaned);
+        return (md || '').replace(/^\s+|\s+$/g, '');
+    }).join('\n\n<!-- pagebreak -->\n\n');
     const f1 = getCurrentMethodsFile(appData.activeMethodsFileId);
     if (f1) {
         const eds1 = getStackEditors('methods-stack-1');
         if (eds1.length > 0) {
-            const newHtml = eds1.map(ed => cleanHTML(ed.innerHTML)).join(METHODS_PAGE_BREAK_HTML);
+            const newMd = collectMarkdown(eds1);
             const newText = eds1.map(ed => ed.innerText || '').join('\n\n');
-            if (f1.contentHtml !== newHtml || f1.contentText !== newText) {
-                f1.contentHtml = newHtml; f1.contentText = newText; f1.updatedAt = Date.now();
+            if (f1.contentMarkdown !== newMd) {
+                f1.contentMarkdown = newMd;
+                f1.contentHtml = markdownToHtml(newMd.split('<!-- pagebreak -->').map(s => s.trim()).join('\n\n'));
+                f1.contentText = newText;
+                f1.updatedAt = Date.now();
                 changed = true;
             }
         }
@@ -2660,10 +2774,13 @@ function commitMethodsEditorToFile() {
         if (f2) {
             const eds2 = getStackEditors('methods-stack-2');
             if (eds2.length > 0) {
-                const newHtml = eds2.map(ed => cleanHTML(ed.innerHTML)).join(METHODS_PAGE_BREAK_HTML);
+                const newMd = collectMarkdown(eds2);
                 const newText = eds2.map(ed => ed.innerText || '').join('\n\n');
-                if (f2.contentHtml !== newHtml || f2.contentText !== newText) {
-                    f2.contentHtml = newHtml; f2.contentText = newText; f2.updatedAt = Date.now();
+                if (f2.contentMarkdown !== newMd) {
+                    f2.contentMarkdown = newMd;
+                    f2.contentHtml = markdownToHtml(newMd.split('<!-- pagebreak -->').map(s => s.trim()).join('\n\n'));
+                    f2.contentText = newText;
+                    f2.updatedAt = Date.now();
                     changed = true;
                 }
             }
@@ -3172,18 +3289,40 @@ window.deleteMindmapNode = function(nodeId) {
     saveMindmapNodesOnly();
 };
 
-function serializeMindmapToHtml() {
+function serializeMindmapToMarkdown() {
     if (_mindmapNodes.length === 0) return '';
     const childrenMap = {};
     _mindmapNodes.forEach(n => { const k = n.parentId || '__root__'; if (!childrenMap[k]) childrenMap[k] = []; childrenMap[k].push(n); });
     const out = [];
     function traverse(node, depth) {
         const lv = Math.min(6, Math.max(1, depth));
-        out.push(`<h${lv}>${escapeHtml(node.text)}</h${lv}>`);
+        out.push('#'.repeat(lv) + ' ' + String(node.text || '未命名'));
         (childrenMap[node.id] || []).forEach(c => traverse(c, depth + 1));
     }
     (childrenMap['__root__'] || []).forEach(r => traverse(r, 1));
-    return out.join('');
+    return out.join('\n\n');
+}
+function parseHeadingsToMindmapFromMd(md) {
+    const lines = String(md || '').split(/\r?\n/);
+    const nodes = [];
+    const stack = [];
+    let cnt = 0;
+    lines.forEach(line => {
+        const m = line.match(/^(#{1,6})\s+(.+)$/);
+        if (!m) return;
+        const level = m[1].length;
+        const text = m[2].trim();
+        if (!text) return;
+        while (stack.length > 0 && stack[stack.length - 1].level >= level) stack.pop();
+        const parentId = stack.length > 0 ? stack[stack.length - 1].id : null;
+        cnt++;
+        const nid = 'n_' + cnt + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        nodes.push({ id: nid, text, level, parentId, x: 0, y: 0 });
+        stack.push({ id: nid, level });
+    });
+    if (nodes.length === 0) nodes.push({ id: 'root_' + Date.now(), text: '中心主题（双击编辑）', level: 1, parentId: null, x: 0, y: 0 });
+    autoLayoutMindmap(nodes);
+    return nodes;
 }
 
 window.toggleMindmapView = function() {
@@ -3196,11 +3335,11 @@ window.toggleMindmapView = function() {
     const paperContainer = document.getElementById('methods-paper-container');
     const btn = document.getElementById('btn-toggle-mindmap');
     if (appData.mindmapMode) {
-        const html = serializeMindmapToHtml();
+        const md = serializeMindmapToMarkdown();
         const stack = document.getElementById('methods-stack-1');
         if (stack) {
             const eds = Array.from(stack.querySelectorAll('.methods-content'));
-            if (eds[0]) { eds[0].innerHTML = html; renderKaTeX(eds[0]); }
+            if (eds[0]) { eds[0].innerHTML = markdownToHtml(md); renderKaTeX(eds[0]); }
             for (let i = 1; i < eds.length; i++) eds[i].innerHTML = '';
         }
         commitMethodsEditorToFile();
@@ -3215,7 +3354,7 @@ window.toggleMindmapView = function() {
         const f = getCurrentMethodsFile();
         if (!f) { showMiniToast('❌ 没有可编辑的笔记'); return; }
         let nodes = [];
-        const rebuilt = parseHeadingsToMindmap(f.contentHtml || '');
+        const rebuilt = parseHeadingsToMindmapFromMd(f.contentMarkdown || '');
         if (f.mindmap && Array.isArray(f.mindmap.nodes) && f.mindmap.nodes.length > 0) {
             const oldTexts = f.mindmap.nodes.map(n => n.text).join('|');
             const newTexts = rebuilt.map(n => n.text).join('|');
@@ -3314,10 +3453,12 @@ function initMethodsEditor() {
 }
 function refreshMethodsEditorContent() {
     const f1 = getCurrentMethodsFile(appData.activeMethodsFileId);
-    renderMethodsStack('methods-stack-1', f1 ? (f1.contentHtml || '') : '', false);
+    const md1 = f1 ? (f1.contentMarkdown !== undefined ? f1.contentMarkdown : htmlToMarkdown(f1.contentHtml || '')) : '';
+    renderMethodsStack('methods-stack-1', md1, false);
     if (appData.splitScreenMode) {
         const f2 = getCurrentMethodsFile(appData.activeMethodsFileId2);
-        renderMethodsStack('methods-stack-2', f2 ? (f2.contentHtml || '') : '', true);
+        const md2 = f2 ? (f2.contentMarkdown !== undefined ? f2.contentMarkdown : htmlToMarkdown(f2.contentHtml || '')) : '';
+        renderMethodsStack('methods-stack-2', md2, true);
     }
     const container = document.getElementById('methods-paper-container');
     const stack2 = document.getElementById('methods-stack-2');
@@ -6306,21 +6447,47 @@ async function _exportMethodsTreeToFolder(rootHandle) {
         for (const folder of folders) {
             try { await _ensureFolder(folder.id); } catch (e) { console.warn('[备份] 建目录失败', folder.name, e); }
         }
+        const liveMdKeys = new Set();
         for (const file of files) {
             try {
                 const parentHandle = await _ensureFolder(file.parentId || null);
-                const safeName = _sanitize(file.name);
-                const docHtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>' + escapeHtml(file.name) + '</title><style>body{font-family:"Microsoft YaHei",sans-serif;font-size:14px;line-height:1.8;}table{border-collapse:collapse;}td{border:1px solid #999;padding:6px;}img{max-width:100%;}</style></head><body>' + (file.contentHtml || '') + '</body></html>';
-                const fhDoc = await parentHandle.getFileHandle(safeName + '.doc', { create: true });
-                const wDoc = await fhDoc.createWritable();
-                await wDoc.write('\ufeff' + docHtml);
-                await wDoc.close();
-                const fhMd = await parentHandle.getFileHandle(safeName + '.md', { create: true });
-                const wMd = await fhMd.createWritable();
-                await wMd.write('# ' + (file.name || '未命名') + '\n\n' + (file.contentText || ''));
-                await wMd.close();
+                const safeName = _sanitize(file.name) + '.md';
+                const md = file.contentMarkdown || '';
+                const fh = await parentHandle.getFileHandle(safeName, { create: true });
+                const w = await fh.createWritable();
+                await w.write(md);
+                await w.close();
+                liveMdKeys.add((file.parentId || 'ROOT') + '/' + safeName);
+                try { await parentHandle.removeEntry(_sanitize(file.name) + '.doc'); } catch(e) {}
             } catch (e) { console.warn('[备份] 写笔记失败', file.name, e); }
         }
+        async function _cleanDir(dirHandle, dirKey) {
+            try {
+                const toRemove = [];
+                for await (const [name, handle] of dirHandle.entries()) {
+                    if (handle.kind === 'file') {
+                        const lower = name.toLowerCase();
+                        if (lower.endsWith('.md')) {
+                            const fullKey = dirKey + '/' + name;
+                            if (!liveMdKeys.has(fullKey)) toRemove.push(name);
+                        } else if (lower.endsWith('.doc')) {
+                            toRemove.push(name);
+                        }
+                    }
+                }
+                for (const name of toRemove) {
+                    try { await dirHandle.removeEntry(name); console.log('[备份] 清理已删笔记:', name); } catch(e) {}
+                }
+                for await (const [name, handle] of dirHandle.entries()) {
+                    if (handle.kind === 'directory') {
+                        const childFolder = folders.find(f => _sanitize(f.name) === name && (f.parentId || null) === (dirKey === 'ROOT' ? null : dirKey));
+                        const childKey = childFolder ? childFolder.id : (dirKey + '/' + name);
+                        await _cleanDir(handle, childKey);
+                    }
+                }
+            } catch (e) { console.warn('[备份] 清理目录失败', e); }
+        }
+        await _cleanDir(rootHandle, 'ROOT');
     } catch (e) { console.warn('[备份] 导出笔记树失败', e); }
 }
 window.performBackup = async function(silent) {
@@ -6638,9 +6805,9 @@ function mergeData(local, remote) {
                 const base = _baseMethodsMap.get(rf.id);
                 let isConflict = false;
                 if (base && rf.type === 'file' && lf.type === 'file') {
-                    const lChanged = (lf.contentHtml !== base.contentHtml) || (lf.contentText !== base.contentText) || (lf.name !== base.name);
-                    const rChanged = (rf.contentHtml !== base.contentHtml) || (rf.contentText !== base.contentText) || (rf.name !== base.name);
-                    const lDiffR = (lf.contentHtml !== rf.contentHtml) || (lf.contentText !== rf.contentText) || (lf.name !== rf.name);
+                    const lChanged = (lf.contentMarkdown !== base.contentMarkdown) || (lf.contentHtml !== base.contentHtml) || (lf.contentText !== base.contentText) || (lf.name !== base.name);
+                    const rChanged = (rf.contentMarkdown !== base.contentMarkdown) || (rf.contentHtml !== base.contentHtml) || (rf.contentText !== base.contentText) || (rf.name !== base.name);
+                    const lDiffR = (lf.contentMarkdown !== rf.contentMarkdown) || (lf.contentHtml !== rf.contentHtml) || (lf.contentText !== rf.contentText) || (lf.name !== rf.name);
                     if (lChanged && rChanged && lDiffR) isConflict = true;
                 }
                 if (isConflict) {
@@ -6658,6 +6825,7 @@ function mergeData(local, remote) {
                             const f = merged.methodsFiles.find(x => x.id === rf.id);
                             if (f) {
                                 f.name = rf.name;
+                                f.contentMarkdown = rf.contentMarkdown;
                                 f.contentHtml = rf.contentHtml;
                                 f.contentText = rf.contentText;
                                 f.updatedAt = Date.now();
