@@ -138,7 +138,7 @@ body.dark-mode .rpg-tip { color: var(--text-muted); }
 .rpg-modal, .task-list-modal, .stats-modal, .task-detail-modal { background: var(--bg-card); color: var(--text-main); border-radius: 16px; max-height: 92vh; overflow-y: auto; padding: 20px; position: relative; }
 .rpg-modal { max-width: 560px; width: 100%; }
 .task-list-modal { max-width: 640px; width: 100%; }
-.stats-modal { max-width: 1200px; width: 95vw; max-height: 95vh; overflow-y: auto; padding: 24px 28px; }
+.stats-modal { max-width: 1400px; width: 96vw; max-height: 95vh; overflow-y: auto; padding: 24px 28px; }
 .task-detail-modal { max-width: 900px; width: 95%; }
 .rpg-modal-header { text-align: center; margin-bottom: 16px; }
 .rpg-modal-level { font-size: 2.2em; font-weight: 800; color: #b45309; }
@@ -187,9 +187,17 @@ body.dark-mode .levelup-exp { color: #fbbf24; }
 .levelup-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
 .confetti-piece { position: absolute; width: 8px; height: 14px; top: -20px; border-radius: 2px; opacity: .95; animation: confettiFall linear forwards; }
 @keyframes confettiFall { 0% { transform: translate(0, 0) rotate(0deg); opacity: 1; } 100% { transform: translate(var(--x, 0), 500px) rotate(720deg); opacity: 0; } }
-.stats-layout { display: flex; gap: 20px; margin-bottom: 16px; }
-.stats-left { flex: 1; display: flex; flex-direction: column; gap: 12px; }
-.stats-right { flex: 1.5; display: flex; flex-direction: column; }
+.stats-layout { display: flex; gap: 20px; margin-bottom: 16px; align-items: stretch; }
+.stats-left { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.stats-right { flex: 1.2; display: flex; flex-direction: column; min-width: 0; }
+#stats-summary-content { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed var(--border-color); }
+.stats-log-section { display: flex; flex-direction: column; gap: 8px; }
+.stats-log-title { font-size: var(--font-content); font-weight: 700; margin: 0 0 4px; color: var(--text-main); }
+.stats-log-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; font-size: var(--font-hint); }
+.stats-log-day { padding: 8px; background: var(--bg-sidebar); border-radius: 6px; border-left: 3px solid var(--accent-color); min-width: 0; word-break: break-word; }
+.stats-log-date { color: var(--accent-color); display: block; margin-bottom: 6px; font-size: var(--font-hint); font-weight: 700; }
+.stats-log-items { display: flex; flex-wrap: wrap; gap: 4px; }
+.stats-log-items > span { display: inline-block; background: var(--bg-card); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px; font-size: var(--font-small); color: var(--text-main); word-break: break-word; max-width: 100%; }
 .stat-bar-row { display: flex; align-items: center; gap: 10px; }
 .stat-bar-label { width: 80px; font-size: var(--font-content); font-weight: 600; flex-shrink: 0; }
 .stat-bar-track { flex: 1; height: 16px; background: var(--bg-sidebar); border-radius: 4px; overflow: hidden; position: relative; }
@@ -1018,7 +1026,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="stats-modal-overlay" id="stats-modal" onclick="if(event.target===this)closeStatsModal()">
 <div class="stats-modal">
 <div class="stats-modal-header"><h3 id="stats-modal-title">统计</h3><button class="stats-modal-close" onclick="closeStatsModal()">×</button></div>
-<div class="stats-layout"><div class="stats-left" id="stats-left-content"></div><div class="stats-right"><div class="chart-title" id="stats-chart-title">三大类累计</div><div style="text-align:center;margin-bottom:8px;"><button class="btn btn-sm" id="stats-mode-times" onclick="switchStatsMode('times')" style="margin-right:4px;">📊 次数</button><button class="btn btn-sm" id="stats-mode-exp" onclick="switchStatsMode('exp')">⭐ 经验</button></div><div class="bar-chart" id="stats-chart-content"></div>
+<div class="stats-layout"><div class="stats-left" id="stats-left-content"></div><div class="stats-right"><div id="stats-summary-content"></div><div class="chart-title" id="stats-chart-title">三大类累计</div><div style="text-align:center;margin-bottom:8px;"><button class="btn btn-sm" id="stats-mode-times" onclick="switchStatsMode('times')" style="margin-right:4px;">📊 次数</button><button class="btn btn-sm" id="stats-mode-exp" onclick="switchStatsMode('exp')">⭐ 经验</button></div><div class="bar-chart" id="stats-chart-content"></div>
 <div class="chart-title" style="margin-top:24px;" id="stats-line-title">📊 学习时长趋势 (分钟)</div>
 <canvas id="stats-line-canvas" style="width:100%; height:180px;"></canvas>
 </div></div>
@@ -4257,7 +4265,7 @@ window.openStatsModal = function(type) {
     let lExp = 0, oExp = 0, eExp = 0;
     let cur = new Date(s + 'T00:00:00');
     const end = new Date(e + 'T00:00:00');
-let logHtml = '<div style="margin-top:16px; border-top:1px dashed var(--border-color); padding-top:12px;"><h4 style="font-size:var(--font-content);margin-bottom:8px;">📋 操作记录</h4><div style="max-height:none;overflow-y:visible;font-size:var(--font-hint);display:flex;flex-direction:column;gap:6px;">';
+let logHtml = '<div class="stats-log-section"><h4 class="stats-log-title">📋 操作记录</h4><div class="stats-log-grid">';
     let hasLogs = false;
     while (cur <= end) {
         const d = formatDate(cur.getFullYear(), cur.getMonth(), cur.getDate());
@@ -4295,20 +4303,20 @@ let logHtml = '<div style="margin-top:16px; border-top:1px dashed var(--border-c
             if (l.completed) parts.push('✅ 完成');
             if (l.delta !== 0) parts.push(`🔄 计数 ${l.delta > 0 ? '+' : ''}${l.delta}`);
             if (l.seconds) parts.push(`⏱ ${Math.floor(l.seconds / 60)}分${Math.floor(l.seconds % 60)}秒`);
-            if (parts.length > 0) logItems.push(`<span style="display:inline-block;margin-right:10px;margin-bottom:2px;background:var(--bg-sidebar);padding:2px 6px;border-radius:4px;">${escapeHtml(l.name)} (${parts.join(', ')})</span>`);
+            if (parts.length > 0) logItems.push(`<span>${escapeHtml(l.name)} (${parts.join(', ')})</span>`);
         });
-        if (logItems.length > 0) { hasLogs = true; logHtml += `<div><b style="color:var(--accent-color);">${d}</b><br><div style="margin-top:4px;">${logItems.join('')}</div></div>`; }
+       if (logItems.length > 0) { hasLogs = true; logHtml += `<div class="stats-log-day"><b class="stats-log-date">${d}</b><div class="stats-log-items">${logItems.join('')}</div></div>`; }
         cur.setDate(cur.getDate() + 1);
     }
     if (!hasLogs) logHtml += '<span style="color:var(--text-muted);">暂无操作记录</span>';
     logHtml += '</div></div>';
     const maxVal = Math.max(ld, od, ed, 1);
-    document.getElementById('stats-left-content').innerHTML = `
+    document.getElementById('stats-summary-content').innerHTML = `
         <div class="stat-bar-row"><div class="stat-bar-label">📚 学习</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${(ld/maxVal)*100}%; background:#2383e2;"></div></div><div class="stat-bar-val" style="color:#2383e2;">${ld}</div></div>
         <div class="stat-bar-row"><div class="stat-bar-label">🧺 其他</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${(od/maxVal)*100}%; background:#f2994a;"></div></div><div class="stat-bar-val" style="color:#f2994a;">${od}</div></div>
         <div class="stat-bar-row"><div class="stat-bar-label">💪 锻炼</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${(ed/maxVal)*100}%; background:#27ae60;"></div></div><div class="stat-bar-val" style="color:#27ae60;">${ed}</div></div>
-        <div class="stat-bar-row" style="margin-top:auto; border-top:1px dashed var(--border-color); padding-top:12px;"><div class="stat-bar-label">总计</div><div class="stat-bar-track"></div><div class="stat-bar-val" style="font-size:1.2em;">${ld+od+ed}</div></div>
-        ${logHtml}`;
+        <div class="stat-bar-row" style="border-top:1px dashed var(--border-color); padding-top:12px;"><div class="stat-bar-label">总计</div><div class="stat-bar-track"></div><div class="stat-bar-val" style="font-size:1.2em;">${ld+od+ed}</div></div>`;
+    document.getElementById('stats-left-content').innerHTML = logHtml;
     // 柱状图展示当前周期三大类（学习/其他/锻炼）累计
     const _chartMode = appData.statsChartMode || 'times';
     const vL = _chartMode === 'exp' ? Math.round(lExp) : ld;
