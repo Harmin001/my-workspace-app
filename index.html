@@ -254,6 +254,12 @@ body.dark-mode .day-box.all-done { background-color: #1b3322; border-color: #2e5
 .mini-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
 .reflection-preview, .deadline-preview { font-size: var(--font-small); margin-top: 4px; padding: 2px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .reflection-preview { color: var(--text-muted); background: var(--bg-sidebar); border-left: 2px solid var(--border-color); }
+#day-reflection-hint { white-space: normal; overflow: visible; text-overflow: clip; height: auto; line-height: 1.6; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; cursor: default; }
+#day-reflection-hint .day-log-title { font-weight: 700; color: var(--text-muted); flex-shrink: 0; }
+#day-reflection-hint .day-log-chip { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 2px 8px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; font-size: var(--font-small); color: var(--text-main); max-width: 100%; min-width: 0; }
+#day-reflection-hint .day-log-chip .day-log-name { font-weight: 600; color: var(--text-main); word-break: break-word; min-width: 0; }
+#day-reflection-hint .day-log-chip .day-log-meta { display: inline-flex; flex-wrap: wrap; gap: 4px; color: var(--text-muted); }
+#day-reflection-hint .day-log-chip .day-log-meta > span { padding: 0 5px; border-radius: 4px; background: var(--bg-sidebar); border: 1px solid var(--border-color); white-space: nowrap; font-size: var(--font-small); }
 .deadline-preview { color: var(--danger-color); background: #ffebee; border-left: 2px solid var(--danger-color); font-weight: bold; }
 body.dark-mode .deadline-preview { background: #3a1c1c; }
 .year-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-shrink: 0; }
@@ -804,7 +810,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="section-box" data-panel="other"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 🧺 其他</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div><div class="panel-content"><div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="按回车添加 (如：跳绳 * 500)" id="other-input"></div><div id="other-list" class="task-drop-zone" data-type="other" data-completed="false"></div><div id="other-completed" class="task-drop-zone" data-type="other" data-completed="true"></div></div></div>
 <div class="section-box" data-panel="exercise"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 💪 锻炼</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span><button class="btn btn-sm btn-primary" onclick="addExerciseCategory()">➕ 添加</button></div></div><div class="panel-content"><div class="exercise-grid" id="exercise-grid"></div></div></div>
 </div>
-<div id="day-reflection-hint" class="reflection-preview" style="margin-bottom:8px;display:block;box-sizing:border-box;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:24px;height:24px;font-size:var(--font-hint);color:var(--text-muted);background:var(--bg-sidebar);border-left:2px solid var(--border-color);padding:0 10px;border-radius:4px;cursor:help;" title="今日暂无操作记录">📋 今日暂无操作记录</div>
+<div id="day-reflection-hint" class="reflection-preview" style="margin-bottom:8px;box-sizing:border-box;width:100%;font-size:var(--font-hint);color:var(--text-muted);background:var(--bg-sidebar);border-left:2px solid var(--border-color);padding:8px 10px;border-radius:4px;" title="今日暂无操作记录"><span class="day-log-title">📋 今日暂无操作记录</span></div>
 <details class="bottom-summary" id="day-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;"><summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">💭 今日反思 (点击展开/收起)</summary><textarea id="daily-reflection-textarea" placeholder="今天过得怎么样？有什么想记录的？" oninput="handleReflectionInput(this.value)" style="margin-top:8px;"></textarea></details>
 </div>
 <div class="view-container" id="view-methods">
@@ -5535,19 +5541,25 @@ function renderDayPlan() {
         if (rDetails) rDetails.open = !!val;
         // 本日累计操作项（与统计面板同源：读 dailyLogs）
         const logs = appData.dailyLogs[ds] || {};
-        const logItems = [];
+        const logEntries = [];
         Object.values(logs).forEach(l => {
             const parts = [];
             if (l.completed) parts.push('✅ 完成');
             if (l.delta !== 0) parts.push(`🔄 ${l.delta > 0 ? '+' : ''}${l.delta}`);
             if (l.seconds) parts.push(`⏱ ${Math.floor(l.seconds / 60)}分${Math.floor(l.seconds % 60)}秒`);
-            if (parts.length > 0) logItems.push(l.name + ' (' + parts.join('，') + ')');
+            if (parts.length > 0) logEntries.push({ name: l.name || '未命名', parts });
         });
-        const fullText = logItems.length > 0 ? '今日操作：' + logItems.join('；') : '今日暂无操作记录';
+        const fullText = logEntries.length > 0 ? '今日操作：' + logEntries.map(e => e.name + ' (' + e.parts.join('，') + ')').join('；') : '今日暂无操作记录';
         rt.title = fullText;
         const hintEl = document.getElementById('day-reflection-hint');
         if (hintEl) {
-            hintEl.textContent = '📋 ' + fullText;
+            if (logEntries.length === 0) {
+                hintEl.innerHTML = '<span class="day-log-title">📋 今日暂无操作记录</span>';
+            } else {
+                hintEl.innerHTML = '<span class="day-log-title">📋 今日操作：</span>' + logEntries.map(e =>
+                    '<span class="day-log-chip"><span class="day-log-name">' + escapeHtml(e.name) + '</span><span class="day-log-meta">' + e.parts.map(p => '<span>' + escapeHtml(p) + '</span>').join('') + '</span></span>'
+                ).join('');
+            }
             hintEl.title = fullText;
         }
     }
