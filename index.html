@@ -646,8 +646,39 @@ body.dark-mode .katex { color: var(--text-main); }
 body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex .mrel, body.dark-mode .katex .mopen, body.dark-mode .katex .mclose, body.dark-mode .katex .mpunct, body.dark-mode .katex .mop { color: #e0e0e0 !important; }
 .katex-block { display: block; text-align: center; margin: 1em 0; overflow-x: auto; overflow-y: hidden; }
 @media(max-width: 900px) { .settings-grid { grid-template-columns: 1fr; gap: 12px; } .rpg-edit-grid { grid-template-columns: repeat(2, 1fr); } }
+.mobile-cat-tabs { display: none; }
 @media(max-width: 768px) {
     body { flex-direction: column; }
+    .mobile-cat-tabs {
+        display: flex; gap: 4px; padding: 6px 8px;
+        background: var(--bg-sidebar); border-bottom: 1px solid var(--border-color);
+        position: sticky; top: 0; z-index: 50;
+    }
+    .mobile-cat-tabs button {
+        flex: 1; padding: 6px; border: 1px solid var(--border-color);
+        background: var(--bg-card); border-radius: 6px; font-size: 12px;
+        cursor: pointer; color: var(--text-main); font-weight: 600;
+    }
+    .mobile-cat-tabs button.active {
+        background: var(--accent-color); color: #fff; border-color: var(--accent-color);
+    }
+    body[data-mobile-cat="learning"] #day-panels-grid .section-box[data-panel="other"],
+    body[data-mobile-cat="learning"] #day-panels-grid .section-box[data-panel="exercise"],
+    body[data-mobile-cat="other"] #day-panels-grid .section-box[data-panel="learning"],
+    body[data-mobile-cat="other"] #day-panels-grid .section-box[data-panel="exercise"],
+    body[data-mobile-cat="exercise"] #day-panels-grid .section-box[data-panel="learning"],
+    body[data-mobile-cat="exercise"] #day-panels-grid .section-box[data-panel="other"] { display: none !important; }
+    body[data-mobile-cat="learning"] .cal-task-other,
+    body[data-mobile-cat="learning"] .cal-task-exercise,
+    body[data-mobile-cat="other"] .cal-task-learning,
+    body[data-mobile-cat="other"] .cal-task-exercise,
+    body[data-mobile-cat="exercise"] .cal-task-learning,
+    body[data-mobile-cat="exercise"] .cal-task-other { display: none !important; }
+    body[data-mobile-cat="learning"] .task-item[data-task-type="other"],
+    body[data-mobile-cat="learning"] .exercise-capsule,
+    body[data-mobile-cat="other"] .task-item[data-task-type="learning"],
+    body[data-mobile-cat="other"] .exercise-capsule,
+    body[data-mobile-cat="exercise"] .task-item:not(.todo-pool-item) { display: none !important; }
     .sidebar { width: 100%; height: auto; order: 2; border-right: none; border-top: 1px solid var(--border-color); padding: 8px 4px; flex-direction: row; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; z-index: 100; background: rgba(247,247,245,.95); backdrop-filter: blur(10px); }
     body.dark-mode .sidebar { background: rgba(30,30,30,.95); }
     .sidebar-title, .sidebar-footer { display: none; }
@@ -773,6 +804,11 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 </div>
 <div class="mobile-rpg-fab" id="mobile-rpg-fab" onclick="openRPGModal()"><span id="mobile-rpg-lv">Lv.1</span><span id="mobile-rpg-energy">⚡200</span></div>
 <div class="main-content">
+<div class="mobile-cat-tabs" id="mobile-cat-tabs">
+    <button data-cat="learning" class="active" onclick="switchMobileCategory('learning')">📚 学习</button>
+    <button data-cat="other" onclick="switchMobileCategory('other')">🧺 其他</button>
+    <button data-cat="exercise" onclick="switchMobileCategory('exercise')">💪 锻炼</button>
+</div>
 <div class="view-container" id="view-year">
 <div class="year-header"><h1>📊 全年总览</h1><div class="time-nav" style="margin-bottom:0;"><button onclick="changeYear(-1)">← 上一年</button><span id="year-display" style="font-size:var(--font-content);">2025年</span><button onclick="changeYear(1)">下一年 →</button></div></div>
 <div class="year-heatmap" id="year-heatmap"></div>
@@ -1829,11 +1865,17 @@ window.openGlobalTimer = function() {
     const t = appData.globalTimer;
     // 树形选项：母任务仅作分组标题，只有子任务可选
     const taskOptsHtml = [];
+    const _gtToday = getTodayString();
     (appData.tasks || []).filter(x => x.type !== 'todo').forEach(mainTask => {
-        const subs = mainTask.subTasks || [];
+        if (isTaskDone(mainTask, _gtToday)) return;
+        if (mainTask.countOnly && mainTask.countEnded) return;
+        const subs = (mainTask.subTasks || []).filter(sub => {
+            if (sub.countOnly && sub.countEnded) return false;
+            if (isSubTaskDone(sub, _gtToday)) return false;
+            return true;
+        });
         const label = (mainTask.type === 'learning' ? '📚 ' : '🧺 ') + mainTask.text;
         taskOptsHtml.push('<optgroup label="' + escapeHtml(label) + '">');
-        // ✅ 新增：展示母任务并支持直接选中
         taskOptsHtml.push('<option value="' + mainTask.id + '"' + (t.taskId === mainTask.id ? ' selected' : '') + '>📌 ' + escapeHtml(mainTask.text) + '</option>');
         subs.forEach(sub => {
             const subVal = mainTask.id + '::' + sub.id;
@@ -1924,11 +1966,19 @@ window.openGoalTimer = function(goalId) {
     const t = goal.timer;
     // 树形任务选项：optgroup 母任务 + 缩进子任务
     const taskOptsHtml = [];
+    const _goToday = getTodayString();
     (appData.tasks || []).filter(x => x.type !== 'todo').forEach(mainTask => {
+        if (isTaskDone(mainTask, _goToday)) return;
+        if (mainTask.countOnly && mainTask.countEnded) return;
+        const subs = (mainTask.subTasks || []).filter(sub => {
+            if (sub.countOnly && sub.countEnded) return false;
+            if (isSubTaskDone(sub, _goToday)) return false;
+            return true;
+        });
         const label = (mainTask.type === 'learning' ? '📚 ' : '🧺 ') + mainTask.text;
         taskOptsHtml.push('<optgroup label="' + escapeHtml(label) + '">');
         taskOptsHtml.push('<option value="' + mainTask.id + '"' + (t.taskId === mainTask.id ? ' selected' : '') + '>📌 ' + escapeHtml(mainTask.text) + '</option>');
-        (mainTask.subTasks || []).forEach(sub => {
+        subs.forEach(sub => {
             const subVal = mainTask.id + '::' + sub.id;
             taskOptsHtml.push('<option value="' + subVal + '"' + (t.taskId === subVal ? ' selected' : '') + '>　└ ' + escapeHtml(sub.text) + '</option>');
         });
@@ -3109,7 +3159,7 @@ window.createMethodsFile = function() {
     const activeFile = appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId);
     if (activeFile && activeFile.parentId) parentId = activeFile.parentId;
     else if (activeFile && activeFile.type === 'folder') parentId = activeFile.id;
-    const newFile = { id: 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: name.trim(), type: 'file', parentId: parentId, contentHtml: '', contentText: '', updatedAt: Date.now() };
+    const newFile = { id: 'file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: name.trim(), type: 'file', parentId: parentId, contentHtml: '', contentText: '', contentMarkdown: '', updatedAt: Date.now() };
     appData.methodsFiles.push(newFile);
     appData.activeMethodsFileId = newFile.id;
     if (parentId) expandedMethodFolders.add(parentId);
@@ -4576,6 +4626,13 @@ window.switchYearChartMode = function(mode) {
     saveDataToFile(appData);
     renderYearHeatmap();
 };
+window.switchMobileCategory = function(cat) {
+    document.body.setAttribute('data-mobile-cat', cat);
+    document.querySelectorAll('.mobile-cat-tabs button').forEach(b => {
+        b.classList.toggle('active', b.dataset.cat === cat);
+    });
+    try { localStorage.setItem('myWorkspaceMobileCat', cat); } catch(e) {}
+};
 function renderCalendar() {
     ensureEnergyData();
     const grid = document.getElementById('calendar-grid');
@@ -4759,6 +4816,7 @@ function renderCalendar() {
 function createWeekTaskDOM(t, ds, options = {}) {
     const item = document.createElement('div');
     item.className = 'task-item';
+    item.dataset.taskType = t.type || 'other';
     item.draggable = true;
     item.ondragstart = (e) => { isDraggingActive = true; drag(e, t.id); };
     if (t.type === 'todo') {
@@ -5329,8 +5387,13 @@ function generateTaskDOM(task, ds, options = {}) {
     div.dataset.taskId = task.id;
     if (locks[task.id]) div.classList.add('locked-by-remote');
     if (task.countOnly) {
-        let _dlBadge = '';
-        if (task.deadline) {
+    let _dlBadge = '';
+    let _countGoalBadge = '';
+    if (task.goalId) {
+        const _cg = (appData.goals || []).find(g => g.id === task.goalId);
+        if (_cg) _countGoalBadge = `<span class="task-badge" style="color:#0e7490;background:#cffafe;border-color:#67e8f9;">🎯 ${escapeHtml(_cg.text)}</span>`;
+    }
+    if (task.deadline) {
             const _dlDate = new Date(task.deadline + 'T00:00:00');
             const _todayD = new Date(getTodayString() + 'T00:00:00');
             const _diffDays = Math.round((_dlDate - _todayD) / (1000 * 60 * 60 * 24));
@@ -5340,7 +5403,7 @@ function generateTaskDOM(task, ds, options = {}) {
             else _dlBadge = `<span class="task-badge">📅 剩 ${_diffDays} 天</span>`;
         }
         div.innerHTML = `
-            <div class="main-task-header"><div class="main-task-top-row"><div class="main-task-title-area"><span style="font-size:1.2em;">🔄</span><span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${escapeHtml(task.text)}</span></div><div class="task-right-group"><div class="task-badges-inline"><span class="task-badge" style="color:#1976d2;background:#e3f2fd;border-color:#90caf9;">累计 ${task.countTotal || 0} 次</span>${_dlBadge}</div><div class="task-meta"><button class="btn-count-minus" onclick="decrementCountTask('${task.id}')" title="撤销一次">-1</button><button class="btn-count-plus" onclick="incrementCountTask('${task.id}')" title="累计一次">+1</button><span class="btn-icon btn-count-end" title="结束此任务" onclick="endCountTask('${task.id}')" style="font-weight:bold;font-size:1em;">🏁</span><span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span><div class="more-menu-container"><span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span><div class="more-menu"><div class="more-menu-item" onclick="toggleCountOnly('${task.id}')">↩️ 转为普通任务</div><div class="more-menu-item" onclick="setTaskEnergyCost('${task.id}')">⚡ 精力消耗</div><div class="more-menu-item" onclick="setDeadline('${task.id}', prompt('设置截止日期 (YYYY-MM-DD，留空取消)：', '${task.deadline || ''}'))">📅 截止日期</div><div class="more-menu-item" onclick="deleteTask('${task.id}')">🗑️ 删除</div></div></div></div></div></div>
+            <div class="main-task-header"><div class="main-task-top-row"><div class="main-task-title-area"><span style="font-size:1.2em;">🔄</span><span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${escapeHtml(task.text)}</span></div><div class="task-right-group"><div <div class="task-badges-inline"><span class="task-badge" style="color:#1976d2;background:#e3f2fd;border-color:#90caf9;">累计 ${task.countTotal || 0} 次</span>${_dlBadge}${_countGoalBadge}</div><div class="task-meta"><button class="btn-count-minus" onclick="decrementCountTask('${task.id}')" title="撤销一次">-1</button><button class="btn-count-plus" onclick="incrementCountTask('${task.id}')" title="累计一次">+1</button><span class="btn-icon btn-count-end" title="结束此任务" onclick="endCountTask('${task.id}')" style="font-weight:bold;font-size:1em;">🏁</span><span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span><div class="more-menu-container"><span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span><div class="more-menu"><div class="more-menu-item" style="padding:4px 6px;" onclick="event.stopPropagation()"><select class="task-goal-select" onchange="setTaskGoal('${task.id}', this.value)" onclick="event.stopPropagation()" title="绑定我的目标" style="width:100%;max-width:none;"><option value="">🎯 绑定目标</option>${(appData.goals || []).map(g => `<option value="${g.id}" ${g.id === task.goalId ? 'selected' : ''}>🎯 ${escapeHtml(g.text)}</option>`).join('')}</select></div><div class="more-menu-item" onclick="toggleCountOnly('${task.id}')">↩️ 转为普通任务</div><div class="more-menu-item" onclick="setTaskEnergyCost('${task.id}')">⚡ 精力消耗</div><div class="more-menu-item" onclick="setDeadline('${task.id}', prompt('设置截止日期 (YYYY-MM-DD，留空取消)：', '${task.deadline || ''}'))">📅 截止日期</div><div class="more-menu-item" onclick="deleteTask('${task.id}')">🗑️ 删除</div></div></div></div></div></div>
             <div class="task-note-area ${task.note ? 'has-note' : ''}" id="note-area-${task.id}" onclick="editTaskNote('${task.id}', this)">${task.note ? escapeHtml(task.note) : '📝 点击添加备注...'}</div>`;
         return div;
     }
@@ -6994,10 +7057,14 @@ function mergeData(local, remote) {
                     });
                     return;
                 }
-                if (rAt > lAt) {
+               if (rAt > lAt) {
                     lf.name = rf.name; lf.type = rf.type; lf.parentId = rf.parentId;
                     lf.deleted = !!rf.deleted;
-                    if (rf.type === 'file') { lf.contentHtml = rf.contentHtml; lf.contentText = rf.contentText; }
+                    if (rf.type === 'file') {
+                        lf.contentHtml = rf.contentHtml;
+                        lf.contentText = rf.contentText;
+                        lf.contentMarkdown = rf.contentMarkdown || lf.contentMarkdown || '';
+                    }
                     lf.updatedAt = rf.updatedAt;
                 }
             }
@@ -7050,19 +7117,18 @@ function mergeData(local, remote) {
             return;
         }
         if (rTime > lTime) {
-            const localSubs = JSON.parse(JSON.stringify(lt.subTasks || []));
-            Object.assign(lt, rt);
-            if (!Array.isArray(lt.subTasks)) lt.subTasks = [];
-            const remoteSubMap = new Map(lt.subTasks.map(s => [s.id, s]));
-            localSubs.forEach(ls => { if (!remoteSubMap.has(ls.id)) lt.subTasks.push(ls); });
-            lt._lastModified = rTime;
-        } else {
-            if (rt.subTasks) {
-                if (!lt.subTasks) lt.subTasks = [];
-                const localSubMap = new Map(lt.subTasks.map(s => [s.id, s]));
-                rt.subTasks.forEach(rs => { if (!localSubMap.has(rs.id)) lt.subTasks.push(rs); });
-            }
-        }
+    // 远端较新：完全采用远端 subTasks（删除优先，禁止旧数据恢复已删子任务）
+    Object.assign(lt, rt);
+    if (!Array.isArray(lt.subTasks)) lt.subTasks = [];
+    lt._lastModified = rTime;
+} else {
+    // 本地较新或相同：保留本地 subTasks，仅补充远端新增的子任务（不覆盖本地删除）
+    if (rt.subTasks) {
+        if (!lt.subTasks) lt.subTasks = [];
+        const localSubMap = new Map(lt.subTasks.map(s => [s.id, s]));
+        rt.subTasks.forEach(rs => { if (!localSubMap.has(rs.id)) lt.subTasks.push(rs); });
+    }
+}
     });
     merged.exercises = mergeExercisesList(merged.exercises || [], remote.exercises || []);
     merged.exerciseSchedule = mergeExerciseScheduleDict(merged.exerciseSchedule || {}, remote.exerciseSchedule || {});
@@ -7623,6 +7689,13 @@ window.addEventListener('beforeunload', () => {
     saveDataToFile(appData);
     resetSyncedBaseline(appData);
     window._appInitDone = true;
+    try {
+        const _savedCat = localStorage.getItem('myWorkspaceMobileCat') || 'learning';
+        document.body.setAttribute('data-mobile-cat', _savedCat);
+        document.querySelectorAll('.mobile-cat-tabs button').forEach(b => {
+            b.classList.toggle('active', b.dataset.cat === _savedCat);
+        });
+    } catch(e) {}
     // checkVersionUpdate(); // 版本弹窗已移除
     window.addEventListener('online', () => { syncStatus = 'connected'; updateSyncUI(); });
     window.addEventListener('offline', () => { syncStatus = 'offline'; updateSyncUI(); });
