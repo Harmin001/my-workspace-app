@@ -725,6 +725,44 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
     .sub-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
     .sub-prog-container { flex: 1; min-width: 100px; }
     .sub-prog-bar-bg { width: 100%; }
+    /* ====== 手机端周计划：撑满主体，本周总结贴底（只对 #view-week 生效，电脑端不受影响） ====== */
+    #view-week.active {
+        padding: 8px 12px 8px 12px !important;
+        overflow: hidden !important;
+    }
+    #view-week .year-header {
+        flex-shrink: 0;
+        margin-bottom: 8px !important;
+    }
+    #view-week #week-board {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow-y: auto !important;
+        margin-bottom: 8px !important;
+    }
+    #view-week #week-board .week-column {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow-y: auto !important;
+    }
+    #view-week .bottom-summary {
+        flex-shrink: 0 !important;
+        margin-top: 0 !important;
+        max-height: 210px;
+        overflow-y: auto;
+        padding-top: 8px !important;
+    }
+    #view-week .bottom-summary[open] {
+        max-height: 260px;
+    }
+    #view-week .bottom-summary textarea {
+        height: 130px;
+        max-height: 160px;
+    }
 }
 </style>
 </head>
@@ -1261,6 +1299,21 @@ function _stampChanges(data) {
     if (data.rpg && rpgStrip(data.rpg) !== rpgStrip(_syncSnapshot.rpg)) data.rpg._lastModified = now;
     // timeSlots: 内容变化则更新 timeSlotsLastModified（兜底，已有入口也会更新）
     if (JSON.stringify(data.timeSlots || []) !== JSON.stringify(_syncSnapshot.timeSlots || [])) data.timeSlotsLastModified = now;
+    // methodsFiles: 内容变化但 updatedAt 没被主动更新时，兜底补一下，确保能触发广播
+    if (Array.isArray(data.methodsFiles) && Array.isArray(_syncSnapshot.methodsFiles)) {
+        const _prevMap = new Map(_syncSnapshot.methodsFiles.map(f => [f.id, f]));
+        data.methodsFiles.forEach(mf => {
+            const pm = _prevMap.get(mf.id);
+            if (!pm) return;
+            const _strip = (f) => JSON.stringify({
+                name: f.name, type: f.type, parentId: f.parentId,
+                contentMarkdown: f.contentMarkdown || '',
+                contentHtml: f.contentHtml || '',
+                deleted: !!f.deleted
+            });
+            if (_strip(mf) !== _strip(pm)) mf.updatedAt = now;
+        });
+    }
 }
 // ============ 双向同步时间戳合并 END ============
 
@@ -3840,21 +3893,21 @@ function broadcastDiffs(data) {
         if (!lt || jstr(lt) !== jstr(ct)) conn.send({ type: 'OP', data: { action: 'UPDATE_TASK', task: ct, clientId: CLIENT_ID, time: Date.now() } });
     });
     lastSyncedTasks.forEach(lt => { if (!currentTasks.find(x => x.id === lt.id)) conn.send({ type: 'OP', data: { action: 'DELETE_TASK', id: lt.id, clientId: CLIENT_ID, time: Date.now() } }); });
-    lastSyncedTasks = currentTasks.map(t => t);
+    lastSyncedTasks = JSON.parse(JSON.stringify(currentTasks));
     const currentExercises = data.exercises || [];
     currentExercises.forEach(ce => {
         const le = lastSyncedExercises.find(x => x.id === ce.id);
         if (!le || jstr(le) !== jstr(ce)) conn.send({ type: 'OP', data: { action: 'UPDATE_EXERCISE', exercise: ce, clientId: CLIENT_ID, time: Date.now() } });
     });
     lastSyncedExercises.forEach(le => { if (!currentExercises.find(x => x.id === le.id)) conn.send({ type: 'OP', data: { action: 'DELETE_EXERCISE', id: le.id, clientId: CLIENT_ID, time: Date.now() } }); });
-    lastSyncedExercises = currentExercises.map(e => e);
+    lastSyncedExercises = JSON.parse(JSON.stringify(currentExercises));
     const currentMethods = data.methodsFiles || [];
     currentMethods.forEach(cm => {
         const lm = lastSyncedMethods.find(x => x.id === cm.id);
         if (!lm || jstr(lm) !== jstr(cm)) conn.send({ type: 'OP', data: { action: 'UPDATE_METHODS', method: cm, clientId: CLIENT_ID, time: Date.now() } });
     });
     lastSyncedMethods.forEach(lm => { if (!currentMethods.find(x => x.id === lm.id)) conn.send({ type: 'OP', data: { action: 'DELETE_METHODS', id: lm.id, clientId: CLIENT_ID, time: Date.now() } }); });
-    lastSyncedMethods = currentMethods.map(m => m);
+    lastSyncedMethods = JSON.parse(JSON.stringify(currentMethods));
 }
 function queueConflict(op) {
     syncStatus = 'conflict'; updateSyncUI();
@@ -4068,6 +4121,16 @@ function handleIncomingOp(op) {
         const m = appData.methodsFiles.find(x => x.id === op.method.id);
         if (m) Object.assign(m, op.method);
         else appData.methodsFiles.push(op.method);
+        // ✅ 更新同步基线，避免接收方下次把同一份内容误广播回去
+        try {
+            const _applied = appData.methodsFiles.find(x => x.id === op.method.id);
+            const _idx = lastSyncedMethods.findIndex(x => x.id === op.method.id);
+            if (_applied) {
+                const _copy = JSON.parse(JSON.stringify(_applied));
+                if (_idx !== -1) lastSyncedMethods[_idx] = _copy;
+                else lastSyncedMethods.push(_copy);
+            }
+        } catch(e) { console.warn('[更新笔记同步基线失败]', e); }
         renderMethodsFileList();
         const paperEl1 = document.getElementById('methods-paper-container');
         const ae1 = document.activeElement;
@@ -6005,11 +6068,19 @@ function renderDayExercises() {
 }
 document.querySelectorAll('.nav-item[data-target]').forEach(item => {
     item.addEventListener('click', () => {
+        const _wasMethodsActive = document.getElementById('view-methods').classList.contains('active');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
         item.classList.add('active');
         const t = item.getAttribute('data-target');
         document.getElementById(`view-${t}`).classList.add('active');
+        // ✅ 离开笔记视图前先把当前编辑内容落盘并广播（防止 500ms 防抖窗口内切走丢内容）
+        if (_wasMethodsActive && t !== 'methods') {
+            try {
+                const _ch = commitMethodsEditorToFile();
+                if (_ch) saveDataToFile(appData);
+            } catch(e) { console.warn('[离开笔记前保存失败]', e); }
+        }
         if (t === 'month') renderCalendar();
         else if (t === 'year') renderYearHeatmap();
         else if (t === 'week') { renderWeekBoard(); renderTaskPool(); renderExercisePool(); renderFixedBlockPool(); }
