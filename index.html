@@ -4626,19 +4626,41 @@ function getCurrentViewTarget() {
     if (!active) return '';
     return (active.id || '').replace(/^view-/, '');
 }
+const MOBILE_DAY_CATS = [
+    { key: 'todo',     name: '📋 待办' },
+    { key: 'learning', name: '📚 学习' },
+    { key: 'exercise', name: '💪 锻炼' },
+    { key: 'other',    name: '🧺 其他' }
+];
+const MOBILE_WEEK_DAYS = ['周一','周二','周三','周四','周五','周六','周日'];
+
 window.renderMobileCatTabs = function() {
     const bar = document.getElementById('mobile-cat-tabs');
     if (!bar) return;
     if (window.innerWidth > 768) { bar.classList.add('hidden-tabs'); bar.innerHTML = ''; return; }
     const view = getCurrentViewTarget();
-    if (view === 'day' || view === 'month' || view === 'week') {
-        const cats = getTaskCategories();
-        let cur = document.body.getAttribute('data-mobile-cat') || cats[0].key;
-        if (!cats.some(c => c.key === cur)) { cur = cats[0].key; document.body.setAttribute('data-mobile-cat', cur); }
-        bar.innerHTML = cats.map(c => `<button data-cat="${c.key}" class="${c.key === cur ? 'active' : ''}" onclick="switchMobileCategory('${c.key}')">${c.name}</button>`).join('');
+    // 日计划：待办 / 学习 / 锻炼 / 其他（四选一）
+    if (view === 'day') {
+        let cur = document.body.getAttribute('data-mobile-day-cat') || 'todo';
+        if (!MOBILE_DAY_CATS.some(c => c.key === cur)) { cur = 'todo'; document.body.setAttribute('data-mobile-day-cat', cur); }
+        bar.innerHTML = MOBILE_DAY_CATS.map(c => `<button data-day-cat="${c.key}" class="${c.key === cur ? 'active' : ''}" onclick="switchMobileCategory('${c.key}')">${c.name}</button>`).join('');
         bar.classList.remove('hidden-tabs');
         return;
     }
+    // 周计划：周一 ~ 周日（七选一，只看那一天）
+    if (view === 'week') {
+        const curStr = document.body.getAttribute('data-mobile-week-day');
+        let cur = (curStr !== null && curStr !== '') ? parseInt(curStr, 10) : -1;
+        if (isNaN(cur) || cur < 0 || cur > 6) {
+            const wd = new Date().getDay() || 7;
+            cur = wd - 1;
+            document.body.setAttribute('data-mobile-week-day', String(cur));
+        }
+        bar.innerHTML = MOBILE_WEEK_DAYS.map((dn, i) => `<button data-week-day="${i}" class="${i === cur ? 'active' : ''}" onclick="switchMobileWeekDay(${i})">${dn}</button>`).join('');
+        bar.classList.remove('hidden-tabs');
+        return;
+    }
+    // 笔记：文件夹树
     if (view === 'methods') {
         if (!Array.isArray(appData.methodsFiles)) { bar.classList.add('hidden-tabs'); bar.innerHTML = ''; return; }
         const folders = appData.methodsFiles.filter(f => f.type === 'folder' && !f.deleted);
@@ -4651,19 +4673,23 @@ window.renderMobileCatTabs = function() {
         bar.classList.remove('hidden-tabs');
         return;
     }
+    // 月计划 / 年计划 / 设置 / 统计 / RPG 等：隐藏
     bar.classList.add('hidden-tabs');
     bar.innerHTML = '';
 };
 window.switchMobileCategory = function(cat) {
-    document.body.setAttribute('data-mobile-cat', cat);
-    document.querySelectorAll('.mobile-cat-tabs button').forEach(b => {
-        b.classList.toggle('active', b.dataset.cat === cat);
-    });
-    try { localStorage.setItem('myWorkspaceMobileCat', cat); } catch(e) {}
-    const view = getCurrentViewTarget();
-    if (view === 'day') renderDayPlan();
-    else if (view === 'month') renderCalendar();
-    else if (view === 'week') { renderWeekBoard(); renderTaskPool(); }
+    document.body.setAttribute('data-mobile-day-cat', cat);
+    try { localStorage.setItem('myWorkspaceMobileDayCat', cat); } catch(e) {}
+    renderMobileCatTabs();
+    if (getCurrentViewTarget() === 'day') renderDayPlan();
+};
+window.switchMobileWeekDay = function(idx) {
+    const n = parseInt(idx, 10);
+    if (isNaN(n) || n < 0 || n > 6) return;
+    document.body.setAttribute('data-mobile-week-day', String(n));
+    try { localStorage.setItem('myWorkspaceMobileWeekDay', String(n)); } catch(e) {}
+    renderMobileCatTabs();
+    if (getCurrentViewTarget() === 'week') renderWeekBoard();
 };
 window.switchMobileMethodsFolder = function(folderId) {
     appData._mobileMethodsFolder = folderId;
@@ -4677,15 +4703,16 @@ window.applyMobileDayFilter = function() {
         grid.querySelectorAll('.section-box[data-panel]').forEach(box => box.style.display = '');
         return;
     }
-    const cat = document.body.getAttribute('data-mobile-cat') || 'learning';
+    const cat = document.body.getAttribute('data-mobile-day-cat') || 'todo';
     grid.querySelectorAll('.section-box[data-panel]').forEach(box => {
         const p = box.getAttribute('data-panel');
-        if (p === 'todo' || p === cat) {
+        if (p === cat) {
             box.style.display = '';
         } else {
             box.style.display = 'none';
+            // 严格隔离：未选中分类的面板内容彻底清空，杜绝滚动穿透
             const zones = box.querySelectorAll('.task-drop-zone, #exercise-grid');
-            zones.forEach(z => z.innerHTML = '');
+            zones.forEach(z => { if (z) z.innerHTML = ''; });
         }
     });
 };
@@ -4729,9 +4756,7 @@ function renderCalendar() {
 
         let html = `<div class="day-number">${i}${isToday ? '<span class="today-badge">今天</span>' : ''}</div>`;
 
-        const _mobCal = window.innerWidth <= 768;
-        const _mobCalCat = document.body.getAttribute('data-mobile-cat') || 'learning';
-        const lt = (!_mobCal || _mobCalCat === 'learning') ? getTasksForDate(ds).filter(t => t.type === 'learning' && t.date !== 'pool').sort((a, b) => String(a.id).localeCompare(String(b.id))) : [];
+        const lt = getTasksForDate(ds).filter(t => t.type === 'learning' && t.date !== 'pool').sort((a, b) => String(a.id).localeCompare(String(b.id)));
         if (lt.length > 0) {
             html += '<div class="cal-section">';
             lt.slice(0, 3).forEach(t => {
@@ -4747,7 +4772,7 @@ function renderCalendar() {
             html += '</div>';
         }
 
-        const ot = (!_mobCal || _mobCalCat === 'other') ? getTasksForDate(ds).filter(t => t.type === 'other' && t.date !== 'pool').sort((a, b) => String(a.id).localeCompare(String(b.id))) : [];
+        const ot = getTasksForDate(ds).filter(t => t.type === 'other' && t.date !== 'pool').sort((a, b) => String(a.id).localeCompare(String(b.id)));
         if (ot.length > 0) {
             html += '<div class="cal-section">';
             ot.slice(0, 3).forEach(t => {
@@ -4767,7 +4792,7 @@ function renderCalendar() {
         const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds]) || {};
         let allSlotExs = [];
         Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
-        const exNames = (!_mobCal || _mobCalCat === 'exercise') ? [...new Set(allSlotExs)] : [];
+        const exNames = [...new Set(allSlotExs)];
         if (exNames.length > 0) {
             html += '<div class="cal-section">';
             exNames.slice(0, 3).forEach(n => {
@@ -4967,16 +4992,21 @@ function renderWeekBoard() {
     if (wkText) wkText.oninput = (e) => { appData.weeklyReflections[wkKey] = e.target.value; saveDataToFile(appData); };
     if (window.innerWidth <= 768) {
         board.style.gridTemplateColumns = '';
-        const _mobCatW = document.body.getAttribute('data-mobile-cat') || 'learning';
-        const _showTasksW = _mobCatW === 'learning' || _mobCatW === 'other';
-        const _showExW = _mobCatW === 'exercise';
+        const _weekDayStr = document.body.getAttribute('data-mobile-week-day');
+        let _mobWeekDay = (_weekDayStr !== null && _weekDayStr !== '') ? parseInt(_weekDayStr, 10) : -1;
+        if (isNaN(_mobWeekDay) || _mobWeekDay < 0 || _mobWeekDay > 6) {
+            const _wd = new Date().getDay() || 7;
+            _mobWeekDay = _wd - 1;
+            document.body.setAttribute('data-mobile-week-day', String(_mobWeekDay));
+        }
         wd.forEach((dn, i) => {
+            if (i !== _mobWeekDay) return;
             const ds = dates[i];
             const isToday = ds === todayStr;
             const col = document.createElement('div');
             col.className = 'week-column' + (isToday ? ' today-col' : '');
             col.innerHTML = `<div class="week-column-header" onclick="jumpToDay('${ds}')">${dn} <br><span style="font-size:var(--font-small);color:var(--text-muted);">${new Date(ds).getMonth()+1}/${new Date(ds).getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
-            if (_showTasksW) getTasksForDate(ds).filter(t => t.type === _mobCatW).forEach(t => {
+            getTasksForDate(ds).forEach(t => {
                 if (t.countOnly && !t.timeSlot) return;
                 const item = createWeekTaskDOM(t, ds);
                 if (t.timeSlot) {
@@ -4990,7 +5020,7 @@ function renderWeekBoard() {
             let allSlotExs = [];
             Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
             const rec = appData.exercises.filter(e => isRecurringMatch(e.recurringType, ds)).map(e => e.name);
-            const names = _showExW ? [...new Set([...manual.filter(n => !allSlotExs.includes(n)), ...rec.filter(n => !allSlotExs.includes(n))])] : [];
+            const names = [...new Set([...manual.filter(n => !allSlotExs.includes(n)), ...rec.filter(n => !allSlotExs.includes(n))])];
             names.forEach(n => {
                 const ex = appData.exercises.find(e => e.name === n);
                 if (!ex) return;
@@ -5710,14 +5740,25 @@ function renderDayPlan() {
             el.appendChild(btn);
         }
     }
-    renderList(ll, aL, 'learning'); renderList(ol, aO, 'other');
-    [['learning', dL, lc], ['other', dO, oc]].forEach(([_, list, container]) => {
-        if (list.length > 0) {
-            container.innerHTML = `<details class="completed-tasks-section"><summary>已完成 (${list.length})</summary><div class="completed-tasks-list"></div></details>`;
-            const box = container.querySelector('.completed-tasks-list');
-            list.forEach(t => box.appendChild(generateTaskDOM(t, ds)));
+    const _isMobDay = window.innerWidth <= 768;
+    const _mobDayCat = document.body.getAttribute('data-mobile-day-cat') || 'todo';
+    const _showDayCat = (key) => !_isMobDay || _mobDayCat === key;
+    if (_showDayCat('learning')) {
+        renderList(ll, aL, 'learning');
+        if (dL.length > 0) {
+            lc.innerHTML = `<details class="completed-tasks-section"><summary>已完成 (${dL.length})</summary><div class="completed-tasks-list"></div></details>`;
+            const box = lc.querySelector('.completed-tasks-list');
+            dL.forEach(t => box.appendChild(generateTaskDOM(t, ds)));
         }
-    });
+    }
+    if (_showDayCat('other')) {
+        renderList(ol, aO, 'other');
+        if (dO.length > 0) {
+            oc.innerHTML = `<details class="completed-tasks-section"><summary>已完成 (${dO.length})</summary><div class="completed-tasks-list"></div></details>`;
+            const box = oc.querySelector('.completed-tasks-list');
+            dO.forEach(t => box.appendChild(generateTaskDOM(t, ds)));
+        }
+    }
     const rt = document.getElementById('daily-reflection-textarea');
     const rDetails = document.getElementById('day-summary-details');
     if (rt) {
@@ -5748,7 +5789,11 @@ function renderDayPlan() {
             hintEl.title = fullText;
         }
     }
-    renderTodoList(); renderDayExercises(); updateFixedProgressBars(); saveDataToFile(appData);
+    if (_showDayCat('todo')) renderTodoList();
+    else { const el = document.getElementById('todo-list'); if (el) el.innerHTML = ''; }
+    if (_showDayCat('exercise')) renderDayExercises();
+    else { const el = document.getElementById('exercise-grid'); if (el) el.innerHTML = ''; }
+    updateFixedProgressBars(); saveDataToFile(appData);
     if (currentTaskModalCategory) renderTaskListModalContent(currentTaskModalCategory);
     if (window.applyMobileDayFilter) window.applyMobileDayFilter();
     setTimeout(initTaskAndSubTaskDrag, 0);
@@ -7753,8 +7798,14 @@ window.addEventListener('beforeunload', () => {
     resetSyncedBaseline(appData);
     window._appInitDone = true;
     try {
-        const _savedCat = localStorage.getItem('myWorkspaceMobileCat') || 'learning';
-        document.body.setAttribute('data-mobile-cat', _savedCat);
+        const _savedDayCat = localStorage.getItem('myWorkspaceMobileDayCat') || 'todo';
+        document.body.setAttribute('data-mobile-day-cat', _savedDayCat);
+        const _savedWeekDay = localStorage.getItem('myWorkspaceMobileWeekDay');
+        if (_savedWeekDay !== null) document.body.setAttribute('data-mobile-week-day', _savedWeekDay);
+        else {
+            const _wd = new Date().getDay() || 7;
+            document.body.setAttribute('data-mobile-week-day', String(_wd - 1));
+        }
     } catch(e) {}
     if (window.renderMobileCatTabs) window.renderMobileCatTabs();
     // checkVersionUpdate(); // 版本弹窗已移除
