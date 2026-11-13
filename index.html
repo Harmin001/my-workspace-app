@@ -4119,16 +4119,27 @@ function handleIncomingOp(op) {
         renderDayExercises(); renderWeekBoard(); renderExercisePool();
     } else if (op.action === 'UPDATE_METHODS') {
         const m = appData.methodsFiles.find(x => x.id === op.method.id);
-        if (m) Object.assign(m, op.method);
-        else appData.methodsFiles.push(op.method);
-        // ✅ 更新同步基线，避免接收方下次把同一份内容误广播回去
+        if (m) {
+            // ✅ 仅当远端内容不旧于本地时才覆盖，防止旧内容覆盖新编辑
+            const _lTime = Number(m.updatedAt || 0);
+            const _rTime = Number(op.method.updatedAt || 0);
+            if (_rTime >= _lTime) Object.assign(m, op.method);
+        } else {
+            appData.methodsFiles.push(op.method);
+        }
+        // ✅ 更新同步基线 & _syncSnapshot，避免接收方把接收到的内容当用户编辑再次广播
         try {
             const _applied = appData.methodsFiles.find(x => x.id === op.method.id);
-            const _idx = lastSyncedMethods.findIndex(x => x.id === op.method.id);
             if (_applied) {
                 const _copy = JSON.parse(JSON.stringify(_applied));
+                const _idx = lastSyncedMethods.findIndex(x => x.id === op.method.id);
                 if (_idx !== -1) lastSyncedMethods[_idx] = _copy;
                 else lastSyncedMethods.push(_copy);
+                if (_syncSnapshot && Array.isArray(_syncSnapshot.methodsFiles)) {
+                    const _idx2 = _syncSnapshot.methodsFiles.findIndex(x => x.id === op.method.id);
+                    if (_idx2 !== -1) _syncSnapshot.methodsFiles[_idx2] = JSON.parse(JSON.stringify(_applied));
+                    else _syncSnapshot.methodsFiles.push(JSON.parse(JSON.stringify(_applied)));
+                }
             }
         } catch(e) { console.warn('[更新笔记同步基线失败]', e); }
         renderMethodsFileList();
@@ -7242,9 +7253,20 @@ function mergeData(local, remote) {
                     if (rf.type === 'file') {
                         lf.contentHtml = rf.contentHtml;
                         lf.contentText = rf.contentText;
-                        lf.contentMarkdown = rf.contentMarkdown || lf.contentMarkdown || '';
+                        lf.contentMarkdown = rf.contentMarkdown !== undefined ? rf.contentMarkdown : (lf.contentMarkdown || '');
                     }
                     lf.updatedAt = rf.updatedAt;
+                } else if (rAt === lAt && rAt === 0 && rf.type === 'file' && lf.type === 'file') {
+                    // 旧数据（两端 updatedAt 均为 0）：本地为空、远端有内容时采用远端，避免首次同步丢正文
+                    const _lMd = String(lf.contentMarkdown || '');
+                    const _rMd = String(rf.contentMarkdown || '');
+                    if (!_lMd && _rMd) {
+                        lf.name = rf.name; lf.type = rf.type; lf.parentId = rf.parentId;
+                        lf.deleted = !!rf.deleted;
+                        lf.contentHtml = rf.contentHtml;
+                        lf.contentText = rf.contentText;
+                        lf.contentMarkdown = _rMd;
+                    }
                 }
             }
         });
