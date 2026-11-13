@@ -2103,7 +2103,8 @@ function getDateEnergySpent(dateStr) {
     return total;
 }
 function getTodayEnergySpent() { return getDateEnergySpent(getTodayString()); }
-function getTodayEnergyRemaining() { ensureEnergyData(); return Math.max(-20, appData.energyMax - getTodayEnergySpent()); }
+function getEnergyLowerBound() { ensureEnergyData(); return -(Number(appData.energyMax) || 200) / 2; }
+function getTodayEnergyRemaining() { ensureEnergyData(); return Math.max(getEnergyLowerBound(), appData.energyMax - getTodayEnergySpent()); }
 function adjustTodayEnergy(delta) {
     ensureEnergyData();
     const today = getTodayString();
@@ -2115,7 +2116,7 @@ function adjustExp(delta) {
     let finalDelta = delta;
     if (delta > 0) {
         const remain = getTodayEnergyRemaining();
-        if (remain <= -20) finalDelta = 1;
+        if (remain <= getEnergyLowerBound()) finalDelta = 1;
         else if (remain < (appData.energyWarnThreshold || 30)) finalDelta = Math.max(1, Math.floor(delta * 0.5 * appData.expRatio));
         else finalDelta = Math.max(1, Math.floor(delta * appData.expRatio));
     } else if (delta < 0) finalDelta = Math.floor(delta * appData.expRatio);
@@ -2173,17 +2174,18 @@ function flashElement(el, cls, ms) { if (!el) return; el.classList.add(cls); set
 function renderEnergyAndRPG() {
     ensureEnergyData();
     const max = appData.energyMax, spent = getTodayEnergySpent();
-    const remaining = Math.max(-20, max - spent);
+    const lowerBound = getEnergyLowerBound();
+    const remaining = Math.max(lowerBound, max - spent);
     const pct = max > 0 ? Math.max(0, Math.min(100, (remaining / max) * 100)) : 0;
     const low = remaining < (appData.energyWarnThreshold || 30);
-    const critical = remaining <= -20;
+    const critical = remaining <= lowerBound;
     const energyColor = critical ? '#ff0000' : (remaining < 0 ? '#ff4d4d' : (remaining / max > 0.6 ? '#27ae60' : (remaining / max > 0.3 ? '#f2994a' : '#eb5757')));
     const eText = document.getElementById('energy-text'), eFill = document.getElementById('energy-fill');
     if (eText) { eText.innerText = `${remaining} / ${max}`; eText.style.color = critical ? '#ff0000' : (low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309')); }
     if (eFill) { eFill.style.width = pct + '%'; eFill.style.background = energyColor; }
     const warn = document.getElementById('energy-warn');
     if (warn) {
-        if (critical) { warn.style.display = 'block'; warn.innerText = '🚨 精力耗尽（-20），请立刻休息！获得的经验降为1。'; warn.style.background = '#ff0000'; warn.style.color = '#fff'; }
+        if (critical) { warn.style.display = 'block'; warn.innerText = '🚨 精力耗尽（' + lowerBound + '），请立刻休息！获得的经验降为1。'; warn.style.background = '#ff0000'; warn.style.color = '#fff'; }
         else if (low) { warn.style.display = 'block'; warn.innerText = '⚠️ 精力过低，注意休息！'; warn.style.background = ''; warn.style.color = ''; }
         else warn.style.display = 'none';
     }
@@ -2191,7 +2193,7 @@ function renderEnergyAndRPG() {
     if (mText) { mText.innerText = `${remaining} / ${max}`; mText.style.color = critical ? '#ff0000' : (low ? 'var(--danger-color)' : (document.body.classList.contains('dark-mode') ? '#fbbf24' : '#b45309')); }
     if (mFill) { mFill.style.width = pct + '%'; mFill.style.background = energyColor; }
     if (mWarn) {
-        if (critical) { mWarn.style.display = 'block'; mWarn.innerText = '🚨 精力耗尽（-20），请立刻休息！获得的经验降为1。'; mWarn.style.background = '#ff0000'; mWarn.style.color = '#fff'; }
+        if (critical) { mWarn.style.display = 'block'; mWarn.innerText = '🚨 精力耗尽（' + lowerBound + '），请立刻休息！获得的经验降为1。'; mWarn.style.background = '#ff0000'; mWarn.style.color = '#fff'; }
         else if (low) { mWarn.style.display = 'block'; mWarn.innerText = '⚠️ 精力过低，注意休息！'; mWarn.style.background = ''; mWarn.style.color = ''; }
         else mWarn.style.display = 'none';
     }
@@ -2314,8 +2316,13 @@ window.restoreEnergy = function(type) {
     const max = appData.energyMax;
     const spentTotal = getDateEnergySpent(today);
     const rawRemain = max - spentTotal;
-    const shownRemain = Math.max(-20, rawRemain);
-    const targetRemain = Math.min(max, shownRemain + amt);
+    const shownRemain = Math.max(getEnergyLowerBound(), rawRemain);
+    let targetRemain;
+    if (type === 'nap' && shownRemain < 0) {
+        targetRemain = Math.min(max, 0 + amt);
+    } else {
+        targetRemain = Math.min(max, shownRemain + amt);
+    }
     if (targetRemain <= shownRemain) { showMiniToast('⚡ 精力已满，无需恢复'); return; }
     const reduce = targetRemain - rawRemain;
     appData.dailyEnergy[today] = (appData.dailyEnergy[today] || 0) - reduce;
@@ -5504,10 +5511,11 @@ const SUB_FOLD_THRESHOLD = 3;
 function renderSubTaskHtml(task, sub, ds) {
     const ecBadge = (sub.energyCost !== undefined && sub.energyCost !== null) ? `<span class="sub-badge sub-badge-energy" title="精力消耗">⚡${sub.energyCost}</span>` : '';
     const estBadge = sub.estimate ? `<span class="sub-badge sub-badge-estimate" title="预计时长">⏱${escapeHtml(sub.estimate)}</span>` : '';
-    if (sub.countOnly) {
+        if (sub.countOnly) {
+        const _visualDone = isTaskDone(task, ds) || !!sub.countEnded;
         return `
             <div class="sub-task-item" data-sub-id="${sub.id}">
-                <div class="sub-task-left"><span style="font-size:1em;">🔄</span><span class="${sub.countEnded ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span></div>
+                <div class="sub-task-left"><span style="font-size:1em;">🔄</span><span class="${_visualDone ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span></div>
                 <div class="sub-actions">${ecBadge}${estBadge}<span class="count-display">累计 <b>${sub.countTotal || 0}</b> 次</span><button class="btn-count-plus" style="padding:2px 8px;font-size:var(--font-small);" onclick="incrementSubCount('${task.id}', '${sub.id}')">+1</button><span class="btn-icon btn-count-end" title="结束此子任务" onclick="endSubCount('${task.id}', '${sub.id}')" style="font-weight:bold;">🏁</span><span class="btn-sub-count" title="转回普通子任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">↩️ 普通</span><span class="btn-sub-delete" title="删除" onclick="deleteSubTask('${task.id}', '${sub.id}')" style="cursor:pointer;color:var(--text-muted);padding:0 2px;">🗑️</span></div>
             </div>`;
     }
@@ -6263,7 +6271,7 @@ function toggleTaskCompletion(t, ds) {
     const isCount = !!t.target && !hasSub;
     if (hasSub) {
         t.subTasks.forEach(s => {
-            if (s.countOnly) { if (will && !s.countEnded) adjustAttr(t.type, 1); s.countEnded = will; return; }
+            if (s.countOnly) { return; }
             const sw = isSubTaskDone(s, ds);
             if (s.target) {
                 if (will) {
