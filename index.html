@@ -662,23 +662,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
     .mobile-cat-tabs button.active {
         background: var(--accent-color); color: #fff; border-color: var(--accent-color);
     }
-    body[data-mobile-cat="learning"] #day-panels-grid .section-box[data-panel="other"],
-    body[data-mobile-cat="learning"] #day-panels-grid .section-box[data-panel="exercise"],
-    body[data-mobile-cat="other"] #day-panels-grid .section-box[data-panel="learning"],
-    body[data-mobile-cat="other"] #day-panels-grid .section-box[data-panel="exercise"],
-    body[data-mobile-cat="exercise"] #day-panels-grid .section-box[data-panel="learning"],
-    body[data-mobile-cat="exercise"] #day-panels-grid .section-box[data-panel="other"] { display: none !important; }
-    body[data-mobile-cat="learning"] .cal-task-other,
-    body[data-mobile-cat="learning"] .cal-task-exercise,
-    body[data-mobile-cat="other"] .cal-task-learning,
-    body[data-mobile-cat="other"] .cal-task-exercise,
-    body[data-mobile-cat="exercise"] .cal-task-learning,
-    body[data-mobile-cat="exercise"] .cal-task-other { display: none !important; }
-    body[data-mobile-cat="learning"] .task-item[data-task-type="other"],
-    body[data-mobile-cat="learning"] .exercise-capsule,
-    body[data-mobile-cat="other"] .task-item[data-task-type="learning"],
-    body[data-mobile-cat="other"] .exercise-capsule,
-    body[data-mobile-cat="exercise"] .task-item:not(.todo-pool-item) { display: none !important; }
+    .mobile-cat-tabs.hidden-tabs { display: none !important; }
     .sidebar { width: 100%; height: auto; order: 2; border-right: none; border-top: 1px solid var(--border-color); padding: 8px 4px; flex-direction: row; justify-content: space-around; align-items: center; position: fixed; bottom: 0; left: 0; z-index: 100; background: rgba(247,247,245,.95); backdrop-filter: blur(10px); }
     body.dark-mode .sidebar { background: rgba(30,30,30,.95); }
     .sidebar-title, .sidebar-footer { display: none; }
@@ -804,11 +788,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 </div>
 <div class="mobile-rpg-fab" id="mobile-rpg-fab" onclick="openRPGModal()"><span id="mobile-rpg-lv">Lv.1</span><span id="mobile-rpg-energy">⚡200</span></div>
 <div class="main-content">
-<div class="mobile-cat-tabs" id="mobile-cat-tabs">
-    <button data-cat="learning" class="active" onclick="switchMobileCategory('learning')">📚 学习</button>
-    <button data-cat="other" onclick="switchMobileCategory('other')">🧺 其他</button>
-    <button data-cat="exercise" onclick="switchMobileCategory('exercise')">💪 锻炼</button>
-</div>
+<div class="mobile-cat-tabs hidden-tabs" id="mobile-cat-tabs"></div>
 <div class="view-container" id="view-year">
 <div class="year-header"><h1>📊 全年总览</h1><div class="time-nav" style="margin-bottom:0;"><button onclick="changeYear(-1)">← 上一年</button><span id="year-display" style="font-size:var(--font-content);">2025年</span><button onclick="changeYear(1)">下一年 →</button></div></div>
 <div class="year-heatmap" id="year-heatmap"></div>
@@ -3109,7 +3089,12 @@ function renderMethodsFileList() {
     if (!list) return;
     list.innerHTML = '';
     if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) { list.innerHTML = '<div class="methods-file-empty">暂无文件<br>点右上角 ➕ 新建</div>'; return; }
-    const roots = buildFileTree(null);
+    let roots;
+    if (window.innerWidth <= 768 && appData._mobileMethodsFolder && appData._mobileMethodsFolder !== 'all') {
+        roots = buildFileTree(appData._mobileMethodsFolder);
+    } else {
+        roots = buildFileTree(null);
+    }
     renderMethodsFileTree(roots, list);
     const files = appData.methodsFiles.filter(f => f.type === 'file' && !f.deleted);
     const leftSel = document.getElementById('split-left-select');
@@ -4111,6 +4096,7 @@ function applyPanelLayout() {
             if (s.h) p.style.height = s.h; else p.style.removeProperty('height');
         }
     });
+    if (window.applyMobileDayFilter) window.applyMobileDayFilter();
 }
 function savePanelOrder() {
     const grid = document.getElementById('day-panels-grid');
@@ -4626,12 +4612,82 @@ window.switchYearChartMode = function(mode) {
     saveDataToFile(appData);
     renderYearHeatmap();
 };
+// ====== 移动端二级筛选栏（动态生成） ======
+function getTaskCategories() {
+    // 任务大类列表，如需新增大类可在此处扩展
+    return [
+        { key: 'learning', name: '📚 学习' },
+        { key: 'other', name: '🧺 其他' },
+        { key: 'exercise', name: '💪 锻炼' }
+    ];
+}
+function getCurrentViewTarget() {
+    const active = document.querySelector('.view-container.active');
+    if (!active) return '';
+    return (active.id || '').replace(/^view-/, '');
+}
+window.renderMobileCatTabs = function() {
+    const bar = document.getElementById('mobile-cat-tabs');
+    if (!bar) return;
+    if (window.innerWidth > 768) { bar.classList.add('hidden-tabs'); bar.innerHTML = ''; return; }
+    const view = getCurrentViewTarget();
+    if (view === 'day' || view === 'month' || view === 'week') {
+        const cats = getTaskCategories();
+        let cur = document.body.getAttribute('data-mobile-cat') || cats[0].key;
+        if (!cats.some(c => c.key === cur)) { cur = cats[0].key; document.body.setAttribute('data-mobile-cat', cur); }
+        bar.innerHTML = cats.map(c => `<button data-cat="${c.key}" class="${c.key === cur ? 'active' : ''}" onclick="switchMobileCategory('${c.key}')">${c.name}</button>`).join('');
+        bar.classList.remove('hidden-tabs');
+        return;
+    }
+    if (view === 'methods') {
+        if (!Array.isArray(appData.methodsFiles)) { bar.classList.add('hidden-tabs'); bar.innerHTML = ''; return; }
+        const folders = appData.methodsFiles.filter(f => f.type === 'folder' && !f.deleted);
+        const cur = appData._mobileMethodsFolder || 'all';
+        let btns = [`<button data-folder="all" class="${cur === 'all' ? 'active' : ''}" onclick="switchMobileMethodsFolder('all')">📁 全部</button>`];
+        folders.forEach(fd => {
+            btns.push(`<button data-folder="${fd.id}" class="${cur === fd.id ? 'active' : ''}" onclick="switchMobileMethodsFolder('${fd.id}')">📂 ${escapeHtml(fd.name)}</button>`);
+        });
+        bar.innerHTML = btns.join('');
+        bar.classList.remove('hidden-tabs');
+        return;
+    }
+    bar.classList.add('hidden-tabs');
+    bar.innerHTML = '';
+};
 window.switchMobileCategory = function(cat) {
     document.body.setAttribute('data-mobile-cat', cat);
     document.querySelectorAll('.mobile-cat-tabs button').forEach(b => {
         b.classList.toggle('active', b.dataset.cat === cat);
     });
     try { localStorage.setItem('myWorkspaceMobileCat', cat); } catch(e) {}
+    const view = getCurrentViewTarget();
+    if (view === 'day') renderDayPlan();
+    else if (view === 'month') renderCalendar();
+    else if (view === 'week') { renderWeekBoard(); renderTaskPool(); }
+};
+window.switchMobileMethodsFolder = function(folderId) {
+    appData._mobileMethodsFolder = folderId;
+    renderMethodsFileList();
+    renderMobileCatTabs();
+};
+window.applyMobileDayFilter = function() {
+    const grid = document.getElementById('day-panels-grid');
+    if (!grid) return;
+    if (window.innerWidth > 768) {
+        grid.querySelectorAll('.section-box[data-panel]').forEach(box => box.style.display = '');
+        return;
+    }
+    const cat = document.body.getAttribute('data-mobile-cat') || 'learning';
+    grid.querySelectorAll('.section-box[data-panel]').forEach(box => {
+        const p = box.getAttribute('data-panel');
+        if (p === 'todo' || p === cat) {
+            box.style.display = '';
+        } else {
+            box.style.display = 'none';
+            const zones = box.querySelectorAll('.task-drop-zone, #exercise-grid');
+            zones.forEach(z => z.innerHTML = '');
+        }
+    });
 };
 function renderCalendar() {
     ensureEnergyData();
@@ -4673,7 +4729,9 @@ function renderCalendar() {
 
         let html = `<div class="day-number">${i}${isToday ? '<span class="today-badge">今天</span>' : ''}</div>`;
 
-        const lt = getTasksForDate(ds).filter(t => t.type === 'learning' && t.date !== 'pool').sort((a, b) => String(a.id).localeCompare(String(b.id)));
+        const _mobCal = window.innerWidth <= 768;
+        const _mobCalCat = document.body.getAttribute('data-mobile-cat') || 'learning';
+        const lt = (!_mobCal || _mobCalCat === 'learning') ? getTasksForDate(ds).filter(t => t.type === 'learning' && t.date !== 'pool').sort((a, b) => String(a.id).localeCompare(String(b.id))) : [];
         if (lt.length > 0) {
             html += '<div class="cal-section">';
             lt.slice(0, 3).forEach(t => {
@@ -4689,7 +4747,7 @@ function renderCalendar() {
             html += '</div>';
         }
 
-        const ot = getTasksForDate(ds).filter(t => t.type === 'other' && t.date !== 'pool').sort((a, b) => String(a.id).localeCompare(String(b.id)));
+        const ot = (!_mobCal || _mobCalCat === 'other') ? getTasksForDate(ds).filter(t => t.type === 'other' && t.date !== 'pool').sort((a, b) => String(a.id).localeCompare(String(b.id))) : [];
         if (ot.length > 0) {
             html += '<div class="cal-section">';
             ot.slice(0, 3).forEach(t => {
@@ -4709,7 +4767,7 @@ function renderCalendar() {
         const slotSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds]) || {};
         let allSlotExs = [];
         Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
-        const exNames = [...new Set(allSlotExs)];
+        const exNames = (!_mobCal || _mobCalCat === 'exercise') ? [...new Set(allSlotExs)] : [];
         if (exNames.length > 0) {
             html += '<div class="cal-section">';
             exNames.slice(0, 3).forEach(n => {
@@ -4909,13 +4967,16 @@ function renderWeekBoard() {
     if (wkText) wkText.oninput = (e) => { appData.weeklyReflections[wkKey] = e.target.value; saveDataToFile(appData); };
     if (window.innerWidth <= 768) {
         board.style.gridTemplateColumns = '';
+        const _mobCatW = document.body.getAttribute('data-mobile-cat') || 'learning';
+        const _showTasksW = _mobCatW === 'learning' || _mobCatW === 'other';
+        const _showExW = _mobCatW === 'exercise';
         wd.forEach((dn, i) => {
             const ds = dates[i];
             const isToday = ds === todayStr;
             const col = document.createElement('div');
             col.className = 'week-column' + (isToday ? ' today-col' : '');
             col.innerHTML = `<div class="week-column-header" onclick="jumpToDay('${ds}')">${dn} <br><span style="font-size:var(--font-small);color:var(--text-muted);">${new Date(ds).getMonth()+1}/${new Date(ds).getDate()}</span>${isToday ? '<br><span class="week-today-badge">今天</span>' : ''}</div>`;
-            getTasksForDate(ds).forEach(t => {
+            if (_showTasksW) getTasksForDate(ds).filter(t => t.type === _mobCatW).forEach(t => {
                 if (t.countOnly && !t.timeSlot) return;
                 const item = createWeekTaskDOM(t, ds);
                 if (t.timeSlot) {
@@ -4929,7 +4990,7 @@ function renderWeekBoard() {
             let allSlotExs = [];
             Object.values(slotSched).forEach(arr => { allSlotExs = allSlotExs.concat(arr); });
             const rec = appData.exercises.filter(e => isRecurringMatch(e.recurringType, ds)).map(e => e.name);
-            const names = [...new Set([...manual.filter(n => !allSlotExs.includes(n)), ...rec.filter(n => !allSlotExs.includes(n))])];
+            const names = _showExW ? [...new Set([...manual.filter(n => !allSlotExs.includes(n)), ...rec.filter(n => !allSlotExs.includes(n))])] : [];
             names.forEach(n => {
                 const ex = appData.exercises.find(e => e.name === n);
                 if (!ex) return;
@@ -5689,6 +5750,7 @@ function renderDayPlan() {
     }
     renderTodoList(); renderDayExercises(); updateFixedProgressBars(); saveDataToFile(appData);
     if (currentTaskModalCategory) renderTaskListModalContent(currentTaskModalCategory);
+    if (window.applyMobileDayFilter) window.applyMobileDayFilter();
     setTimeout(initTaskAndSubTaskDrag, 0);
 }
 function getCategoryTasks(type) {
@@ -5918,6 +5980,7 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
             const panel = document.getElementById('week-drawer-panel');
             if (panel && panel.classList.contains('open')) toggleWeekDrawer(false);
         }
+        if (window.renderMobileCatTabs) window.renderMobileCatTabs();
     });
 });
 window.handleReflectionInput = function(val) {
@@ -7692,10 +7755,8 @@ window.addEventListener('beforeunload', () => {
     try {
         const _savedCat = localStorage.getItem('myWorkspaceMobileCat') || 'learning';
         document.body.setAttribute('data-mobile-cat', _savedCat);
-        document.querySelectorAll('.mobile-cat-tabs button').forEach(b => {
-            b.classList.toggle('active', b.dataset.cat === _savedCat);
-        });
     } catch(e) {}
+    if (window.renderMobileCatTabs) window.renderMobileCatTabs();
     // checkVersionUpdate(); // 版本弹窗已移除
     window.addEventListener('online', () => { syncStatus = 'connected'; updateSyncUI(); });
     window.addEventListener('offline', () => { syncStatus = 'offline'; updateSyncUI(); });
