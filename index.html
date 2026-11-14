@@ -4267,6 +4267,14 @@ function getTaskProgress(t, ds) {
 }
 function syncParentTaskStatus(t, ds) {
     if (!t.subTasks || t.subTasks.length === 0) return;
+    if (isTaskDone(t, ds)) {
+        const _allDoneCheck = t.subTasks.every(s => {
+            if (s.countOnly) return !!s.countEnded;
+            if (s.target) return getSubCurrent(s, ds, t) >= s.target;
+            return isSubTaskDone(s, ds);
+        });
+        if (!_allDoneCheck) return;
+    }
     const allDone = t.subTasks.every(s => {
         if (s.countOnly) return !!s.countEnded;
         return s.target ? getSubCurrent(s, ds, t) >= s.target : isSubTaskDone(s, ds);
@@ -5513,11 +5521,19 @@ function renderSubTaskHtml(task, sub, ds) {
     const estBadge = sub.estimate ? `<span class="sub-badge sub-badge-estimate" title="预计时长">⏱${escapeHtml(sub.estimate)}</span>` : '';
         if (sub.countOnly) {
         const _visualDone = isTaskDone(task, ds) || !!sub.countEnded;
-        return `
-            <div class="sub-task-item" data-sub-id="${sub.id}">
-                <div class="sub-task-left"><span style="font-size:1em;">🔄</span><span class="${_visualDone ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span></div>
-                <div class="sub-actions">${ecBadge}${estBadge}<span class="count-display">累计 <b>${sub.countTotal || 0}</b> 次</span><button class="btn-count-plus" style="padding:2px 8px;font-size:var(--font-small);" onclick="incrementSubCount('${task.id}', '${sub.id}')">+1</button><span class="btn-icon btn-count-end" title="结束此子任务" onclick="endSubCount('${task.id}', '${sub.id}')" style="font-weight:bold;">🏁</span><span class="btn-sub-count" title="转回普通子任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">↩️ 普通</span><span class="btn-sub-delete" title="删除" onclick="deleteSubTask('${task.id}', '${sub.id}')" style="cursor:pointer;color:var(--text-muted);padding:0 2px;">🗑️</span></div>
-            </div>`;
+            const _visualDone = isTaskDone(task, ds) || done;
+    const _leadingIcon = isCount
+        ? `<span style="font-size:1em;">🎯</span>`
+        : `<input type="checkbox" class="task-checkbox" ${done ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')">`;
+    return `
+        <div class="sub-task-item" data-sub-id="${sub.id}">
+            <div class="sub-task-left">${_leadingIcon}<span class="${_visualDone ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span></div>
+            <div class="sub-actions">${ecBadge}${estBadge}${progBadge}
+                ${isCount ? `<div class="sub-prog-container"><div class="sub-prog-bar-bg"><div class="sub-prog-bar-fill" style="width:${pct}%;"></div></div>${!done ? `<button class="btn-sub-plus" onclick="decrementSubTaskProgress('${task.id}', '${sub.id}')" title="减少一次">-1</button><button class="btn-sub-plus" onclick="incrementSubTaskProgress('${task.id}', '${sub.id}')" title="增加一次">+1</button>` : ''}</div>` : ''}
+                <span class="btn-sub-count" title="转为累计计数任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">🔄 计数</span>
+                <div class="sub-more-container"><span class="sub-more-btn" onclick="toggleSubMore(this, event)" title="更多操作">⋮</span><div class="sub-more-menu"><div class="sub-more-item" onclick="setSubTaskEstimate('${task.id}', '${sub.id}')">${estLabel} 预计时长</div><div class="sub-more-item" onclick="setSubTaskEnergyCost('${task.id}', '${sub.id}')">⚡ 精力消耗 (${ec})</div><div class="sub-more-item" onclick="setSubTaskTarget('${task.id}', '${sub.id}')"># 设置次数</div><div class="sub-more-item" onclick="deleteSubTask('${task.id}', '${sub.id}')" style="color:var(--danger-color);">🗑️ 删除</div></div></div>
+            </div>
+        </div>`;
     }
     const sp = getSubTaskProgress(sub, ds, task);
     const done = isSubTaskDone(sub, ds);
@@ -6272,22 +6288,13 @@ function toggleTaskCompletion(t, ds) {
     if (hasSub) {
         t.subTasks.forEach(s => {
             if (s.countOnly) { return; }
+            if (s.target) { return; }
             const sw = isSubTaskDone(s, ds);
-            if (s.target) {
-                if (will) {
-                    const cur = getSubCurrent(s, ds, t);
-                    const d = s.target - cur;
-                    if (d > 0) { adjustTodayEnergy(d * (s.energyCost || 1)); adjustExp(d * (s.energyCost || 1)); }
-                    setSubCurrent(s, ds, s.target); setSubTaskDone(s, ds, true);
-                    if (!sw) adjustAttr(t.type, 1);
-                } else { setSubTaskDone(s, ds, false); if (sw) adjustAttr(t.type, -1); }
-            } else {
-                if (sw !== will) {
-                    if (will) { adjustTodayEnergy(s.energyCost || 5); adjustExp(s.energyCost || 5); adjustAttr(t.type, 1); }
-                    else { adjustTodayEnergy(-(s.energyCost || 5)); adjustExp(-(s.energyCost || 5)); adjustAttr(t.type, -1); }
-                }
-                setSubTaskDone(s, ds, will);
+            if (sw !== will) {
+                if (will) { adjustTodayEnergy(s.energyCost || 5); adjustExp(s.energyCost || 5); adjustAttr(t.type, 1); }
+                else { adjustTodayEnergy(-(s.energyCost || 5)); adjustExp(-(s.energyCost || 5)); adjustAttr(t.type, -1); }
             }
+            setSubTaskDone(s, ds, will);
         });
         setTaskDone(t, ds, will);
         if (will && !was) updateStreak();
@@ -6596,6 +6603,7 @@ window.toggleSubTask = function(tid, sid) {
     const s = t.subTasks.find(s => s.id === sid);
     if (!s) return;
     if (s.countOnly) return;
+    if (s.target) return;
     const wt = isTaskDone(t, ds);
     const ws = isSubTaskDone(s, ds);
     const will = !ws;
