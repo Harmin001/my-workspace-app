@@ -1344,6 +1344,18 @@ function getDateLabel(dateStr) {
     if (d.getFullYear() === t.getFullYear()) return full;
     return `${d.getFullYear()}年${full}`;
 }
+function getDeadlineDate(task) {
+    if (!task || !task.deadline) return '';
+    const s = String(task.deadline);
+    return s.length >= 10 ? s.substring(0, 10) : s;
+}
+function formatDeadlineDisplay(deadline) {
+    if (!deadline) return '';
+    const s = String(deadline);
+    if (s.length >= 16 && s[10] === 'T') return s.substring(0, 10) + ' ' + s.substring(11, 16);
+    return s;
+}
+function generatePeerId() {
 function generatePeerId() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     let s = 'ws-';
@@ -1404,7 +1416,7 @@ function getTasksForDate(dateStr, options = {}) {
     const filteredDirect = appData.tasks.filter(t => {
         if (t.date !== dateStr || t.date === 'pool') return false;
         if (t.type === 'todo') return false;
-        if (t.skipDates && t.skipDates[dateStr] && dateStr !== t.deadline) return false;
+        if (t.skipDates && t.skipDates[dateStr] && dateStr !== getDeadlineDate(t)) return false;
         return true;
     });
     let deadlineRange = [];
@@ -1412,9 +1424,10 @@ function getTasksForDate(dateStr, options = {}) {
         deadlineRange = appData.tasks.filter(t => {
             if (t.type === 'todo') return false;
             if (!t.deadline || t.recurringType || t.countOnly || t.date === 'pool' || !t.date) return false;
-            if (t.date > dateStr || dateStr > t.deadline) return false;
+            const _dl = getDeadlineDate(t);
+            if (t.date > dateStr || dateStr > _dl) return false;
             if (filteredDirect.includes(t)) return false;
-            if (t.skipDates && t.skipDates[dateStr] && dateStr !== t.deadline) return false;
+            if (t.skipDates && t.skipDates[dateStr] && dateStr !== _dl) return false;
             return true;
         });
     }
@@ -1422,10 +1435,9 @@ function getTasksForDate(dateStr, options = {}) {
         if (t.type === 'todo') return false;
         if (!t.recurringType || t.date === 'pool' || t.date > dateStr) return false;
         if (t.timeSlot && dateStr !== t.date) return false;
-        if (t.deadline && dateStr > t.deadline) return false;
+        if (t.deadline && dateStr > getDeadlineDate(t)) return false;
         if (t.recurringEndedDate && dateStr > t.recurringEndedDate) return false;
-        if (t.completed && t.date < dateStr && !t.recurringEndedDate) return false;
-        if (t.skipDates && t.skipDates[dateStr] && dateStr !== t.deadline) return false;
+        if (t.skipDates && t.skipDates[dateStr] && dateStr !== getDeadlineDate(t)) return false;
         if (filteredDirect.includes(t) || deadlineRange.includes(t)) return false;
         return isRecurringMatch(t.recurringType, t.date, dateStr);
     });
@@ -1441,19 +1453,20 @@ function getTasksForDate(dateStr, options = {}) {
 function isTaskDone(task, dateStr) {
     if (task.countOnly) return !!task.countEnded;
     if (task.deadline && !task.recurringType && task.date && task.date !== 'pool') {
-        if (task.date <= dateStr && dateStr <= task.deadline) return !!task.completed;
+        const _dl = getDeadlineDate(task);
+        if (task.date <= dateStr && dateStr <= _dl) return !!task.completed;
     }
     if (task.completions && task.completions[dateStr] !== undefined) return task.completions[dateStr];
-    if (task.date === dateStr) return !!task.completed;
+    if (!task.recurringType && task.date === dateStr) return !!task.completed;
     return false;
 }
 function setTaskDone(task, dateStr, val) {
     if (task.countOnly) { task.countEnded = val; return; }
     if (!task.completions) task.completions = {};
     task.completions[dateStr] = val;
-    if (task.date === dateStr) task.completed = val;
+    if (!task.recurringType && task.date === dateStr) task.completed = val;
     if (task.deadline && !task.recurringType && task.date && task.date !== 'pool') {
-        if (task.date <= dateStr && dateStr <= task.deadline) task.completed = val;
+        if (task.date <= dateStr && dateStr <= getDeadlineDate(task)) task.completed = val;
     }
 }
 function getTaskCurrent(task, dateStr) {
@@ -1495,19 +1508,7 @@ function setSubTaskDone(sub, dateStr, val) {
 }
 function getSubCurrent(sub, dateStr, parentTask) {
     if (sub.currents && sub.currents[dateStr] !== undefined) return sub.currents[dateStr];
-    if (sub.target && parentTask && parentTask.recurringType) {
-        let checkDateStr = dateStr;
-        for (let i = 0; i < 50; i++) {
-            const prev = getPrevRecurringDate(parentTask.recurringType, checkDateStr);
-            if (!prev || prev < parentTask.date) break;
-            if (sub.currents && sub.currents[prev] !== undefined) {
-                const prevVal = sub.currents[prev];
-                return prevVal < sub.target ? prevVal : 0;
-            }
-            checkDateStr = prev;
-        }
-        if (parentTask.date <= dateStr && sub.current !== undefined) return sub.current < sub.target ? sub.current : 0;
-    }
+    if (parentTask && parentTask.recurringType) return 0;
     return sub.current || 0;
 }
 function setSubCurrent(sub, dateStr, val) {
@@ -1657,6 +1658,11 @@ function ensureEnergyData() {
             if (t.subTasks) t.subTasks.forEach(s => { s.completed = false; if (s.completions) delete s.completions; });
         }
         if (t.type === 'todo' && !t.todoKind) t.todoKind = 'learning';
+        // 🩹 修复旧版 bug：循环任务 + 计数目标不应因单日完成而自动结束，清理历史 recurringEndedDate
+        if (t.recurringType && t.recurringEndedDate) {
+            const _hasCountTarget = !!t.target || (t.subTasks && t.subTasks.some(s => s.target || s.countOnly));
+            if (_hasCountTarget) delete t.recurringEndedDate;
+        }
     });
     ensureGoals();
 }
@@ -4894,9 +4900,12 @@ function renderCalendar() {
             html += '</div>';
         }
 
-        const dl = appData.tasks.filter(t => t.deadline === ds && !t.completed && !t.countOnly && t.type !== 'todo');
+        const dl = appData.tasks.filter(t => getDeadlineDate(t) === ds && !t.completed && !t.countOnly && t.type !== 'todo');
         if (dl.length > 0) {
-            const dt = dl.map(t => t.text).join(', ');
+            const dt = dl.map(t => {
+                const _rawDl = String(t.deadline);
+                return t.text + (_rawDl.length >= 16 && _rawDl[10] === 'T' ? ' ' + _rawDl.substring(11, 16) : '');
+            }).join(', ');
             html += `<div class="deadline-preview" title="截止任务: ${escapeHtml(dt)}">⏰ ${escapeHtml(dt.length > 8 ? dt.substring(0, 8) + '...' : dt)}</div>`;
         }
 
@@ -5579,16 +5588,19 @@ function generateTaskDOM(task, ds, options = {}) {
         if (_cg) _countGoalBadge = `<span class="task-badge" style="color:#0e7490;background:#cffafe;border-color:#67e8f9;">🎯 ${escapeHtml(_cg.text)}</span>`;
     }
     if (task.deadline) {
-            const _dlDate = new Date(task.deadline + 'T00:00:00');
-            const _todayD = new Date(getTodayString() + 'T00:00:00');
-            const _diffDays = Math.round((_dlDate - _todayD) / (1000 * 60 * 60 * 24));
-            if (_diffDays < 0) _dlBadge = `<span class="task-badge urgent">⚠️ 已过期 ${Math.abs(_diffDays)} 天</span>`;
-            else if (_diffDays === 0) _dlBadge = `<span class="task-badge urgent">📅 今天截止</span>`;
-            else if (_diffDays <= 3) _dlBadge = `<span class="task-badge warning">📅 剩 ${_diffDays} 天</span>`;
-            else _dlBadge = `<span class="task-badge">📅 剩 ${_diffDays} 天</span>`;
-        }
+        const dlDate = new Date(getDeadlineDate(task) + 'T00:00:00');
+        const dsDate = new Date(ds + 'T00:00:00');
+        const diffDays = Math.round((dlDate - dsDate) / (1000 * 60 * 60 * 24));
+        const _rawDl = String(task.deadline);
+        const _dlTimeStr = (_rawDl.length >= 16 && _rawDl[10] === 'T') ? ' ' + _rawDl.substring(11, 16) : '';
+        const _dlTip = formatDeadlineDisplay(task.deadline);
+        if (diffDays < 0) badgesHtml += `<span class="task-badge urgent" title="截止 ${_dlTip}">⚠️ 已逾期 ${Math.abs(diffDays)} 天${_dlTimeStr}</span>`;
+        else if (diffDays === 0) badgesHtml += `<span class="task-badge urgent" title="截止 ${_dlTip}">📅 今天${_dlTimeStr}截止</span>`;
+        else if (diffDays <= 3) badgesHtml += `<span class="task-badge warning" title="截止 ${_dlTip}">📅 剩 ${diffDays} 天${_dlTimeStr}</span>`;
+        else badgesHtml += `<span class="task-badge" title="截止 ${_dlTip}">📅 剩 ${diffDays} 天${_dlTimeStr}</span>`;
+    }
         div.innerHTML = `
-            <div class="main-task-header"><div class="main-task-top-row"><div class="main-task-title-area"><span style="font-size:1.2em;">🔄</span><span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${escapeHtml(task.text)}</span></div><div class="task-right-group"><div <div class="task-badges-inline"><span class="task-badge" style="color:#1976d2;background:#e3f2fd;border-color:#90caf9;">累计 ${task.countTotal || 0} 次</span>${_dlBadge}${_countGoalBadge}</div><div class="task-meta"><button class="btn-count-minus" onclick="decrementCountTask('${task.id}')" title="撤销一次">-1</button><button class="btn-count-plus" onclick="incrementCountTask('${task.id}')" title="累计一次">+1</button><span class="btn-icon btn-count-end" title="结束此任务" onclick="endCountTask('${task.id}')" style="font-weight:bold;font-size:1em;">🏁</span><span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span><div class="more-menu-container"><span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span><div class="more-menu"><div class="more-menu-item" style="padding:4px 6px;" onclick="event.stopPropagation()"><select class="task-goal-select" onchange="setTaskGoal('${task.id}', this.value)" onclick="event.stopPropagation()" title="绑定我的目标" style="width:100%;max-width:none;"><option value="">🎯 绑定目标</option>${(appData.goals || []).map(g => `<option value="${g.id}" ${g.id === task.goalId ? 'selected' : ''}>🎯 ${escapeHtml(g.text)}</option>`).join('')}</select></div><div class="more-menu-item" onclick="toggleCountOnly('${task.id}')">↩️ 转为普通任务</div><div class="more-menu-item" onclick="setTaskEnergyCost('${task.id}')">⚡ 精力消耗</div><div class="more-menu-item" onclick="setDeadline('${task.id}', prompt('设置截止日期 (YYYY-MM-DD，留空取消)：', '${task.deadline || ''}'))">📅 截止日期</div><div class="more-menu-item" onclick="deleteTask('${task.id}')">🗑️ 删除</div></div></div></div></div></div>
+            <div class="main-task-header"><div class="main-task-top-row"><div class="main-task-title-area"><span style="font-size:1.2em;">🔄</span><span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${escapeHtml(task.text)}</span></div><div class="task-right-group"><div <div class="task-badges-inline"><span class="task-badge" style="color:#1976d2;background:#e3f2fd;border-color:#90caf9;">累计 ${task.countTotal || 0} 次</span>${_dlBadge}${_countGoalBadge}</div><div class="task-meta"><button class="btn-count-minus" onclick="decrementCountTask('${task.id}')" title="撤销一次">-1</button><button class="btn-count-plus" onclick="incrementCountTask('${task.id}')" title="累计一次">+1</button><span class="btn-icon btn-count-end" title="结束此任务" onclick="endCountTask('${task.id}')" style="font-weight:bold;font-size:1em;">🏁</span><span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span><div class="more-menu-container"><span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span><div class="more-menu"><div class="more-menu-item" style="padding:4px 6px;" onclick="event.stopPropagation()"><select class="task-goal-select" onchange="setTaskGoal('${task.id}', this.value)" onclick="event.stopPropagation()" title="绑定我的目标" style="width:100%;max-width:none;"><option value="">🎯 绑定目标</option>${(appData.goals || []).map(g => `<option value="${g.id}" ${g.id === task.goalId ? 'selected' : ''}>🎯 ${escapeHtml(g.text)}</option>`).join('')}</select></div><div class="more-menu-item" onclick="toggleCountOnly('${task.id}')">↩️ 转为普通任务</div><div class="more-menu-item" onclick="setTaskEnergyCost('${task.id}')">⚡ 精力消耗</div><div class="more-menu-item" onclick="setDeadline('${task.id}')">📅 截止日期</div><div class="more-menu-item" onclick="deleteTask('${task.id}')">🗑️ 删除</div></div></div></div></div></div>
             <div class="task-note-area ${task.note ? 'has-note' : ''}" id="note-area-${task.id}" onclick="editTaskNote('${task.id}', this)">${task.note ? escapeHtml(task.note) : '📝 点击添加备注...'}</div>`;
         return div;
     }
@@ -5605,14 +5617,17 @@ function generateTaskDOM(task, ds, options = {}) {
     if (task.energyCost !== undefined && task.energyCost !== defEC) badgesHtml += `<span class="task-badge">⚡ ${task.energyCost}</span>`;
     if (task.target && !hasSub) badgesHtml += `<span class="task-badge">🎯 目标 ${mp.total} 次</span>`;
     if (task.deadline) {
-        const dlDate = new Date(task.deadline + 'T00:00:00');
-        const dsDate = new Date(ds + 'T00:00:00');
-        const diffDays = Math.round((dlDate - dsDate) / (1000 * 60 * 60 * 24));
-        if (diffDays < 0) badgesHtml += `<span class="task-badge urgent">⚠️ 已逾期 ${Math.abs(diffDays)} 天</span>`;
-        else if (diffDays === 0) badgesHtml += `<span class="task-badge urgent">📅 今天截止</span>`;
-        else if (diffDays <= 3) badgesHtml += `<span class="task-badge warning">📅 剩 ${diffDays} 天</span>`;
-        else badgesHtml += `<span class="task-badge">📅 剩 ${diffDays} 天</span>`;
-    }
+            const _dlDate = new Date(getDeadlineDate(task) + 'T00:00:00');
+            const _todayD = new Date(getTodayString() + 'T00:00:00');
+            const _diffDays = Math.round((_dlDate - _todayD) / (1000 * 60 * 60 * 24));
+            const _rawDl = String(task.deadline);
+            const _dlTimeStr = (_rawDl.length >= 16 && _rawDl[10] === 'T') ? ' ' + _rawDl.substring(11, 16) : '';
+            const _dlTip = formatDeadlineDisplay(task.deadline);
+            if (_diffDays < 0) _dlBadge = `<span class="task-badge urgent" title="截止 ${_dlTip}">⚠️ 已过期 ${Math.abs(_diffDays)} 天${_dlTimeStr}</span>`;
+            else if (_diffDays === 0) _dlBadge = `<span class="task-badge urgent" title="截止 ${_dlTip}">📅 今天${_dlTimeStr}截止</span>`;
+            else if (_diffDays <= 3) _dlBadge = `<span class="task-badge warning" title="截止 ${_dlTip}">📅 剩 ${_diffDays} 天${_dlTimeStr}</span>`;
+            else _dlBadge = `<span class="task-badge" title="截止 ${_dlTip}">📅 剩 ${_diffDays} 天${_dlTimeStr}</span>`;
+        }
     const cbSet = new Set(appData.commonBtns);
     let btnsHtml = '', moreBtnsHtml = '';
     const canSkip = !!(task.deadline || task.recurringType);
@@ -5624,7 +5639,7 @@ function generateTaskDOM(task, ds, options = {}) {
         { key: 'target', icon: '#', title: '次数', action: `onclick="setTaskTarget('${task.id}')"` },
         { key: 'loop', icon: '🔁', title: '循环', cls: task.recurringType ? 'active' : '', action: `onclick="toggleRecurring('${task.id}')"` },
         { key: 'count', icon: '🔄', title: '转为计数任务', action: `onclick="toggleCountOnly('${task.id}')"` },
-        { key: 'deadline', icon: '📅', title: '设置截止日期', action: `onclick="setDeadline('${task.id}', prompt('设置截止日期 (YYYY-MM-DD，留空取消)：', '${task.deadline || ''}'))"` },
+        { key: 'deadline', icon: '📅', title: '设置截止日期', action: `onclick="setDeadline('${task.id}')"` },
         { key: 'delete', icon: '🗑️', title: '删除', cls: 'btn-delete-task', action: `onclick="deleteTask('${task.id}')"` }
     ];
     allBtns.forEach(btn => {
@@ -6322,7 +6337,7 @@ window.incrementTaskProgress = function(id) {
         const wasDone = isTaskDone(t, ds);
         setTaskDone(t, ds, true);
         if (!wasDone) { adjustAttr(t.type, 1); adjustAttr('focus', 1); updateStreak(); logTaskAction(ds, t.id, t.text, 'complete'); }
-        if (t.recurringType && !t.recurringEndedDate) { t.recurringEndedDate = ds; showMiniToast(`🎉【${t.text}】目标已达成！该循环任务已自动结束。`); }
+        if (t.recurringType) { showMiniToast(`🎉【${t.text}】今日目标已达成！`); }
     }
     renderEnergyAndRPG(); updateFixedProgressBars(); saveDataToFile(appData);
     renderDayPlan(); renderCalendar(); renderYearHeatmap(); refreshDetailModalIfOpen();
@@ -6360,7 +6375,7 @@ window.incrementSubTaskProgress = function(tid, sid) {
     syncParentTaskStatus(t, ds);
     const newT = isTaskDone(t, ds);
     if (!wt && newT) { adjustAttr('focus', 1); updateStreak(); logTaskAction(ds, t.id, t.text, 'complete'); }
-    if (newT && t.recurringType && !t.recurringEndedDate) { t.recurringEndedDate = ds; showMiniToast(`🎉【${t.text}】目标已达成！该循环任务已自动结束。`); }
+    if (newT && t.recurringType) { showMiniToast(`🎉【${t.text}】今日目标已达成！`); }
     renderEnergyAndRPG(); updateFixedProgressBars(); saveDataToFile(appData);
     renderDayPlan(); renderCalendar(); renderYearHeatmap(); refreshDetailModalIfOpen();
 };
@@ -6469,15 +6484,49 @@ window.toggleExerciseRecurring = function(id) {
     ex._lastModified = Date.now();
     renderDayExercises(); renderWeekBoard(); saveDataToFile(appData);
 };
-window.setDeadline = function(id, v) {
-    if (v === null) return;
+window.setDeadline = function(id) {
     const t = appData.tasks.find(t => t.id === id);
     if (!t) return;
     if (t.type === 'todo') { showMiniToast('待办清单里的任务不能设置截止日期，拖入学习/其他后再设置'); return; }
-    const nv = v.trim();
-    if (nv) t.deadline = nv;
-    else delete t.deadline;
-    renderDayPlan(); refreshDetailModalIfOpen(); saveDataToFile(appData);
+    const curRaw = t.deadline ? String(t.deadline) : '';
+    const curDate = curRaw.length >= 10 ? curRaw.substring(0, 10) : '';
+    const curTime = (curRaw.length >= 16 && curRaw[10] === 'T') ? curRaw.substring(11, 16) : '';
+    const old = document.getElementById('deadline-picker-overlay');
+    if (old) old.remove();
+    const modal = document.createElement('div');
+    modal.id = 'deadline-picker-overlay';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:4500;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = '<div style="background:var(--bg-card);color:var(--text-main);border-radius:14px;padding:20px;max-width:360px;width:100%;border:1px solid var(--border-color);box-shadow:0 8px 30px rgba(0,0,0,.25);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div style="font-weight:700;font-size:var(--font-content);">📅 设置截止时间</div><div style="cursor:pointer;color:var(--text-muted);font-size:1.5em;padding:0 8px;line-height:1;" id="dlp-close">×</div></div>' +
+        '<div style="font-size:var(--font-hint);color:var(--text-muted);margin-bottom:12px;">可只填日期；也可以加上具体时分。</div>' +
+        '<div style="margin-bottom:10px;"><div style="font-size:var(--font-hint);font-weight:600;margin-bottom:4px;">日期</div><input type="date" id="dlp-date" value="' + curDate + '" style="width:100%;padding:8px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"></div>' +
+        '<div style="margin-bottom:14px;"><div style="font-size:var(--font-hint);font-weight:600;margin-bottom:4px;">时间（可选）</div><input type="time" id="dlp-time" value="' + curTime + '" style="width:100%;padding:8px;font-size:var(--font-content);border:1px solid var(--border-color);border-radius:6px;background:var(--bg-input);color:var(--text-main);"></div>' +
+        '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
+        '<button class="btn btn-sm" id="dlp-clear" style="color:var(--danger-color);">🗑️ 清除</button>' +
+        '<button class="btn btn-sm" id="dlp-cancel">取消</button>' +
+        '<button class="btn btn-sm btn-primary" id="dlp-save">✅ 保存</button>' +
+        '</div></div>';
+    document.body.appendChild(modal);
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.getElementById('dlp-close').onclick = () => modal.remove();
+    document.getElementById('dlp-cancel').onclick = () => modal.remove();
+    document.getElementById('dlp-clear').onclick = () => {
+        delete t.deadline;
+        modal.remove();
+        renderDayPlan(); renderWeekBoard(); renderTaskPool(); renderCalendar(); refreshDetailModalIfOpen();
+        saveDataToFile(appData);
+        showMiniToast('🗑️ 已清除截止时间');
+    };
+    document.getElementById('dlp-save').onclick = () => {
+        const dateVal = (document.getElementById('dlp-date').value || '').trim();
+        const timeVal = (document.getElementById('dlp-time').value || '').trim();
+        if (!dateVal) { showMiniToast('❌ 请选择日期'); return; }
+        t.deadline = timeVal ? (dateVal + 'T' + timeVal) : dateVal;
+        modal.remove();
+        renderDayPlan(); renderWeekBoard(); renderTaskPool(); renderCalendar(); refreshDetailModalIfOpen();
+        saveDataToFile(appData);
+        showMiniToast('✅ 截止时间已设置');
+    };
 };
 window.addExerciseCategory = function() {
     const n = prompt("新锻炼大类名称：");
