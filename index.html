@@ -5519,33 +5519,29 @@ const SUB_FOLD_THRESHOLD = 3;
 function renderSubTaskHtml(task, sub, ds) {
     const ecBadge = (sub.energyCost !== undefined && sub.energyCost !== null) ? `<span class="sub-badge sub-badge-energy" title="精力消耗">⚡${sub.energyCost}</span>` : '';
     const estBadge = sub.estimate ? `<span class="sub-badge sub-badge-estimate" title="预计时长">⏱${escapeHtml(sub.estimate)}</span>` : '';
-        if (sub.countOnly) {
+    if (sub.countOnly) {
         const _visualDone = isTaskDone(task, ds) || !!sub.countEnded;
-            const _visualDone = isTaskDone(task, ds) || done;
-    const _leadingIcon = isCount
-        ? `<span style="font-size:1em;">🎯</span>`
-        : `<input type="checkbox" class="task-checkbox" ${done ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')">`;
-    return `
+        return `
         <div class="sub-task-item" data-sub-id="${sub.id}">
-            <div class="sub-task-left">${_leadingIcon}<span class="${_visualDone ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span></div>
-            <div class="sub-actions">${ecBadge}${estBadge}${progBadge}
-                ${isCount ? `<div class="sub-prog-container"><div class="sub-prog-bar-bg"><div class="sub-prog-bar-fill" style="width:${pct}%;"></div></div>${!done ? `<button class="btn-sub-plus" onclick="decrementSubTaskProgress('${task.id}', '${sub.id}')" title="减少一次">-1</button><button class="btn-sub-plus" onclick="incrementSubTaskProgress('${task.id}', '${sub.id}')" title="增加一次">+1</button>` : ''}</div>` : ''}
-                <span class="btn-sub-count" title="转为累计计数任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">🔄 计数</span>
-                <div class="sub-more-container"><span class="sub-more-btn" onclick="toggleSubMore(this, event)" title="更多操作">⋮</span><div class="sub-more-menu"><div class="sub-more-item" onclick="setSubTaskEstimate('${task.id}', '${sub.id}')">${estLabel} 预计时长</div><div class="sub-more-item" onclick="setSubTaskEnergyCost('${task.id}', '${sub.id}')">⚡ 精力消耗 (${ec})</div><div class="sub-more-item" onclick="setSubTaskTarget('${task.id}', '${sub.id}')"># 设置次数</div><div class="sub-more-item" onclick="deleteSubTask('${task.id}', '${sub.id}')" style="color:var(--danger-color);">🗑️ 删除</div></div></div>
-            </div>
+            <div class="sub-task-left"><span style="font-size:1em;">🔄</span><span class="${_visualDone ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span></div>
+            <div class="sub-actions">${ecBadge}${estBadge}<span class="count-display">累计 <b>${sub.countTotal || 0}</b> 次</span><button class="btn-count-plus" style="padding:2px 8px;font-size:var(--font-small);" onclick="incrementSubCount('${task.id}', '${sub.id}')">+1</button><span class="btn-icon btn-count-end" title="结束此子任务" onclick="endSubCount('${task.id}', '${sub.id}')" style="font-weight:bold;">🏁</span><span class="btn-sub-count" title="转回普通子任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">↩️ 普通</span><span class="btn-sub-delete" title="删除" onclick="deleteSubTask('${task.id}', '${sub.id}')" style="cursor:pointer;color:var(--text-muted);padding:0 2px;">🗑️</span></div>
         </div>`;
     }
     const sp = getSubTaskProgress(sub, ds, task);
     const done = isSubTaskDone(sub, ds);
     const isCount = sub.target > 0;
+    const visualDone = isTaskDone(task, ds) || done;
     const pct = isCount ? Math.min(100, Math.round((sp.done / sp.total) * 100)) : 0;
     const defEC = sub.target ? 1 : 5;
     const ec = sub.energyCost !== undefined ? sub.energyCost : defEC;
     const estLabel = sub.estimate ? `⏱ ${sub.estimate}` : '⏱';
     const progBadge = isCount ? `<span class="sub-badge" title="进度" style="background:#e3f2fd;color:#1976d2;border-color:#90caf9;">🎯 ${sp.done}/${sp.total}</span>` : '';
+    const _leadingIcon = isCount
+        ? `<span style="font-size:1em;">🎯</span>`
+        : `<input type="checkbox" class="task-checkbox" ${done ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')">`;
     return `
         <div class="sub-task-item" data-sub-id="${sub.id}">
-            <div class="sub-task-left"><input type="checkbox" class="task-checkbox" ${done ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')"><span class="${done ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span></div>
+            <div class="sub-task-left">${_leadingIcon}<span class="${visualDone ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span></div>
             <div class="sub-actions">${ecBadge}${estBadge}${progBadge}
                 ${isCount ? `<div class="sub-prog-container"><div class="sub-prog-bar-bg"><div class="sub-prog-bar-fill" style="width:${pct}%;"></div></div>${!done ? `<button class="btn-sub-plus" onclick="decrementSubTaskProgress('${task.id}', '${sub.id}')" title="减少一次">-1</button><button class="btn-sub-plus" onclick="incrementSubTaskProgress('${task.id}', '${sub.id}')" title="增加一次">+1</button>` : ''}</div>` : ''}
                 <span class="btn-sub-count" title="转为累计计数任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">🔄 计数</span>
