@@ -5555,7 +5555,7 @@ function renderSubTaskHtml(task, sub, ds) {
         <div class="sub-task-item" data-sub-id="${sub.id}">
             <div class="sub-task-left">${_leadingIcon}<span class="${visualDone ? 'task-completed' : ''}" ondblclick="enableTaskEdit(this, '${task.id}', '${sub.id}')" title="双击编辑" style="cursor:text;">${escapeHtml(sub.text)}</span></div>
             <div class="sub-actions">${ecBadge}${estBadge}${progBadge}
-                ${isCount ? `<div class="sub-prog-container"><div class="sub-prog-bar-bg"><div class="sub-prog-bar-fill" style="width:${pct}%;"></div></div>${!done ? `<button class="btn-sub-plus" onclick="decrementSubTaskProgress('${task.id}', '${sub.id}')" title="减少一次">-1</button><button class="btn-sub-plus" onclick="incrementSubTaskProgress('${task.id}', '${sub.id}')" title="增加一次">+1</button>` : ''}</div>` : ''}
+                ${isCount ? `<div class="sub-prog-container"><div class="sub-prog-bar-bg"><div class="sub-prog-bar-fill" style="width:${pct}%;"></div></div>${!done ? `<button class="btn-sub-plus" onclick="decrementSubTaskProgress('${task.id}', '${sub.id}')" title="减少一次">-1</button><button class="btn-sub-plus" onclick="incrementSubTaskProgress('${task.id}', '${sub.id}')" title="增加一次">+1</button>` : `<button class="btn-sub-plus" onclick="decrementSubTaskProgress('${task.id}', '${sub.id}')" title="撤回一次（回到未完成）">-1</button>`}</div>` : ''}
                 <span class="btn-sub-count" title="转为累计计数任务" onclick="toggleSubCountOnly('${task.id}', '${sub.id}')">🔄 计数</span>
                 <div class="sub-more-container"><span class="sub-more-btn" onclick="toggleSubMore(this, event)" title="更多操作">⋮</span><div class="sub-more-menu"><div class="sub-more-item" onclick="setSubTaskEstimate('${task.id}', '${sub.id}')">${estLabel} 预计时长</div><div class="sub-more-item" onclick="setSubTaskEnergyCost('${task.id}', '${sub.id}')">⚡ 精力消耗 (${ec})</div><div class="sub-more-item" onclick="setSubTaskTarget('${task.id}', '${sub.id}')"># 设置次数</div><div class="sub-more-item" onclick="deleteSubTask('${task.id}', '${sub.id}')" style="color:var(--danger-color);">🗑️ 删除</div></div></div>
             </div>
@@ -6381,7 +6381,6 @@ window.incrementSubTaskProgress = function(tid, sid) {
     const c = s.energyCost || 1;
     const willDone = cur + 1 >= s.target;
     setSubCurrent(s, ds, cur + 1);
-    s.totalCount = (Number(s.totalCount) || 0) + 1;
     adjustTodayEnergy(c); adjustExp(c);
     logTaskAction(ds, s.id, s.text, 'count', 1);
     if (willDone) { adjustAttr(t.type, 1); logTaskAction(ds, s.id, s.text, 'complete'); }
@@ -6406,10 +6405,13 @@ window.decrementSubTaskProgress = function(tid, sid) {
     const wasDone = cur >= s.target;
     const willDone = cur - 1 >= s.target;
     setSubCurrent(s, ds, cur - 1);
-    s.totalCount = Math.max(0, (Number(s.totalCount) || 0) - 1);
     adjustTodayEnergy(-c); adjustExp(-c);
     logTaskAction(ds, s.id, s.text, 'count', -1);
-    if (wasDone && !willDone) { adjustAttr(t.type, -1); logTaskAction(ds, s.id, s.text, 'uncomplete'); }
+    if (wasDone && !willDone) {
+        adjustAttr(t.type, -1);
+        logTaskAction(ds, s.id, s.text, 'uncomplete');
+        setTaskDone(t, ds, false);
+    }
     syncParentTaskStatus(t, ds);
     const newT = isTaskDone(t, ds);
     if (wt && !newT) { adjustAttr('focus', -1); logTaskAction(ds, t.id, t.text, 'uncomplete'); }
