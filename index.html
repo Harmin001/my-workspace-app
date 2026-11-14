@@ -1046,6 +1046,22 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 </div>
 </details>
 </div>
+<div class="section-box span-full" style="border-color:#a5d6a7;">
+<details class="settings-details">
+<summary style="color:#2e7d32;">📜 任务变更日志</summary>
+<div class="panel-content" style="padding-top:0;">
+<p style="font-size:var(--font-hint);color:var(--text-muted);margin-top:6px;">每次修改任务自动记录变更快照。查看过去日期时按当时的状态展示，不允许修改。</p>
+<div style="margin-top:12px;">
+  <label style="font-size:var(--font-hint);color:var(--text-main);display:flex;align-items:center;gap:6px;">自动合并阈值（天）：<input type="number" id="log-merge-days" min="1" max="3650" step="1" style="width:80px;padding:4px;" onchange="changeLogMergeDays(this.value)"></label>
+</div>
+<div id="log-size-info" style="font-size:var(--font-hint);color:var(--text-muted);margin-top:12px;line-height:1.7;">计算中...</div>
+<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+  <button class="btn btn-sm btn-primary" onclick="mergeLogsNow()">📦 立即合并旧日志</button>
+  <button class="btn btn-sm" onclick="clearSingleTaskLog()" style="color:var(--danger-color);">🗑️ 清空单条任务日志</button>
+</div>
+</div>
+</details>
+</div>
 </div>
 </div>
 </div>
@@ -1211,7 +1227,8 @@ let appData = {
     timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS)),
     timeSlotsLastModified: 0,
     fixedBlocks: JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS)),
-    fixedBlockSchedule: {}, maxVisible: 5, animationEnabled: true, statsChartMode: 'times'
+    fixedBlockSchedule: {}, maxVisible: 5, animationEnabled: true, statsChartMode: 'times',
+    taskChangelogs: {}, logMergeDays: 7
 };
 let peer = null, conn = null;
 // 版本更新相关函数已移除
@@ -1265,6 +1282,7 @@ let _opDebounceTimer = null;
 let _mainLoopInterval = null;
 let _pendingImportData = null;
 let _backupTimerRegistry = [];
+const _historySnapshotsCache = {};
 function _registerBackupTimer(id) { _backupTimerRegistry.push(id); return id; }
 function _clearBackupTimers() { _backupTimerRegistry.forEach(id => { clearInterval(id); clearTimeout(id); }); _backupTimerRegistry = []; }
 // ============ 双向同步时间戳合并 ============
@@ -1349,6 +1367,118 @@ function getDeadlineDate(task) {
     const s = String(task.deadline);
     return s.length >= 10 ? s.substring(0, 10) : s;
 }
+
+// ============ 任务变更日志 ============
+function _taskLogSnapshot(task) {
+    if (!task) return null;
+    const t = JSON.parse(JSON.stringify(task));
+    delete t._lastModified;
+    delete t._poolOrigin;
+    delete t._prevDate;
+    return t;
+}
+function _recordTaskChanges(data) {
+    const tasks = (data && Array.isArray(data.tasks)) ? data.tasks : (appData && Array.isArray(appData.tasks) ? appData.tasks : []);
+    if (!tasks.length) return;
+    const target = data || appData;
+    if (!target.taskChangelogs) target.taskChangelogs = {};
+    const logs = target.taskChangelogs;
+    const now = Date.now();
+    let anyChanged = false;
+    tasks.forEach(task => {
+        if (!task || !task.id) return;
+        const arr = logs[task.id] || (logs[task.id] = []);
+        const snap = _taskLogSnapshot(task);
+        const snapStr = JSON.stringify(snap);
+        const last = arr[arr.length - 1];
+        if (last && JSON.stringify(last.task) === snapStr) return;
+        if (last && (now - last.ts) < 2000) {
+            last.ts = now;
+            last.task = snap;
+            anyChanged = true;
+            return;
+        }
+        arr.push({ ts: now, task: snap });
+        anyChanged = true;
+    });
+    if (anyChanged) {
+        Object.keys(_historySnapshotsCache).forEach(k => delete _historySnapshotsCache[k]);
+    }
+}
+function _isHistoryDate(d) {
+    return (d || '') < getTodayString();
+}
+function _isHistoryView() {
+    return _isHistoryDate(appData.selectedDate);
+}
+function _getTasksSnapshotsAtDate(dateStr) {
+    if (_historySnapshotsCache[dateStr]) return _historySnapshotsCache[dateStr];
+    const dateEnd = new Date(dateStr + 'T23:59:59.999').getTime();
+    const logs = appData.taskChangelogs || {};
+    const result = [];
+    const seenIds = new Set();
+    Object.keys(logs).forEach(taskId => {
+        const arr = logs[taskId];
+        if (!arr || !arr.length) return;
+        seenIds.add(taskId);
+        let snap = null;
+        for (let i = arr.length - 1; i >= 0; i--) {
+            if (arr[i].ts <= dateEnd) { snap = arr[i].task; break; }
+        }
+        if (snap && !snap._deleted) {
+            const clone = JSON.parse(JSON.stringify(snap));
+            delete clone._deleted;
+            result.push(clone);
+        }
+    });
+    (appData.tasks || []).forEach(t => {
+        if (seenIds.has(t.id)) return;
+        result.push(JSON.parse(JSON.stringify(t)));
+    });
+    _historySnapshotsCache[dateStr] = result;
+    return result;
+}
+function _activeTasksForDate(ds) {
+    return _isHistoryDate(ds) ? _getTasksSnapshotsAtDate(ds) : appData.tasks;
+}
+function _mergeTaskLogs(cutoffTs) {
+    if (!appData.taskChangelogs) return 0;
+    const cutoff = cutoffTs || (Date.now() - (Number(appData.logMergeDays) || 7) * 86400000);
+    let merged = 0;
+    Object.keys(appData.taskChangelogs).forEach(taskId => {
+        const arr = appData.taskChangelogs[taskId];
+        if (!Array.isArray(arr) || arr.length < 2) return;
+        const oldR = [], newR = [];
+        arr.forEach(r => { if (r.ts <= cutoff) oldR.push(r); else newR.push(r); });
+        if (oldR.length < 2) return;
+        appData.taskChangelogs[taskId] = [oldR[oldR.length - 1], ...newR];
+        merged += oldR.length - 1;
+    });
+    if (merged > 0) Object.keys(_historySnapshotsCache).forEach(k => delete _historySnapshotsCache[k]);
+    return merged;
+}
+function _estimateLogSize() {
+    if (!appData.taskChangelogs) return { current: 0, merged: 0, saved: 0 };
+    const cur = JSON.stringify(appData.taskChangelogs);
+    const curBytes = new Blob([cur]).size;
+    const clone = JSON.parse(cur);
+    const cutoff = Date.now() - (Number(appData.logMergeDays) || 7) * 86400000;
+    Object.keys(clone).forEach(taskId => {
+        const arr = clone[taskId];
+        if (!Array.isArray(arr) || arr.length < 2) return;
+        const oldR = [], newR = [];
+        arr.forEach(r => { if (r.ts <= cutoff) oldR.push(r); else newR.push(r); });
+        if (oldR.length < 2) return;
+        clone[taskId] = [oldR[oldR.length - 1], ...newR];
+    });
+    const mergedBytes = new Blob([JSON.stringify(clone)]).size;
+    return { current: curBytes, merged: mergedBytes, saved: Math.max(0, curBytes - mergedBytes) };
+}
+function _fmtBytes(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / 1024 / 1024).toFixed(2) + ' MB';
+}
 function formatDeadlineDisplay(deadline) {
     if (!deadline) return '';
     const s = String(deadline);
@@ -1411,6 +1541,18 @@ function getPrevRecurringDate(type, dateStr) {
     return formatDate(d.getFullYear(), d.getMonth(), d.getDate());
 }
 function getTasksForDate(dateStr, options = {}) {
+    if (_isHistoryDate(dateStr)) {
+        const orig = appData.tasks;
+        try {
+            appData.tasks = _getTasksSnapshotsAtDate(dateStr);
+            return _getTasksForDateCore(dateStr, options);
+        } finally {
+            appData.tasks = orig;
+        }
+    }
+    return _getTasksForDateCore(dateStr, options);
+}
+function _getTasksForDateCore(dateStr, options = {}) {
     const includeDeadlineRange = options.includeDeadlineRange !== false;
     const filteredDirect = appData.tasks.filter(t => {
         if (t.date !== dateStr || t.date === 'pool') return false;
@@ -1665,6 +1807,8 @@ function ensureEnergyData() {
             if (_hasCountTarget) delete t.recurringEndedDate;
         }
     });
+    if (!appData.taskChangelogs) appData.taskChangelogs = {};
+    if (appData.logMergeDays === undefined) appData.logMergeDays = 7;
     ensureGoals();
 }
 const GOAL_EXP_REWARD = 200;
@@ -3757,6 +3901,7 @@ function saveDataToFile(data) {
     if (!data) data = appData;
     if (!isSyncing) data._lastModified = Date.now();
     _stampChanges(data);
+    try { _recordTaskChanges(data); } catch (e) { console.warn('[记录变更日志失败]', e); }
     persistNow(data);
     if (!isSyncing) _syncSnapshot = JSON.parse(JSON.stringify(data));
     if (!isSyncing) {
@@ -4901,7 +5046,7 @@ function renderCalendar() {
             html += '</div>';
         }
 
-        const dl = appData.tasks.filter(t => getDeadlineDate(t) === ds && !t.completed && !t.countOnly && t.type !== 'todo');
+        const dl = _activeTasksForDate(ds).filter(t => getDeadlineDate(t) === ds && !t.completed && !t.countOnly && t.type !== 'todo');
         if (dl.length > 0) {
             const dt = dl.map(t => {
                 const _rawDl = String(t.deadline);
@@ -5179,7 +5324,7 @@ function renderWeekBoard() {
             getTasksForDate(ds).filter(t => t.timeSlot === ts.id && !t.countOnly).forEach(t => {
                 const item = createWeekTaskDOM(t, ds); item.classList.add('lecture-task'); cell.appendChild(item);
             });
-            appData.tasks.filter(t => t.countOnly && t.timeSlots && t.timeSlots.includes(ds + '_' + ts.id)).forEach(t => {
+            _activeTasksForDate(ds).filter(t => t.countOnly && t.timeSlots && t.timeSlots.includes(ds + '_' + ts.id)).forEach(t => {
                 const item = createWeekTaskDOM(t, ds, { slotDate: ds, slotId: ts.id }); item.classList.add('lecture-task'); cell.appendChild(item);
             });
             const exSched = (appData.exerciseTimeSlotSchedule && appData.exerciseTimeSlotSchedule[ds] && appData.exerciseTimeSlotSchedule[ds][ts.id]) || [];
@@ -5487,6 +5632,24 @@ document.addEventListener('click', (e) => {
     if (!e.target.closest('.more-menu-container')) document.querySelectorAll('.more-menu').forEach(menu => menu.classList.remove('active'));
     if (!e.target.closest('.sub-more-container')) document.querySelectorAll('.sub-more-menu').forEach(menu => menu.classList.remove('active'));
 });
+// 回看历史时，禁止对任务卡片做任何交互
+document.addEventListener('click', function(e) {
+    if (!_isHistoryView()) return;
+    if (!e.target.closest) return;
+    if (!e.target.closest('.main-task-item, .task-item, .exercise-capsule')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    showMiniToast('📖 正在回看历史，切回今天再操作');
+}, true);
+document.addEventListener('keypress', function(e) {
+    if (!_isHistoryView()) return;
+    if (!e.target.matches) return;
+    if (!e.target.matches('#learning-input, #other-input, #todo-input, #pool-input-learning, #pool-input-other, .add-sub-task-input')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    showMiniToast('📖 正在回看历史，切回今天再操作');
+}, true);
 window.toggleMoreMenu = function(btn, ev) {
     ev.stopPropagation();
     const menu = btn.nextElementSibling;
@@ -6141,6 +6304,7 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
         else if (t === 'methods') { initMethodsEditor(); renderMethodsFileList(); refreshMethodsEditorContent(); }
         else if (t === 'settings') {
             renderP2PHistory(); updateBackupUI(); renderLevelConfig(); renderEnergyAndRPG(); renderTimeSlotConfig(); renderFixedBlockEnergyConfig();
+            if (window.renderLogSettings) window.renderLogSettings();
             const sh = localStorage.getItem('my_p2p_host_id');
             if (sh) document.getElementById('my-peer-id').innerText = sh;
         }
@@ -6269,6 +6433,15 @@ function handleDrop(ev, td, timeslot, poolKind) {
 }
 window.deleteTask = function(id) {
     if (!confirm('删除这个任务？')) return;
+    const _dt = appData.tasks.find(x => x.id === id);
+    if (_dt) {
+        if (!appData.taskChangelogs) appData.taskChangelogs = {};
+        const _arr = appData.taskChangelogs[id] || (appData.taskChangelogs[id] = []);
+        const _snap = _taskLogSnapshot(_dt);
+        _snap._deleted = true;
+        _arr.push({ ts: Date.now(), task: _snap });
+        Object.keys(_historySnapshotsCache).forEach(k => delete _historySnapshotsCache[k]);
+    }
     appData.tasks = appData.tasks.filter(t => t.id !== id);
     renderDayPlan(); renderCalendar(); renderTaskPool(); renderYearHeatmap(); updateFixedProgressBars(); saveDataToFile(appData);
     refreshDetailModalIfOpen();
@@ -7810,6 +7983,64 @@ function setupConnection(connection, isHost, targetId) {
     });
     connection.on('error', (err) => { if (conn !== connection) return; console.log("Err:", err); });
 }
+window.renderLogSettings = function() {
+    const el = document.getElementById('log-size-info');
+    if (!el) return;
+    const input = document.getElementById('log-merge-days');
+    if (input && document.activeElement !== input) input.value = appData.logMergeDays || 7;
+    if (!appData.taskChangelogs || Object.keys(appData.taskChangelogs).length === 0) {
+        el.innerHTML = '暂无变更日志。';
+        return;
+    }
+    let totalLogs = 0;
+    let taskCount = 0;
+    Object.keys(appData.taskChangelogs).forEach(id => {
+        const arr = appData.taskChangelogs[id];
+        if (Array.isArray(arr) && arr.length > 0) { taskCount++; totalLogs += arr.length; }
+    });
+    const est = _estimateLogSize();
+    el.innerHTML = `📊 当前 <b>${totalLogs}</b> 条变更（<b>${taskCount}</b> 个任务）<br>💾 占用 ≈ <b>${_fmtBytes(est.current)}</b>；按 <b>${appData.logMergeDays || 7}</b> 天合并后 ≈ <b>${_fmtBytes(est.merged)}</b>，节省 <b>${_fmtBytes(est.saved)}</b>。`;
+};
+window.changeLogMergeDays = function(val) {
+    const n = parseInt(val);
+    if (isNaN(n) || n < 1) return;
+    appData.logMergeDays = n;
+    saveDataToFile(appData);
+    if (window.renderLogSettings) window.renderLogSettings();
+    showMiniToast('✅ 已保存合并阈值：' + n + ' 天');
+};
+window.mergeLogsNow = function() {
+    const merged = _mergeTaskLogs();
+    if (merged > 0) {
+        saveDataToFile(appData);
+        showMiniToast(`📦 已合并 ${merged} 条旧日志`);
+    } else {
+        showMiniToast('暂无超过阈值可合并的日志');
+    }
+    if (window.renderLogSettings) window.renderLogSettings();
+};
+window.clearSingleTaskLog = function() {
+    const name = prompt('请输入要清空变更日志的任务名称（完全匹配）：');
+    if (!name) return;
+    const target = name.trim();
+    if (!target) return;
+    let cleared = 0;
+    Object.keys(appData.taskChangelogs || {}).forEach(taskId => {
+        const arr = appData.taskChangelogs[taskId];
+        const firstSnap = arr && arr[0] && arr[0].task;
+        const logName = firstSnap ? (firstSnap.text || '') : '';
+        const liveTask = (appData.tasks || []).find(x => x.id === taskId);
+        const liveName = liveTask ? (liveTask.text || '') : '';
+        if (logName === target || liveName === target) { delete appData.taskChangelogs[taskId]; cleared++; }
+    });
+    if (cleared > 0) {
+        saveDataToFile(appData);
+        showMiniToast(`🗑️ 已清空 ${cleared} 个任务的变更日志`);
+    } else {
+        showMiniToast('❌ 未找到匹配的任务');
+    }
+    if (window.renderLogSettings) window.renderLogSettings();
+};
 window.toggleWeekDrawer = function(force) {
     const panel = document.getElementById('week-drawer-panel');
     const tab = document.getElementById('week-drawer-tab');
@@ -7875,6 +8106,7 @@ window.addEventListener('beforeunload', () => {
     if (_mainLoopInterval) clearInterval(_mainLoopInterval);
     if (_idleEnergyTimer) clearInterval(_idleEnergyTimer);
     if (window._goalTimerTick) { clearInterval(window._goalTimerTick); window._goalTimerTick = null; }
+    if (window._logMergeTimer) { clearInterval(window._logMergeTimer); window._logMergeTimer = null; }
     _clearBackupTimers();
     if (resizeObserver) { try { resizeObserver.disconnect(); } catch(e) {} }
     if (_panelSortable) { try { _panelSortable.destroy(); } catch(e) {} }
@@ -8011,6 +8243,15 @@ window.addEventListener('beforeunload', () => {
         applyIdleEnergyDeduction();
         renderEnergyAndRPG();
     }, 60000);
+    if (window._logMergeTimer) clearInterval(window._logMergeTimer);
+    window._logMergeTimer = setInterval(() => {
+        if (document.hidden) return;
+        const merged = _mergeTaskLogs();
+        if (merged > 0) {
+            saveDataToFile(appData);
+            console.log('[自动合并日志] 合并了', merged, '条');
+        }
+    }, 60 * 60 * 1000);
     applyIdleEnergyDeduction();
 })();
 </script>
