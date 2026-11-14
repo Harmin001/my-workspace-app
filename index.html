@@ -1356,7 +1356,6 @@ function formatDeadlineDisplay(deadline) {
     return s;
 }
 function generatePeerId() {
-function generatePeerId() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     let s = 'ws-';
     for (let i = 0; i < 32; i++) s += chars[Math.floor(Math.random() * chars.length)];
@@ -5588,16 +5587,16 @@ function generateTaskDOM(task, ds, options = {}) {
         if (_cg) _countGoalBadge = `<span class="task-badge" style="color:#0e7490;background:#cffafe;border-color:#67e8f9;">🎯 ${escapeHtml(_cg.text)}</span>`;
     }
     if (task.deadline) {
-        const dlDate = new Date(getDeadlineDate(task) + 'T00:00:00');
-        const dsDate = new Date(ds + 'T00:00:00');
-        const diffDays = Math.round((dlDate - dsDate) / (1000 * 60 * 60 * 24));
+        const _dlDate = new Date(getDeadlineDate(task) + 'T00:00:00');
+        const _todayD = new Date(getTodayString() + 'T00:00:00');
+        const _diffDays = Math.round((_dlDate - _todayD) / (1000 * 60 * 60 * 24));
         const _rawDl = String(task.deadline);
         const _dlTimeStr = (_rawDl.length >= 16 && _rawDl[10] === 'T') ? ' ' + _rawDl.substring(11, 16) : '';
         const _dlTip = formatDeadlineDisplay(task.deadline);
-        if (diffDays < 0) badgesHtml += `<span class="task-badge urgent" title="截止 ${_dlTip}">⚠️ 已逾期 ${Math.abs(diffDays)} 天${_dlTimeStr}</span>`;
-        else if (diffDays === 0) badgesHtml += `<span class="task-badge urgent" title="截止 ${_dlTip}">📅 今天${_dlTimeStr}截止</span>`;
-        else if (diffDays <= 3) badgesHtml += `<span class="task-badge warning" title="截止 ${_dlTip}">📅 剩 ${diffDays} 天${_dlTimeStr}</span>`;
-        else badgesHtml += `<span class="task-badge" title="截止 ${_dlTip}">📅 剩 ${diffDays} 天${_dlTimeStr}</span>`;
+        if (_diffDays < 0) _dlBadge = `<span class="task-badge urgent" title="截止 ${_dlTip}">⚠️ 已过期 ${Math.abs(_diffDays)} 天${_dlTimeStr}</span>`;
+        else if (_diffDays === 0) _dlBadge = `<span class="task-badge urgent" title="截止 ${_dlTip}">📅 今天${_dlTimeStr}截止</span>`;
+        else if (_diffDays <= 3) _dlBadge = `<span class="task-badge warning" title="截止 ${_dlTip}">📅 剩 ${_diffDays} 天${_dlTimeStr}</span>`;
+        else _dlBadge = `<span class="task-badge" title="截止 ${_dlTip}">📅 剩 ${_diffDays} 天${_dlTimeStr}</span>`;
     }
         div.innerHTML = `
             <div class="main-task-header"><div class="main-task-top-row"><div class="main-task-title-area"><span style="font-size:1.2em;">🔄</span><span class="task-text" ondblclick="enableTaskEdit(this, '${task.id}')" title="双击编辑" style="cursor:text;font-weight:600;">${escapeHtml(task.text)}</span></div><div class="task-right-group"><div <div class="task-badges-inline"><span class="task-badge" style="color:#1976d2;background:#e3f2fd;border-color:#90caf9;">累计 ${task.countTotal || 0} 次</span>${_dlBadge}${_countGoalBadge}</div><div class="task-meta"><button class="btn-count-minus" onclick="decrementCountTask('${task.id}')" title="撤销一次">-1</button><button class="btn-count-plus" onclick="incrementCountTask('${task.id}')" title="累计一次">+1</button><span class="btn-icon btn-count-end" title="结束此任务" onclick="endCountTask('${task.id}')" style="font-weight:bold;font-size:1em;">🏁</span><span class="btn-icon btn-delete-task" title="删除" onclick="deleteTask('${task.id}')">🗑️</span><div class="more-menu-container"><span class="btn-icon" onclick="toggleMoreMenu(this, event)" title="更多操作" style="font-weight:bold;">⋮</span><div class="more-menu"><div class="more-menu-item" style="padding:4px 6px;" onclick="event.stopPropagation()"><select class="task-goal-select" onchange="setTaskGoal('${task.id}', this.value)" onclick="event.stopPropagation()" title="绑定我的目标" style="width:100%;max-width:none;"><option value="">🎯 绑定目标</option>${(appData.goals || []).map(g => `<option value="${g.id}" ${g.id === task.goalId ? 'selected' : ''}>🎯 ${escapeHtml(g.text)}</option>`).join('')}</select></div><div class="more-menu-item" onclick="toggleCountOnly('${task.id}')">↩️ 转为普通任务</div><div class="more-menu-item" onclick="setTaskEnergyCost('${task.id}')">⚡ 精力消耗</div><div class="more-menu-item" onclick="setDeadline('${task.id}')">📅 截止日期</div><div class="more-menu-item" onclick="deleteTask('${task.id}')">🗑️ 删除</div></div></div></div></div></div>
@@ -5617,17 +5616,17 @@ function generateTaskDOM(task, ds, options = {}) {
     if (task.energyCost !== undefined && task.energyCost !== defEC) badgesHtml += `<span class="task-badge">⚡ ${task.energyCost}</span>`;
     if (task.target && !hasSub) badgesHtml += `<span class="task-badge">🎯 目标 ${mp.total} 次</span>`;
     if (task.deadline) {
-            const _dlDate = new Date(getDeadlineDate(task) + 'T00:00:00');
-            const _todayD = new Date(getTodayString() + 'T00:00:00');
-            const _diffDays = Math.round((_dlDate - _todayD) / (1000 * 60 * 60 * 24));
-            const _rawDl = String(task.deadline);
-            const _dlTimeStr = (_rawDl.length >= 16 && _rawDl[10] === 'T') ? ' ' + _rawDl.substring(11, 16) : '';
-            const _dlTip = formatDeadlineDisplay(task.deadline);
-            if (_diffDays < 0) _dlBadge = `<span class="task-badge urgent" title="截止 ${_dlTip}">⚠️ 已过期 ${Math.abs(_diffDays)} 天${_dlTimeStr}</span>`;
-            else if (_diffDays === 0) _dlBadge = `<span class="task-badge urgent" title="截止 ${_dlTip}">📅 今天${_dlTimeStr}截止</span>`;
-            else if (_diffDays <= 3) _dlBadge = `<span class="task-badge warning" title="截止 ${_dlTip}">📅 剩 ${_diffDays} 天${_dlTimeStr}</span>`;
-            else _dlBadge = `<span class="task-badge" title="截止 ${_dlTip}">📅 剩 ${_diffDays} 天${_dlTimeStr}</span>`;
-        }
+        const dlDate = new Date(getDeadlineDate(task) + 'T00:00:00');
+        const dsDate = new Date(ds + 'T00:00:00');
+        const diffDays = Math.round((dlDate - dsDate) / (1000 * 60 * 60 * 24));
+        const _rawDl = String(task.deadline);
+        const _dlTimeStr = (_rawDl.length >= 16 && _rawDl[10] === 'T') ? ' ' + _rawDl.substring(11, 16) : '';
+        const _dlTip = formatDeadlineDisplay(task.deadline);
+        if (diffDays < 0) badgesHtml += `<span class="task-badge urgent" title="截止 ${_dlTip}">⚠️ 已逾期 ${Math.abs(diffDays)} 天${_dlTimeStr}</span>`;
+        else if (diffDays === 0) badgesHtml += `<span class="task-badge urgent" title="截止 ${_dlTip}">📅 今天${_dlTimeStr}截止</span>`;
+        else if (diffDays <= 3) badgesHtml += `<span class="task-badge warning" title="截止 ${_dlTip}">📅 剩 ${diffDays} 天${_dlTimeStr}</span>`;
+        else badgesHtml += `<span class="task-badge" title="截止 ${_dlTip}">📅 剩 ${diffDays} 天${_dlTimeStr}</span>`;
+    }
     const cbSet = new Set(appData.commonBtns);
     let btnsHtml = '', moreBtnsHtml = '';
     const canSkip = !!(task.deadline || task.recurringType);
