@@ -5543,7 +5543,9 @@ function renderSubTaskHtml(task, sub, ds) {
     const defEC = sub.target ? 1 : 5;
     const ec = sub.energyCost !== undefined ? sub.energyCost : defEC;
     const estLabel = sub.estimate ? `⏱ ${sub.estimate}` : '⏱';
-    const progBadge = isCount ? `<span class="sub-badge" title="进度" style="background:#e3f2fd;color:#1976d2;border-color:#90caf9;">🎯 ${sp.done}/${sp.total}</span>` : '';
+    const _totalCount = Number(sub.totalCount) || 0;
+    const _totalBadge = _totalCount > 0 ? `<span class="sub-badge" title="累计总次数（跨天保留）" style="background:#f0fdf4;color:#166534;border-color:#86efac;">总 ${_totalCount} 次</span>` : '';
+    const progBadge = isCount ? `<span class="sub-badge" title="今日进度" style="background:#e3f2fd;color:#1976d2;border-color:#90caf9;">🎯 ${sp.done}/${sp.total}</span>${_totalBadge}` : '';
     const _leadingIcon = isCount
         ? `<span style="font-size:1em;">🎯</span>`
         : `<input type="checkbox" class="task-checkbox" ${done ? 'checked' : ''} onchange="toggleSubTask('${task.id}', '${sub.id}')">`;
@@ -5615,6 +5617,10 @@ function generateTaskDOM(task, ds, options = {}) {
     const defEC = task.target ? 1 : 10;
     if (task.energyCost !== undefined && task.energyCost !== defEC) badgesHtml += `<span class="task-badge">⚡ ${task.energyCost}</span>`;
     if (task.target && !hasSub) badgesHtml += `<span class="task-badge">🎯 目标 ${mp.total} 次</span>`;
+    if (task.target && !hasSub && task.recurringType) {
+        const _mtTotal = Number(task.totalCount) || 0;
+        if (_mtTotal > 0) badgesHtml += `<span class="task-badge" style="color:#166534;background:#f0fdf4;border-color:#86efac;" title="累计总次数（跨天保留）">总 ${_mtTotal} 次</span>`;
+    }
     if (task.deadline) {
         const dlDate = new Date(getDeadlineDate(task) + 'T00:00:00');
         const dsDate = new Date(ds + 'T00:00:00');
@@ -6330,6 +6336,7 @@ window.incrementTaskProgress = function(id) {
     const cur = getTaskCurrent(t, ds);
     const c = t.energyCost || 1;
     setTaskCurrent(t, ds, cur + 1);
+    t.totalCount = (Number(t.totalCount) || 0) + 1;
     adjustTodayEnergy(c); adjustExp(c);
     logTaskAction(ds, t.id, t.text, 'count', 1);
     if (cur + 1 >= t.target) {
@@ -6350,7 +6357,9 @@ window.decrementTaskProgress = function(id) {
     const cur = getTaskCurrent(t, ds);
     if (cur > 0) {
         adjustTodayEnergy(-c); adjustExp(-c);
-        setTaskCurrent(t, ds, cur - 1);
+        setSubCurrent(s, ds, cur - 1);
+        s.totalCount = Math.max(0, (Number(s.totalCount) || 0) - 1);
+        logTaskAction(ds, s.id, s.text, 'count', -1);
         logTaskAction(ds, t.id, t.text, 'count', -1);
         if (cur - 1 < t.target && isTaskDone(t, ds)) { setTaskDone(t, ds, false); adjustAttr(t.type, -1); adjustAttr('focus', -1); logTaskAction(ds, t.id, t.text, 'uncomplete'); }
     }
@@ -6368,6 +6377,7 @@ window.incrementSubTaskProgress = function(tid, sid) {
     const wt = isTaskDone(t, ds);
     const c = s.energyCost || 1;
     setSubCurrent(s, ds, cur + 1);
+    s.totalCount = (Number(s.totalCount) || 0) + 1;
     adjustTodayEnergy(c); adjustExp(c);
     logTaskAction(ds, s.id, s.text, 'count', 1);
     if (cur + 1 >= s.target) { if (!isSubTaskDone(s, ds)) adjustAttr(t.type, 1); setSubTaskDone(s, ds, true); logTaskAction(ds, s.id, s.text, 'complete'); }
