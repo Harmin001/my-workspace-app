@@ -870,7 +870,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="week-drawer-tab" id="week-drawer-tab" onclick="toggleWeekDrawer()" title="展开待办面板">📋 待办</div>
 </div>
 <div class="view-container" id="view-day">
-<h1 id="day-title">📝 日计划</h1>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px;"><h1 id="day-title" style="margin-bottom:0;">📝 日计划</h1><button class="btn btn-sm" id="btn-supplement-yesterday" onclick="openSupplementYesterdayModal()" style="font-size:var(--font-hint);padding:4px 10px;color:#7e22ce;border-color:#a855f7;background:#faf5ff;white-space:nowrap;">📝 补录昨日任务</button></div>
 <div class="day-panels-grid" id="day-panels-grid">
 <div class="section-box" data-panel="todo"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 📋 待办清单</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div><div class="panel-content"><div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="添加待办 (支持：任务名 * 100)" id="todo-input"></div><div id="todo-list" class="task-drop-zone" data-type="todo" data-completed="false"></div><p style="font-size:var(--font-small);color:var(--text-muted);margin-top:8px;line-height:1.5;">💡 这里是一直显示的清单，随时可增删，不支持完成或设置属性。把它拖入「学习」或「其他」才算正式开始处理。</p></div></div>
 <div class="section-box" data-panel="learning"><div class="panel-header"><h2><span class="drag-handle-icon">⠿</span> 📚 学习</h2><div class="panel-controls"><span class="btn-resize" title="切换全宽" onclick="togglePanelWidth(this)">↔</span></div></div><div class="panel-content"><div class="panel-input-wrapper"><input type="text" class="main-input" placeholder="按回车添加 (如：看教程 * 100)" id="learning-input"></div><div id="learning-list" class="task-drop-zone" data-type="learning" data-completed="false"></div><div id="learning-completed" class="task-drop-zone" data-type="learning" data-completed="true"></div></div></div>
@@ -969,6 +969,10 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="section-box" style="border-color:#fde68a;"><div class="panel-content"><h2 style="color:#b45309;">🏆 等级配置</h2><div class="level-config-list" id="level-config-list"></div><button class="btn btn-sm" onclick="addLevelConfig()" style="margin-top:6px;color:#b45309;border-color:#fcd34d;">➕ 添加等级</button><button class="btn btn-sm" onclick="resetLevelConfig()" style="margin-top:6px;color:var(--text-muted);margin-left:6px;">🔄 恢复默认</button></div></div>
 <div class="section-box" style="border-color:#c5cae9;"><div class="panel-content"><h2 style="color:#303f9f;">⏰ 课表时间段设置</h2><p style="font-size:var(--font-hint);color:var(--text-muted);">拖动左侧 ⋮⋮ 图标可调整顺序；每行代表一节课，如 08:00-08:50</p><div id="timeslot-config-list" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:280px;overflow-y:auto;"></div><button class="btn btn-sm" onclick="addTimeSlot()" style="margin-top:6px;color:#303f9f;border-color:#c5cae9;">➕ 添加时间段</button><button class="btn btn-sm" onclick="resetTimeSlots()" style="margin-top:6px;margin-left:6px;">🔄 恢复默认</button></div></div>
 <div class="section-box" style="border-color:#c5cae9;"><div class="panel-content"><h2 style="color:#303f9f;">📌 固定块精力设置</h2><p style="font-size:var(--font-hint);color:var(--text-muted);">分配固定块到时间池时，会自动扣除这些精力。</p><div id="fixed-block-energy-config-list" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:280px;overflow-y:auto;"></div></div></div>
+<div class="section-box" style="border-color:#a855f7;"><div class="panel-content"><h2 style="color:#7e22ce;">📝 昨日补录</h2>
+<p style="font-size:var(--font-hint);color:var(--text-muted);margin-top:6px;">开启后，日计划顶部会显示「补录昨日任务」按钮，可对昨天的任务进行勾选、计数调整。补录只影响昨天的状态，不触发新的循环实例。</p>
+<label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:var(--font-hint);color:var(--text-main);cursor:pointer;"><input type="checkbox" id="supplement-yesterday-toggle" onchange="changeSupplementYesterdayEnabled(this.checked)" style="accent-color:#a855f7;width:16px;height:16px;"> 启用昨日补录功能</label>
+</div></div>
 <div class="section-box" style="border-color:#a5d6a7;"><div class="panel-content"><h2 style="color:#2e7d32;">🔘 任务常用按钮</h2><p>勾选要在日计划卡片上直接显示的按钮，未勾选的将收纳进「⋮」菜单中。</p>
 <div class="common-btns-grid" id="common-btns-config">
 <label><input type="checkbox" value="skip" onchange="updateCommonBtn('skip', this.checked)"> ⏭️ 今日跳过</label>
@@ -1211,7 +1215,7 @@ let appData = {
     timeSlotsLastModified: 0,
     fixedBlocks: JSON.parse(JSON.stringify(DEFAULT_FIXED_BLOCKS)),
     fixedBlockSchedule: {}, maxVisible: 5, animationEnabled: true, statsChartMode: 'times',
-    taskChangelogs: {}, logMergeDays: 7
+    taskChangelogs: {}, logMergeDays: 7, supplementYesterdayEnabled: true
 };
 let peer = null, conn = null;
 // 版本更新相关函数已移除
@@ -1261,6 +1265,7 @@ let lastSyncedExerciseTimeSlotSchedule = {};
 let lastSyncedReflections = {};
 let lastSyncedRpg = {};
 let lastSyncedEnergy = {};
+let lastSyncedTaskLogs = {};
 let _opDebounceTimer = null;
 let _mainLoopInterval = null;
 let _pendingImportData = null;
@@ -1350,6 +1355,17 @@ function getDeadlineDate(task) {
     const s = String(task.deadline);
     return s.length >= 10 ? s.substring(0, 10) : s;
 }
+function getYesterdayString() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return formatDate(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function _logEffectiveTs(rec) {
+    if (rec && rec._supplementYesterday && rec.effectiveDate) {
+        return new Date(rec.effectiveDate + 'T23:59:59.999').getTime();
+    }
+    return rec ? (rec.ts || 0) : 0;
+}
 
 // ============ 任务变更日志 ============
 function _taskLogSnapshot(task) {
@@ -1404,12 +1420,13 @@ function _getTasksSnapshotsAtDate(dateStr) {
         const arr = logs[taskId];
         if (!arr || !arr.length) return;
         seenIds.add(taskId);
-        let snap = null;
-        for (let i = arr.length - 1; i >= 0; i--) {
-            if (arr[i].ts <= dateEnd) { snap = arr[i].task; break; }
-        }
-        if (snap && !snap._deleted) {
-            const clone = JSON.parse(JSON.stringify(snap));
+        let best = null, bestTs = -1;
+        arr.forEach(rec => {
+            const effTs = _logEffectiveTs(rec);
+            if (effTs <= dateEnd && effTs > bestTs) { bestTs = effTs; best = rec; }
+        });
+        if (best && best.task && !best.task._deleted) {
+            const clone = JSON.parse(JSON.stringify(best.task));
             delete clone._deleted;
             result.push(clone);
         }
@@ -1462,6 +1479,183 @@ function _fmtBytes(n) {
     if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
     return (n / 1024 / 1024).toFixed(2) + ' MB';
 }
+
+// ============ 昨日补录 ============
+function _applySupplementLog(taskId) {
+    const realTask = appData.tasks.find(t => t.id === taskId);
+    if (!realTask) return;
+    const yesterday = getYesterdayString();
+    if (!appData.taskChangelogs) appData.taskChangelogs = {};
+    const arr = appData.taskChangelogs[taskId] || (appData.taskChangelogs[taskId] = []);
+    const snap = _taskLogSnapshot(realTask);
+    arr.push({ ts: Date.now(), task: snap, _supplementYesterday: true, effectiveDate: yesterday });
+    Object.keys(_historySnapshotsCache).forEach(k => delete _historySnapshotsCache[k]);
+    saveDataToFile(appData);
+}
+window.openSupplementYesterdayModal = function() {
+    if (!appData.supplementYesterdayEnabled) { showMiniToast('❌ 昨日补录功能已关闭，请到设置开启'); return; }
+    const yesterday = getYesterdayString();
+    const orig = appData.tasks;
+    let yTasks;
+    try {
+        appData.tasks = _getTasksSnapshotsAtDate(yesterday);
+        yTasks = _getTasksForDateCore(yesterday, { includeDeadlineRange: true });
+    } finally {
+        appData.tasks = orig;
+    }
+    const visible = yTasks.filter(t => t.type !== 'todo' && !t.countOnly);
+    const old = document.getElementById('supplement-yesterday-overlay');
+    if (old) old.remove();
+    const modal = document.createElement('div');
+    modal.id = 'supplement-yesterday-overlay';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;';
+    let body = '';
+    if (visible.length === 0) {
+        body = '<div style="color:var(--text-muted);text-align:center;padding:30px;font-size:var(--font-content);">昨日没有可补录的任务</div>';
+    } else {
+        visible.forEach(t => {
+            const done = isTaskDone(t, yesterday);
+            const isTarget = !!t.target;
+            const isRec = !!t.recurringType;
+            const cur = isTarget ? getTaskCurrent(t, yesterday) : 0;
+            let ctrl = '';
+            if (isTarget) {
+                ctrl = `<span style="display:inline-flex;align-items:center;gap:4px;font-size:var(--font-hint);flex-shrink:0;"><button class="btn-sub-plus" onclick="applySupplementDecrementProgress('${t.id}', '')" title="减少一次">-1</button><span style="color:#1976d2;font-weight:700;">${cur}/${t.target}</span><button class="btn-sub-plus" onclick="applySupplementIncrementProgress('${t.id}', '')" title="增加一次">+1</button></span>`;
+            }
+            const badges = [];
+            if (isRec) badges.push('<span style="font-size:10px;color:#1e40af;background:#dbeafe;padding:1px 6px;border-radius:4px;">🔁 ' + escapeHtml(t.recurringType) + '</span>');
+            if (isTarget) badges.push('<span style="font-size:10px;color:#7e22ce;background:#f3e8ff;padding:1px 6px;border-radius:4px;">🎯 目标</span>');
+            body += `<div style="padding:8px 10px;background:var(--bg-sidebar);border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px;border:1px solid var(--border-color);">
+                <input type="checkbox" class="task-checkbox" ${done ? 'checked' : ''} onchange="applySupplementToggleTask('${t.id}')" style="flex-shrink:0;">
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <span class="${done ? 'task-completed' : ''}" style="font-size:var(--font-content);word-break:break-all;">${escapeHtml(t.text)}</span>
+                        ${badges.join('')}
+                    </div>
+                </div>
+                ${ctrl}
+            </div>`;
+            if (t.subTasks && t.subTasks.length > 0) {
+                t.subTasks.forEach(s => {
+                    if (s.countOnly) return;
+                    const sDone = isSubTaskDone(s, yesterday);
+                    const sTarget = !!s.target;
+                    const sCur = sTarget ? (Number(s.current) || 0) : 0;
+                    let sCtrl = '';
+                    if (sTarget) {
+                        sCtrl = `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;flex-shrink:0;"><button class="btn-sub-plus" onclick="applySupplementDecrementProgress('${t.id}', '${s.id}')" title="减少一次">-1</button><span style="color:#1976d2;font-weight:700;">${sCur}/${s.target}</span><button class="btn-sub-plus" onclick="applySupplementIncrementProgress('${t.id}', '${s.id}')" title="增加一次">+1</button></span>`;
+                    }
+                    body += `<div style="padding:6px 10px 6px 32px;background:var(--bg-card);border-radius:6px;margin-bottom:4px;display:flex;align-items:center;gap:8px;border:1px solid var(--border-color);">
+                        <input type="checkbox" class="task-checkbox" ${sDone ? 'checked' : ''} onchange="applySupplementToggleSubTask('${t.id}', '${s.id}')" style="flex-shrink:0;">
+                        <span class="${sDone ? 'task-completed' : ''}" style="flex:1;font-size:var(--font-hint);word-break:break-all;">${escapeHtml(s.text)}</span>
+                        ${sCtrl}
+                    </div>`;
+                });
+            }
+        });
+    }
+    modal.innerHTML = '<div style="background:var(--bg-card);color:var(--text-main);border-radius:16px;padding:20px;max-width:640px;width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--border-color);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-weight:700;font-size:var(--font-title);">📝 补录昨日任务</div><div style="cursor:pointer;color:var(--text-muted);font-size:1.5em;padding:0 8px;line-height:1;" id="supp-close">×</div></div>' +
+        '<div style="font-size:var(--font-hint);color:var(--text-muted);margin-bottom:12px;line-height:1.6;">生效日期：<b>' + yesterday + '</b>（只影响昨天的状态，今天的任务不变；更早日期不受影响）</div>' +
+        '<div style="flex:1;overflow-y:auto;min-height:0;">' + body + '</div>' +
+        '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;border-top:1px solid var(--border-color);padding-top:12px;"><button class="btn btn-sm btn-primary" id="supp-done">完成</button></div>' +
+        '</div>';
+    document.body.appendChild(modal);
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.getElementById('supp-close').onclick = () => modal.remove();
+    document.getElementById('supp-done').onclick = () => {
+        modal.remove();
+        renderDayPlan(); renderCalendar(); renderWeekBoard(); updateFixedProgressBars();
+    };
+};
+window.applySupplementToggleTask = function(taskId) {
+    if (!appData.supplementYesterdayEnabled) return;
+    const realTask = appData.tasks.find(t => t.id === taskId);
+    if (!realTask) return;
+    if (realTask.countOnly) return;
+    const yesterday = getYesterdayString();
+    const wasDone = isTaskDone(realTask, yesterday);
+    const willDone = !wasDone;
+    if (!realTask.completions) realTask.completions = {};
+    realTask.completions[yesterday] = willDone;
+    if (!realTask.recurringType && realTask.date === yesterday) realTask.completed = willDone;
+    if (realTask.subTasks && realTask.subTasks.length > 0) {
+        realTask.subTasks.forEach(s => {
+            if (s.countOnly) return;
+            if (s.target) { s.current = willDone ? s.target : 0; }
+            else {
+                if (!s.completions) s.completions = {};
+                s.completions[yesterday] = willDone;
+                s.completed = willDone;
+            }
+        });
+    }
+    _applySupplementLog(taskId);
+    window.openSupplementYesterdayModal();
+};
+window.applySupplementToggleSubTask = function(taskId, subId) {
+    if (!appData.supplementYesterdayEnabled) return;
+    const realTask = appData.tasks.find(t => t.id === taskId);
+    if (!realTask || !realTask.subTasks) return;
+    const s = realTask.subTasks.find(x => x.id === subId);
+    if (!s || s.countOnly) return;
+    const yesterday = getYesterdayString();
+    const wasDone = isSubTaskDone(s, yesterday);
+    const willDone = !wasDone;
+    if (s.target) { s.current = willDone ? s.target : 0; }
+    else {
+        if (!s.completions) s.completions = {};
+        s.completions[yesterday] = willDone;
+        s.completed = willDone;
+    }
+    _applySupplementLog(taskId);
+    window.openSupplementYesterdayModal();
+};
+window.applySupplementIncrementProgress = function(taskId, subId) {
+    if (!appData.supplementYesterdayEnabled) return;
+    const realTask = appData.tasks.find(t => t.id === taskId);
+    if (!realTask) return;
+    if (subId) {
+        if (!realTask.subTasks) return;
+        const s = realTask.subTasks.find(x => x.id === subId);
+        if (!s || !s.target) return;
+        const cur = Number(s.current) || 0;
+        if (cur >= s.target) return;
+        s.current = cur + 1;
+    } else {
+        if (!realTask.target) return;
+        const cur = Number(realTask.current) || 0;
+        if (cur >= realTask.target) return;
+        realTask.current = cur + 1;
+    }
+    _applySupplementLog(taskId);
+    window.openSupplementYesterdayModal();
+};
+window.applySupplementDecrementProgress = function(taskId, subId) {
+    if (!appData.supplementYesterdayEnabled) return;
+    const realTask = appData.tasks.find(t => t.id === taskId);
+    if (!realTask) return;
+    if (subId) {
+        if (!realTask.subTasks) return;
+        const s = realTask.subTasks.find(x => x.id === subId);
+        if (!s || !s.target) return;
+        const cur = Number(s.current) || 0;
+        if (cur <= 0) return;
+        s.current = cur - 1;
+    } else {
+        if (!realTask.target) return;
+        const cur = Number(realTask.current) || 0;
+        if (cur <= 0) return;
+        realTask.current = cur - 1;
+    }
+    _applySupplementLog(taskId);
+    window.openSupplementYesterdayModal();
+};
+window.changeSupplementYesterdayEnabled = function(val) {
+    appData.supplementYesterdayEnabled = !!val;
+    saveDataToFile(appData);
+    showMiniToast(val ? '✅ 已开启昨日补录' : '⏸ 已关闭昨日补录');
+};
 function formatDeadlineDisplay(deadline) {
     if (!deadline) return '';
     const s = String(deadline);
@@ -1580,11 +1774,11 @@ function _getTasksForDateCore(dateStr, options = {}) {
 }
 function isTaskDone(task, dateStr) {
     if (task.countOnly) return !!task.countEnded;
+    if (task.completions && task.completions[dateStr] !== undefined) return task.completions[dateStr];
     if (task.deadline && !task.recurringType && task.date && task.date !== 'pool') {
         const _dl = getDeadlineDate(task);
         if (task.date <= dateStr && dateStr <= _dl) return !!task.completed;
     }
-    if (task.completions && task.completions[dateStr] !== undefined) return task.completions[dateStr];
     if (!task.recurringType && task.date === dateStr) return !!task.completed;
     return false;
 }
@@ -1796,6 +1990,7 @@ function ensureEnergyData() {
     });
     if (!appData.taskChangelogs) appData.taskChangelogs = {};
     if (appData.logMergeDays === undefined) appData.logMergeDays = 7;
+    if (appData.supplementYesterdayEnabled === undefined) appData.supplementYesterdayEnabled = true;
     ensureGoals();
 }
 const GOAL_EXP_REWARD = 200;
@@ -4041,6 +4236,7 @@ function resetSyncedBaseline(data) {
     lastSyncedTasks = JSON.parse(JSON.stringify(data.tasks));
     lastSyncedExercises = JSON.parse(JSON.stringify(data.exercises));
     lastSyncedMethods = JSON.parse(JSON.stringify(data.methodsFiles));
+    lastSyncedTaskLogs = JSON.parse(JSON.stringify(data.taskChangelogs || {}));
     _syncSnapshot = JSON.parse(JSON.stringify(data));
 }
 function broadcastDiffs(data) {
@@ -4102,6 +4298,22 @@ function broadcastDiffs(data) {
     });
     lastSyncedMethods.forEach(lm => { if (!currentMethods.find(x => x.id === lm.id)) conn.send({ type: 'OP', data: { action: 'DELETE_METHODS', id: lm.id, clientId: CLIENT_ID, time: Date.now() } }); });
     lastSyncedMethods = JSON.parse(JSON.stringify(currentMethods));
+    const _curLogs = data.taskChangelogs || {};
+    const _newLogsPayload = {};
+    let _hasNewLogs = false;
+    Object.keys(_curLogs).forEach(taskId => {
+        const curArr = _curLogs[taskId];
+        if (!Array.isArray(curArr) || curArr.length === 0) return;
+        const oldArr = (lastSyncedTaskLogs && lastSyncedTaskLogs[taskId]) || [];
+        if (curArr.length > oldArr.length) {
+            _newLogsPayload[taskId] = curArr.slice(oldArr.length);
+            _hasNewLogs = true;
+        }
+    });
+    if (_hasNewLogs) {
+        try { conn.send({ type: 'OP', data: { action: 'APPEND_TASK_LOGS', logs: _newLogsPayload, clientId: CLIENT_ID, time: Date.now() } }); } catch (e) {}
+        lastSyncedTaskLogs = JSON.parse(jstr(_curLogs));
+    }
 }
 function queueConflict(op) {
     syncStatus = 'conflict'; updateSyncUI();
@@ -4344,6 +4556,24 @@ function handleIncomingOp(op) {
         const _dm = appData.methodsFiles.find(x => x.id === op.id);
         if (_dm) { _dm.deleted = true; _dm.updatedAt = Date.now(); }
         renderMethodsFileList(); refreshMethodsEditorContent();
+    } else if (op.action === 'APPEND_TASK_LOGS') {
+        if (!appData.taskChangelogs) appData.taskChangelogs = {};
+        Object.keys(op.logs || {}).forEach(taskId => {
+            const incoming = op.logs[taskId];
+            if (!Array.isArray(incoming) || incoming.length === 0) return;
+            const existing = appData.taskChangelogs[taskId] || (appData.taskChangelogs[taskId] = []);
+            const _seen = new Set(existing.map(r => (r.ts || 0) + '_' + ((r.task && r.task.text) || '')));
+            incoming.forEach(r => {
+                const key = (r.ts || 0) + '_' + ((r.task && r.task.text) || '');
+                if (!_seen.has(key)) { existing.push(r); _seen.add(key); }
+            });
+            existing.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+            appData.taskChangelogs[taskId] = existing;
+        });
+        Object.keys(_historySnapshotsCache).forEach(k => delete _historySnapshotsCache[k]);
+        if (lastSyncedTaskLogs) lastSyncedTaskLogs = JSON.parse(JSON.stringify(appData.taskChangelogs));
+        if (window.renderDayPlan) renderDayPlan();
+        if (window.renderCalendar) renderCalendar();
     }
     syncStatus = 'connected'; updateSyncUI();
     setTimeout(() => isSyncing = false, 100);
@@ -6033,6 +6263,8 @@ function renderTodoList() {
 }
 function renderDayPlan() {
     ensureEnergyData();
+    const _suppBtn = document.getElementById('btn-supplement-yesterday');
+    if (_suppBtn) _suppBtn.style.display = (appData.supplementYesterdayEnabled && !_isHistoryDate(appData.selectedDate)) ? '' : 'none';
     document.getElementById('day-title').innerText = `📝 日计划 (${getDateLabel(appData.selectedDate)})`;
     const ll = document.getElementById('learning-list'), ol = document.getElementById('other-list');
     const lc = document.getElementById('learning-completed'), oc = document.getElementById('other-completed');
@@ -6339,6 +6571,8 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
         else if (t === 'methods') { initMethodsEditor(); renderMethodsFileList(); refreshMethodsEditorContent(); }
         else if (t === 'settings') {
             renderP2PHistory(); updateBackupUI(); renderLevelConfig(); renderEnergyAndRPG(); renderTimeSlotConfig(); renderFixedBlockEnergyConfig();
+            const _suppCb = document.getElementById('supplement-yesterday-toggle');
+            if (_suppCb) _suppCb.checked = !!appData.supplementYesterdayEnabled;
             const sh = localStorage.getItem('my_p2p_host_id');
             if (sh) document.getElementById('my-peer-id').innerText = sh;
         }
