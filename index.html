@@ -848,7 +848,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div class="week-board" id="week-board"></div>
 <details class="bottom-summary" id="week-summary-details" style="border-top:1px dashed var(--border-color); padding-top:12px; margin-top:16px;"><summary style="cursor:pointer; font-weight:600; color:var(--accent-color); font-size:var(--font-content); list-style:none; outline:none;">📝 本周总结 (点击展开/收起)</summary><textarea id="week-summary-textarea" placeholder="记录这一周的感受与收获..." style="margin-top:8px;"></textarea></details>
 <div class="week-drawer-panel" id="week-drawer-panel">
-<div class="week-drawer-header"><span>📋 待办与排期</span><span class="week-drawer-close" onclick="toggleWeekDrawer(false)" title="收起">✕</span></div>
+<div class="week-drawer-header"><span>📋 待办与排期</span><div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-sm" onclick="clearOverdueTasks()" title="一键标记所有逾期任务为暂不完成 / 归档，不再持续逾期" style="font-size:11px;padding:3px 8px;color:#e65100;border-color:#ff9800;white-space:nowrap;">🧹 清理逾期</button><span class="week-drawer-close" onclick="toggleWeekDrawer(false)" title="收起">✕</span></div></div>
 <div class="week-drawer-body">
 <div class="todo-lists-container">
 <div class="todo-column"><h3>📚 学习待办</h3><input type="text" class="todo-input" id="pool-input-learning" placeholder="📝 添加待办 (支持：任务名 * 100)..."><div class="task-pool-list" id="task-pool-learning" ondrop="handleDrop(event, 'pool', undefined, 'learning')" ondragover="allowDrop(event)"></div></div>
@@ -892,7 +892,7 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 </div>
 <div class="methods-layout">
     <div class="methods-sidebar">
-        <div class="methods-sidebar-header"><span>📁 文件树</span><div style="display:flex;gap:4px;"><button class="methods-new-file-btn" onclick="createMethodsFolder()" title="新建文件夹" style="background:#27ae60;">📁+</button><button class="methods-new-file-btn" onclick="createMethodsFile()" title="新建文件">📄+</button></div></div>
+        <div class="methods-sidebar-header"><span>📁 文件树</span><div style="display:flex;gap:4px;"><button class="methods-new-file-btn" onclick="createMethodsFolder()" title="新建文件夹" style="background:#27ae60;">📁+</button><button class="methods-new-file-btn" onclick="createMethodsFile()" title="新建文件">📄+</button><button class="methods-new-file-btn" onclick="createMindmapFile()" title="新建思维导图" style="background:#9b51e0;">🧠+</button></div></div>
         <div class="methods-file-list" id="methods-file-list"></div>
     </div>
     <div class="methods-editor-area">
@@ -907,7 +907,6 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
             <div class="tb-group"><button type="button" data-cmd="undo" title="撤销 (Ctrl+Z)">↶</button><button type="button" data-cmd="redo" title="重做 (Ctrl+Y)">↷</button></div>
             <div class="tb-group"><button type="button" data-cmd="removeFormat" title="清除格式" style="font-style:italic;">T<sub style="font-size:9px;">x</sub></button><button type="button" data-cmd="insertHorizontalRule" title="插入分隔线" style="font-weight:900;">—</button></div>
             <div class="tb-group"><button type="button" onclick="addMethodsPage()" title="在当前栏末尾增加一张纸">📄+ 纸张</button><button type="button" onclick="removeLastMethodsPage()" title="删除当前栏最后一张纸">🗑 纸张</button></div>
-            <div class="tb-group"><button type="button" id="btn-toggle-mindmap" onclick="toggleMindmapView()" title="切换普通/思维导图视图">🧠 思维导图</button></div>
             <div class="tb-group"><button type="button" onclick="exportMethodsFile()" title="导出为 Markdown (.md) 文件">📤 导出</button><button type="button" onclick="importMethodsFile()" title="从 Markdown / HTML / Word 文件导入">📥 导入</button></div>
             <div class="tb-group"><button type="button" onclick="openMarkdownHelp()" title="Markdown 语法说明" style="font-weight:900;color:var(--accent-color);min-width:auto;padding:0 10px;">❓ 说明</button></div>
         </div>
@@ -1042,22 +1041,6 @@ body.dark-mode .katex .mord, body.dark-mode .katex .mbin, body.dark-mode .katex 
 <div style="margin-top:6px;border-top:1px dashed var(--border-color);padding-top:4px;"><span style="font-size:var(--font-small);color:#1976d2;font-weight:bold;display:block;margin-bottom:4px;">历史记录</span><div id="p2p-history-list" style="display:flex;gap:4px;flex-wrap:wrap;"></div></div>
 <div style="margin-top:8px;"><button class="btn btn-sm btn-primary" id="btn-manual-sync-2" onclick="manualSync()">🔄 立即同步</button></div>
 </div>
-</div>
-</div>
-</details>
-</div>
-<div class="section-box span-full" style="border-color:#a5d6a7;">
-<details class="settings-details">
-<summary style="color:#2e7d32;">📜 任务变更日志</summary>
-<div class="panel-content" style="padding-top:0;">
-<p style="font-size:var(--font-hint);color:var(--text-muted);margin-top:6px;">每次修改任务自动记录变更快照。查看过去日期时按当时的状态展示，不允许修改。</p>
-<div style="margin-top:12px;">
-  <label style="font-size:var(--font-hint);color:var(--text-main);display:flex;align-items:center;gap:6px;">自动合并阈值（天）：<input type="number" id="log-merge-days" min="1" max="3650" step="1" style="width:80px;padding:4px;" onchange="changeLogMergeDays(this.value)"></label>
-</div>
-<div id="log-size-info" style="font-size:var(--font-hint);color:var(--text-muted);margin-top:12px;line-height:1.7;">计算中...</div>
-<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
-  <button class="btn btn-sm btn-primary" onclick="mergeLogsNow()">📦 立即合并旧日志</button>
-  <button class="btn btn-sm" onclick="clearSingleTaskLog()" style="color:var(--danger-color);">🗑️ 清空单条任务日志</button>
 </div>
 </div>
 </details>
@@ -1555,6 +1538,7 @@ function getTasksForDate(dateStr, options = {}) {
 function _getTasksForDateCore(dateStr, options = {}) {
     const includeDeadlineRange = options.includeDeadlineRange !== false;
     const filteredDirect = appData.tasks.filter(t => {
+        if (t.archived) return false;
         if (t.date !== dateStr || t.date === 'pool') return false;
         if (t.type === 'todo') return false;
         if (t.skipDates && t.skipDates[dateStr] && dateStr !== getDeadlineDate(t)) return false;
@@ -1563,6 +1547,7 @@ function _getTasksForDateCore(dateStr, options = {}) {
     let deadlineRange = [];
     if (includeDeadlineRange) {
         deadlineRange = appData.tasks.filter(t => {
+            if (t.archived) return false;
             if (t.type === 'todo') return false;
             if (!t.deadline || t.recurringType || t.countOnly || t.date === 'pool' || !t.date) return false;
             const _dl = getDeadlineDate(t);
@@ -1573,6 +1558,7 @@ function _getTasksForDateCore(dateStr, options = {}) {
         });
     }
     const recurring = appData.tasks.filter(t => {
+        if (t.archived) return false;
         if (t.type === 'todo') return false;
         if (!t.recurringType || t.date === 'pool' || t.date > dateStr) return false;
         if (t.timeSlot && dateStr !== t.date) return false;
@@ -1583,6 +1569,7 @@ function _getTasksForDateCore(dateStr, options = {}) {
         return isRecurringMatch(t.recurringType, t.date, dateStr);
     });
     const countOnlyTasks = appData.tasks.filter(t => {
+        if (t.archived) return false;
         if (t.type === 'todo') return false;
         if (!t.countOnly || t.date === 'pool' || !t.date || t.date > dateStr) return false;
         if (t.timeSlot && dateStr !== t.date) return false;
@@ -1784,7 +1771,7 @@ function ensureEnergyData() {
         });
     })();
     if (!appData.activeMethodsFileId || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId && !f.deleted)) {
-        const firstFile = appData.methodsFiles.find(f => f.type === 'file' && !f.deleted);
+        const firstFile = appData.methodsFiles.find(f => (f.type === 'file' || f.type === 'mindmap') && !f.deleted);
         appData.activeMethodsFileId = firstFile ? firstFile.id : null;
     }
     if (!appData.activeMethodsFileId2 || !appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId2 && !f.deleted)) {
@@ -3227,7 +3214,7 @@ function renderMethodsFileTree(node, listElement, depth = 0) {
         item.title = f.name + '\n双击重命名';
         const icon = document.createElement('span');
         icon.className = 'file-icon';
-        icon.textContent = isFolder ? (isExpanded ? '📂' : '📁') : '📄';
+        icon.textContent = isFolder ? (isExpanded ? '📂' : '📁') : (f.type === 'mindmap' ? '🧠' : '📄');
         const toggle = document.createElement('span');
         toggle.className = 'folder-toggle';
         toggle.textContent = isFolder ? (isExpanded ? '▼' : '▶') : '';
@@ -3318,7 +3305,6 @@ function renderMethodsFileList() {
 }
 function switchMethodsFile(id) {
     if (appData.activeMethodsFileId === id) return;
-    if (appData.mindmapMode && typeof window.toggleMindmapView === 'function') window.toggleMindmapView();
     commitMethodsEditorToFile();
     appData.activeMethodsFileId = id;
     refreshMethodsEditorContent();
@@ -3327,7 +3313,6 @@ function switchMethodsFile(id) {
 }
 window.switchMethodsFile2 = function(id) {
     if (appData.activeMethodsFileId2 === id) return;
-    if (appData.mindmapMode && typeof window.toggleMindmapView === 'function') window.toggleMindmapView();
     commitMethodsEditorToFile();
     appData.activeMethodsFileId2 = id;
     refreshMethodsEditorContent();
@@ -3362,6 +3347,35 @@ window.createMethodsFile = function() {
     renderMethodsFileList(); refreshMethodsEditorContent(); saveDataToFile(appData);
     showMiniToast('✅ 已创建「' + newFile.name + '」');
 };
+window.createMindmapFile = function() {
+    const name = prompt('新思维导图名称：', '新思维导图');
+    if (name === null || !name.trim()) return;
+    commitMethodsEditorToFile();
+    let parentId = null;
+    const activeFile = appData.methodsFiles.find(f => f.id === appData.activeMethodsFileId);
+    if (activeFile && activeFile.parentId) parentId = activeFile.parentId;
+    else if (activeFile && activeFile.type === 'folder') parentId = activeFile.id;
+    const rootId = 'n_root_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    const newFile = {
+        id: 'mindmap_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: name.trim(),
+        type: 'mindmap',
+        parentId: parentId,
+        mindmap: { nodes: [{ id: rootId, text: '中心主题（双击编辑）', level: 1, parentId: null, x: 0, y: 0 }] },
+        updatedAt: Date.now()
+    };
+    appData.methodsFiles.push(newFile);
+    appData.activeMethodsFileId = newFile.id;
+    if (parentId) expandedMethodFolders.add(parentId);
+    renderMethodsFileList(); refreshMethodsEditorContent(); saveDataToFile(appData);
+    showMiniToast('✅ 已创建思维导图「' + newFile.name + '」');
+};
+function getCurrentMethodsItem(idStr) {
+    if (!Array.isArray(appData.methodsFiles) || appData.methodsFiles.length === 0) return null;
+    const targetId = idStr || appData.activeMethodsFileId;
+    const f = appData.methodsFiles.find(f => f.id === targetId && !f.deleted);
+    return (f && (f.type === 'file' || f.type === 'mindmap')) ? f : null;
+}
 function renameMethodsFile(id) {
     const f = appData.methodsFiles.find(x => x.id === id);
     if (!f) return;
@@ -3381,7 +3395,7 @@ function deleteMethodsFile(id) {
         const children = appData.methodsFiles.filter(x => x.parentId === id && !x.deleted);
         if (children.length > 0) { alert('文件夹不为空，请先删除内部的文件/文件夹。'); return; }
     }
-    if (appData.methodsFiles.filter(x => x.type === 'file' && !x.deleted).length <= 1 && f.type === 'file') { alert('至少保留一个文件'); return; }
+    if (appData.methodsFiles.filter(x => (x.type === 'file' || x.type === 'mindmap') && !x.deleted).length <= 1 && (f.type === 'file' || f.type === 'mindmap')) { alert('至少保留一个笔记文件'); return; }
     if (!confirm(`删除「${f.name}」？内容将永久丢失。`)) return;
     const deleteRecursive = (delId) => {
         const children = appData.methodsFiles.filter(x => x.parentId === delId && !x.deleted);
@@ -3543,7 +3557,7 @@ if (!window._mindmapDragBound) {
 }
 
 function saveMindmapNodesOnly() {
-    const f = getCurrentMethodsFile();
+    const f = getCurrentMethodsItem();
     if (!f) return;
     f.mindmap = { nodes: JSON.parse(JSON.stringify(_mindmapNodes)) };
     f.updatedAt = Date.now();
@@ -3740,6 +3754,31 @@ function initMethodsEditor() {
     }
 }
 function refreshMethodsEditorContent() {
+    const cur = getCurrentMethodsItem(appData.activeMethodsFileId);
+    const isMindmap = cur && cur.type === 'mindmap';
+    const paperContainer = document.getElementById('methods-paper-container');
+    const mindmapContainer = document.getElementById('methods-mindmap-container');
+    const stack2 = document.getElementById('methods-stack-2');
+    const btnSplit = document.getElementById('btn-toggle-split');
+    const splitControls = document.getElementById('methods-split-controls');
+    if (isMindmap) {
+        if (paperContainer) paperContainer.style.display = 'none';
+        if (mindmapContainer) mindmapContainer.style.display = 'block';
+        if (splitControls) splitControls.style.display = 'none';
+        if (btnSplit) { btnSplit.classList.remove('btn-primary'); btnSplit.innerText = '🖥️ 双栏模式'; }
+        let nodes = [];
+        if (cur.mindmap && Array.isArray(cur.mindmap.nodes) && cur.mindmap.nodes.length > 0) {
+            nodes = JSON.parse(JSON.stringify(cur.mindmap.nodes));
+        } else {
+            nodes = [{ id: 'n_root_' + Date.now(), text: '中心主题（双击编辑）', level: 1, parentId: null, x: 0, y: 0 }];
+        }
+        nodes.forEach(n => { if (typeof n.x !== 'number') n.x = 0; if (typeof n.y !== 'number') n.y = 0; });
+        if (nodes.every(n => n.x === 0 && n.y === 0)) autoLayoutMindmap(nodes);
+        renderMindmapView(nodes);
+        return;
+    }
+    if (paperContainer) paperContainer.style.display = '';
+    if (mindmapContainer) mindmapContainer.style.display = 'none';
     const f1 = getCurrentMethodsFile(appData.activeMethodsFileId);
     const md1 = f1 ? (f1.contentMarkdown !== undefined ? f1.contentMarkdown : htmlToMarkdown(f1.contentHtml || '')) : '';
     renderMethodsStack('methods-stack-1', md1, false);
@@ -3748,19 +3787,15 @@ function refreshMethodsEditorContent() {
         const md2 = f2 ? (f2.contentMarkdown !== undefined ? f2.contentMarkdown : htmlToMarkdown(f2.contentHtml || '')) : '';
         renderMethodsStack('methods-stack-2', md2, true);
     }
-    const container = document.getElementById('methods-paper-container');
-    const stack2 = document.getElementById('methods-stack-2');
-    const btn = document.getElementById('btn-toggle-split');
-    const splitControls = document.getElementById('methods-split-controls');
     if (appData.splitScreenMode) {
-        if (container) container.classList.add('split-screen');
+        if (paperContainer) paperContainer.classList.add('split-screen');
         if (stack2) stack2.style.display = 'flex';
-        if (btn) { btn.classList.add('btn-primary'); btn.innerText = '🖥️ 单栏模式'; }
+        if (btnSplit) { btnSplit.classList.add('btn-primary'); btnSplit.innerText = '🖥️ 单栏模式'; }
         if (splitControls) splitControls.style.display = 'flex';
     } else {
-        if (container) container.classList.remove('split-screen');
+        if (paperContainer) paperContainer.classList.remove('split-screen');
         if (stack2) stack2.style.display = 'none';
-        if (btn) { btn.classList.remove('btn-primary'); btn.innerText = '🖥️ 双栏模式'; }
+        if (btnSplit) { btnSplit.classList.remove('btn-primary'); btnSplit.innerText = '🖥️ 双栏模式'; }
         if (splitControls) splitControls.style.display = 'none';
     }
 }
@@ -5476,7 +5511,7 @@ function renderTaskPool() {
             pool.appendChild(item);
         });
     });
-    appData.tasks.filter(t => t.type !== 'todo' && t.date !== 'pool' && t.date < td && !isTaskDone(t, t.date) && !t.countOnly).forEach(t => {
+    appData.tasks.filter(t => t.type !== 'todo' && t.date !== 'pool' && t.date < td && !isTaskDone(t, t.date) && !t.countOnly && !t.archived).forEach(t => {
         hasOverdue = true;
         const item = createWeekTaskDOM(t, t.date);
         const tag = document.createElement('span'); tag.className = 'task-tag overdue'; tag.innerText = `逾期 ${t.date.substring(5)}`;
@@ -6304,7 +6339,6 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
         else if (t === 'methods') { initMethodsEditor(); renderMethodsFileList(); refreshMethodsEditorContent(); }
         else if (t === 'settings') {
             renderP2PHistory(); updateBackupUI(); renderLevelConfig(); renderEnergyAndRPG(); renderTimeSlotConfig(); renderFixedBlockEnergyConfig();
-            if (window.renderLogSettings) window.renderLogSettings();
             const sh = localStorage.getItem('my_p2p_host_id');
             if (sh) document.getElementById('my-peer-id').innerText = sh;
         }
@@ -7983,63 +8017,43 @@ function setupConnection(connection, isHost, targetId) {
     });
     connection.on('error', (err) => { if (conn !== connection) return; console.log("Err:", err); });
 }
-window.renderLogSettings = function() {
-    const el = document.getElementById('log-size-info');
-    if (!el) return;
-    const input = document.getElementById('log-merge-days');
-    if (input && document.activeElement !== input) input.value = appData.logMergeDays || 7;
-    if (!appData.taskChangelogs || Object.keys(appData.taskChangelogs).length === 0) {
-        el.innerHTML = '暂无变更日志。';
+window.clearOverdueTasks = function() {
+    const today = getTodayString();
+    let archived = 0, skipped = 0;
+    appData.tasks.forEach(t => {
+        if (t.type === 'todo' || t.date === 'pool' || t.countOnly) return;
+        if (!t.date || t.date >= today) return;
+        if (t.archived) return;
+        if (isTaskDone(t, t.date)) return;
+        if (t.recurringType) {
+            if (!t.skipDates) t.skipDates = {};
+            let d = new Date(t.date + 'T00:00:00');
+            const end = new Date(today + 'T00:00:00');
+            while (d < end) {
+                const ds = formatDate(d.getFullYear(), d.getMonth(), d.getDate());
+                if (!t.skipDates[ds]) { t.skipDates[ds] = true; skipped++; }
+                d.setDate(d.getDate() + 1);
+            }
+        } else {
+            t.archived = true;
+            archived++;
+        }
+    });
+    if (archived === 0 && skipped === 0) {
+        showMiniToast('✅ 没有需要清理的逾期任务');
         return;
     }
-    let totalLogs = 0;
-    let taskCount = 0;
-    Object.keys(appData.taskChangelogs).forEach(id => {
-        const arr = appData.taskChangelogs[id];
-        if (Array.isArray(arr) && arr.length > 0) { taskCount++; totalLogs += arr.length; }
-    });
-    const est = _estimateLogSize();
-    el.innerHTML = `📊 当前 <b>${totalLogs}</b> 条变更（<b>${taskCount}</b> 个任务）<br>💾 占用 ≈ <b>${_fmtBytes(est.current)}</b>；按 <b>${appData.logMergeDays || 7}</b> 天合并后 ≈ <b>${_fmtBytes(est.merged)}</b>，节省 <b>${_fmtBytes(est.saved)}</b>。`;
-};
-window.changeLogMergeDays = function(val) {
-    const n = parseInt(val);
-    if (isNaN(n) || n < 1) return;
-    appData.logMergeDays = n;
     saveDataToFile(appData);
-    if (window.renderLogSettings) window.renderLogSettings();
-    showMiniToast('✅ 已保存合并阈值：' + n + ' 天');
-};
-window.mergeLogsNow = function() {
-    const merged = _mergeTaskLogs();
-    if (merged > 0) {
-        saveDataToFile(appData);
-        showMiniToast(`📦 已合并 ${merged} 条旧日志`);
-    } else {
-        showMiniToast('暂无超过阈值可合并的日志');
+    renderDayPlan(); renderCalendar(); renderTaskPool(); renderWeekBoard(); updateFixedProgressBars();
+    if (appData.selectedDate !== today) {
+        appData.selectedDate = today;
+        userPickedDate = false;
+        renderDayPlan();
+        renderCalendar();
     }
-    if (window.renderLogSettings) window.renderLogSettings();
-};
-window.clearSingleTaskLog = function() {
-    const name = prompt('请输入要清空变更日志的任务名称（完全匹配）：');
-    if (!name) return;
-    const target = name.trim();
-    if (!target) return;
-    let cleared = 0;
-    Object.keys(appData.taskChangelogs || {}).forEach(taskId => {
-        const arr = appData.taskChangelogs[taskId];
-        const firstSnap = arr && arr[0] && arr[0].task;
-        const logName = firstSnap ? (firstSnap.text || '') : '';
-        const liveTask = (appData.tasks || []).find(x => x.id === taskId);
-        const liveName = liveTask ? (liveTask.text || '') : '';
-        if (logName === target || liveName === target) { delete appData.taskChangelogs[taskId]; cleared++; }
-    });
-    if (cleared > 0) {
-        saveDataToFile(appData);
-        showMiniToast(`🗑️ 已清空 ${cleared} 个任务的变更日志`);
-    } else {
-        showMiniToast('❌ 未找到匹配的任务');
-    }
-    if (window.renderLogSettings) window.renderLogSettings();
+    showMiniToast(`🧹 已清理：归档 ${archived} 个逾期任务，跳过 ${skipped} 天历史逾期`);
+    if (window.closeWeekDrawer) window.closeWeekDrawer();
+    if (typeof toggleWeekDrawer === 'function') { const p = document.getElementById('week-drawer-panel'); if (p && p.classList.contains('open')) toggleWeekDrawer(false); }
 };
 window.toggleWeekDrawer = function(force) {
     const panel = document.getElementById('week-drawer-panel');
@@ -8106,7 +8120,6 @@ window.addEventListener('beforeunload', () => {
     if (_mainLoopInterval) clearInterval(_mainLoopInterval);
     if (_idleEnergyTimer) clearInterval(_idleEnergyTimer);
     if (window._goalTimerTick) { clearInterval(window._goalTimerTick); window._goalTimerTick = null; }
-    if (window._logMergeTimer) { clearInterval(window._logMergeTimer); window._logMergeTimer = null; }
     _clearBackupTimers();
     if (resizeObserver) { try { resizeObserver.disconnect(); } catch(e) {} }
     if (_panelSortable) { try { _panelSortable.destroy(); } catch(e) {} }
@@ -8243,15 +8256,6 @@ window.addEventListener('beforeunload', () => {
         applyIdleEnergyDeduction();
         renderEnergyAndRPG();
     }, 60000);
-    if (window._logMergeTimer) clearInterval(window._logMergeTimer);
-    window._logMergeTimer = setInterval(() => {
-        if (document.hidden) return;
-        const merged = _mergeTaskLogs();
-        if (merged > 0) {
-            saveDataToFile(appData);
-            console.log('[自动合并日志] 合并了', merged, '条');
-        }
-    }, 60 * 60 * 1000);
     applyIdleEnergyDeduction();
 })();
 </script>
