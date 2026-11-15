@@ -1480,6 +1480,20 @@ function _fmtBytes(n) {
     return (n / 1024 / 1024).toFixed(2) + ' MB';
 }
 
+// ============ 全局状态更新事件 ============
+// 任何任务/同步/补录/初始化结束 → 派发 app:state-updated
+// RPG 面板（侧栏精力 + FAB + 完成度进度条 + 🎯 目标）订阅该事件后主动重读 appData.rpg 并刷新，不再依赖点开设置页
+function _dispatchStateUpdated(reason) {
+    try {
+        window.dispatchEvent(new CustomEvent('app:state-updated', { detail: { reason: reason || 'unknown', ts: Date.now() } }));
+    } catch (e) { console.warn('[dispatchStateUpdated 失败]', e); }
+}
+window.addEventListener('app:state-updated', function() {
+    try { renderEnergyAndRPG(); } catch (e) { console.warn('[订阅 app:state-updated 刷新 RPG 失败]', e); }
+    try { if (window.renderGoals) renderGoals(); } catch (e) {}
+    try { if (window.renderGlobalTimer) renderGlobalTimer(); } catch (e) {}
+});
+
 // ============ 昨日补录 ============
 function _applySupplementLog(taskId) {
     const realTask = appData.tasks.find(t => t.id === taskId);
@@ -4148,6 +4162,7 @@ function saveDataToFile(data) {
             if (syncStatus === 'connected' || syncStatus === 'syncing') broadcastDiffs(data);
         }, 300);
     }
+    _dispatchStateUpdated('saveDataToFile');
 }
 function saveLocalStorage() { persistNow(appData); }
 window.changeThemeMode = function(mode) { appData.themeMode = mode; document.body.classList.toggle('dark-mode', mode === 'dark'); saveDataToFile(appData); };
@@ -4584,6 +4599,7 @@ function handleIncomingOp(op) {
         if (window.renderCalendar) renderCalendar();
     }
     syncStatus = 'connected'; updateSyncUI();
+    _dispatchStateUpdated('incoming-op');
     setTimeout(() => isSyncing = false, 100);
 }
 function applyPanelLayout() {
@@ -8078,6 +8094,7 @@ function applyRemoteData(payload, oldData) {
     if (_mergeConflicts.length > 0) {
         showMergeConflictDialog();
     }
+    _dispatchStateUpdated('applyRemoteData');
     setTimeout(() => { isSyncing = false; }, 100);
 }
 function _formatMergeConflictValue(c, v) {
@@ -8455,6 +8472,9 @@ window.addEventListener('beforeunload', () => {
     saveDataToFile(appData);
     resetSyncedBaseline(appData);
     window._appInitDone = true;
+    // 页面初始化流程：全量数据加载 + 默认值补全 + 快照缓存清理 已完成 → 统一派发一次事件，RPG 面板按最终状态重渲染
+    try { Object.keys(_historySnapshotsCache).forEach(k => delete _historySnapshotsCache[k]); } catch (e) {}
+    try { _dispatchStateUpdated('app-init-complete'); } catch (e) {}
     try {
         const _savedDayCat = localStorage.getItem('myWorkspaceMobileDayCat') || 'todo';
         document.body.setAttribute('data-mobile-day-cat', _savedDayCat);
