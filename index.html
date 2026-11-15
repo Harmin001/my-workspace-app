@@ -1397,7 +1397,7 @@ function _recordTaskChanges(data) {
             anyChanged = true;
             return;
         }
-        arr.push({ ts: now, task: snap });
+        arr.push({ ts: now, task: snap, rpg: data.rpg ? JSON.parse(JSON.stringify(data.rpg)) : null });
         anyChanged = true;
     });
     if (anyChanged) {
@@ -1488,7 +1488,7 @@ function _applySupplementLog(taskId) {
     if (!appData.taskChangelogs) appData.taskChangelogs = {};
     const arr = appData.taskChangelogs[taskId] || (appData.taskChangelogs[taskId] = []);
     const snap = _taskLogSnapshot(realTask);
-    arr.push({ ts: Date.now(), task: snap, _supplementYesterday: true, effectiveDate: yesterday });
+    arr.push({ ts: Date.now(), task: snap, _supplementYesterday: true, effectiveDate: yesterday, rpg: appData.rpg ? JSON.parse(JSON.stringify(appData.rpg)) : null });
     Object.keys(_historySnapshotsCache).forEach(k => delete _historySnapshotsCache[k]);
     saveDataToFile(appData);
 }
@@ -1565,7 +1565,15 @@ window.openSupplementYesterdayModal = function() {
     document.getElementById('supp-close').onclick = () => modal.remove();
     document.getElementById('supp-done').onclick = () => {
         modal.remove();
-        renderDayPlan(); renderCalendar(); renderWeekBoard(); updateFixedProgressBars();
+        renderDayPlan();
+        renderCalendar();
+        renderWeekBoard();
+        renderTaskPool();
+        updateFixedProgressBars();
+        renderEnergyAndRPG();
+        renderGoals();
+        if (window.renderGlobalTimer) window.renderGlobalTimer();
+        if (window.refreshDetailModalIfOpen) window.refreshDetailModalIfOpen();
     };
 };
 window.applySupplementToggleTask = function(taskId) {
@@ -6707,7 +6715,7 @@ window.deleteTask = function(id) {
         const _arr = appData.taskChangelogs[id] || (appData.taskChangelogs[id] = []);
         const _snap = _taskLogSnapshot(_dt);
         _snap._deleted = true;
-        _arr.push({ ts: Date.now(), task: _snap });
+        _arr.push({ ts: Date.now(), task: _snap, rpg: appData.rpg ? JSON.parse(JSON.stringify(appData.rpg)) : null });
         Object.keys(_historySnapshotsCache).forEach(k => delete _historySnapshotsCache[k]);
     }
     appData.tasks = appData.tasks.filter(t => t.id !== id);
