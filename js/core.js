@@ -13,6 +13,11 @@ const MODULES = {
     util: './js/util.js'
 };
 
+// ============ 渲染函数导入 ============
+import { renderCalendarView, renderWeekView } from './calendar.js';
+import { renderDayView } from './day.js';
+import { renderNoteView } from './methods.js';
+
 // ============ 全局状态 ============
 let appData = null;
 let isInitComplete = false;
@@ -223,26 +228,43 @@ function switchView(target) {
     switch (target) {
         case 'year':
             console.log('[switchView] 渲染全年总览');
+            // 全年总览由 calendar.renderCalendar() 处理
             break;
         case 'month':
             console.log('[switchView] 渲染月计划');
-            import('./calendar.js').then(module => {
-                if (module.renderCalendarView) module.renderCalendarView();
-            }).catch(err => console.warn('[switchView] 导入失败:', err));
+            if (typeof renderCalendarView === 'function') {
+                renderCalendarView();
+            } else {
+                console.warn('[switchView] renderCalendarView 不存在，跳过月计划渲染');
+            }
             break;
         case 'week':
             console.log('[switchView] 渲染周计划');
+            if (typeof renderWeekView === 'function') {
+                renderWeekView();
+            } else {
+                console.warn('[switchView] renderWeekView 不存在，跳过周计划渲染');
+            }
             break;
         case 'day':
             console.log('[switchView] 渲染日计划');
-            if (day && typeof day.renderDay === 'function') day.renderDay();
+            if (typeof renderDayView === 'function') {
+                renderDayView();
+            } else {
+                console.warn('[switchView] renderDayView 不存在，跳过日计划渲染');
+            }
             break;
         case 'methods':
             console.log('[switchView] 渲染笔记');
-            if (methods && typeof methods.renderNotes === 'function') methods.renderNotes();
+            if (typeof renderNoteView === 'function') {
+                renderNoteView();
+            } else {
+                console.warn('[switchView] renderNoteView 不存在，跳过笔记渲染');
+            }
             break;
         case 'settings':
             console.log('[switchView] 渲染设置');
+            // 设置面板静态内容，无需渲染
             break;
         default:
             console.warn('[switchView] 未知视图:', target);

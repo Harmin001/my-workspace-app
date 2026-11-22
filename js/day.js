@@ -156,4 +156,13 @@ class DayManager {
 
 // 导出
 window.DayManager = DayManager;
-window.dayManager = new DayManager();
+window.dayManager = new DayManager;
+
+// 日计划渲染函数
+function renderDayView() {
+    const dayManager = new DayManager();
+    if (typeof dayManager.renderDay === 'function') {
+        dayManager.renderDay();
+    }
+}
+export { renderDayView };

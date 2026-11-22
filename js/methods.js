@@ -95,7 +95,16 @@ class MethodsManager {
 
 // 导出
 window.MethodsManager = MethodsManager;
-window.methodsManager = new MethodsManager();
+window.methodsManager = new MethodsManager;
+
+// 笔记渲染函数
+function renderNoteView() {
+    const methodsManager = new MethodsManager();
+    if (typeof methodsManager.renderNotes === 'function') {
+        methodsManager.renderNotes();
+    }
+}
+export { renderNoteView };
 
 // ============ Markdown 渲染工具 ============
 function renderMarkdown(text) {

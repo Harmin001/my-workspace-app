@@ -224,4 +224,12 @@ function renderCalendarView() {
         calendarManager.renderCalendar();
     }
 }
-export { renderCalendarView };
+
+// 周计划渲染函数
+function renderWeekView() {
+    const calendarManager = new CalendarManager();
+    if (typeof calendarManager.renderWeekBoard === 'function') {
+        calendarManager.renderWeekBoard();
+    }
+}
+export { renderCalendarView, renderWeekView };
