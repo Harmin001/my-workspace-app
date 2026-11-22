@@ -67,29 +67,29 @@ function saveDataToFile(data) {
 
 function loadData() {
     ensureStorage();
-    // 确保数据结构完整性
-    if (!appData.tasks) appData.tasks = [];
-    if (!appData.exercises) appData.exercises = [];
-    if (!appData.exerciseSchedule) appData.exerciseSchedule = {};
-    if (!appData.exerciseTimeSlotSchedule) appData.exerciseTimeSlotSchedule = {};
-    if (!appData.dailyExerciseChecks) appData.dailyExerciseChecks = {};
-    if (!appData.dailyReflections) appData.dailyReflections = {};
-    if (!appData.weeklyReflections) appData.weeklyReflections = {};
-    if (!appData.monthlyReflections) appData.monthlyReflections = {};
-    if (!appData.dailyLogs) appData.dailyLogs = {};
-    if (!appData.dailyEnergy) appData.dailyEnergy = {};
-    if (!appData.dailyEnergyTS) appData.dailyEnergyTS = {};
-    if (!appData.fixedBlockSchedule) appData.fixedBlockSchedule = {};
+    // 确保数据结构完整性 - 增加空对象判断兜底
+    if (appData && !appData.tasks) appData.tasks = [];
+    if (appData && !appData.exercises) appData.exercises = [];
+    if (appData && !appData.exerciseSchedule) appData.exerciseSchedule = {};
+    if (appData && !appData.exerciseTimeSlotSchedule) appData.exerciseTimeSlotSchedule = {};
+    if (appData && !appData.dailyExerciseChecks) appData.dailyExerciseChecks = {};
+    if (appData && !appData.dailyReflections) appData.dailyReflections = {};
+    if (appData && !appData.weeklyReflections) appData.weeklyReflections = {};
+    if (appData && !appData.monthlyReflections) appData.monthlyReflections = {};
+    if (appData && !appData.dailyLogs) appData.dailyLogs = {};
+    if (appData && !appData.dailyEnergy) appData.dailyEnergy = {};
+    if (appData && !appData.dailyEnergyTS) appData.dailyEnergyTS = {};
+    if (appData && !appData.fixedBlockSchedule) appData.fixedBlockSchedule = {};
     
-    // 默认值
-    if (appData.energyMax === undefined || appData.energyMax === null) appData.energyMax = 200;
-    if (appData.energyWarnThreshold === undefined || appData.energyWarnThreshold === null) appData.energyWarnThreshold = 30;
-    if (appData.expRatio === undefined || appData.expRatio === null) appData.expRatio = 0.6;
-    if (appData.napEnergy === undefined || appData.napEnergy === null) appData.napEnergy = 50;
-    if (appData.breakEnergy === undefined || appData.breakEnergy === null) appData.breakEnergy = 20;
-    if (appData.maxVisible === undefined) appData.maxVisible = 5;
-    if (appData.animationEnabled === undefined) appData.animationEnabled = true;
-    if (appData.supplementYesterdayEnabled === undefined) appData.supplementYesterdayEnabled = true;
+    // 默认值 - 增加空对象判断
+    if (appData && (appData.energyMax === undefined || appData.energyMax === null)) appData.energyMax = 200;
+    if (appData && (appData.energyWarnThreshold === undefined || appData.energyWarnThreshold === null)) appData.energyWarnThreshold = 30;
+    if (appData && (appData.expRatio === undefined || appData.expRatio === null)) appData.expRatio = 0.6;
+    if (appData && (appData.napEnergy === undefined || appData.napEnergy === null)) appData.napEnergy = 50;
+    if (appData && (appData.breakEnergy === undefined || appData.breakEnergy === null)) appData.breakEnergy = 20;
+    if (appData && appData.maxVisible === undefined) appData.maxVisible = 5;
+    if (appData && appData.animationEnabled === undefined) appData.animationEnabled = true;
+    if (appData && appData.supplementYesterdayEnabled === undefined) appData.supplementYesterdayEnabled = true;
     
     return appData;
 }
@@ -294,6 +294,9 @@ window.getTodayString = getTodayString;
 window.escapeHtml = escapeHtml;
 window.eventBus = eventBus;
 window.appData = appData; // 导出 appData
+
+// 命名导出 appData
+export { appData };
 
 // 自动初始化
 if (document.readyState === 'loading') {
