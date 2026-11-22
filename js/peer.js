@@ -111,7 +111,7 @@ class PeerManager {
         // 处理同步数据
         if (data.tasks) {
             // 合并任务数据
-            const localTasks = appData.tasks || [];
+            const localTasks = (appData && appData.tasks) || [];
             const remoteTasks = data.tasks;
             
             // 简单合并逻辑

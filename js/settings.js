@@ -1,6 +1,8 @@
 // ===== 设置模块 =====
 // 应用配置、偏好设置
 
+import { appData } from './core.js';
+
 class SettingsManager {
     constructor() {
         this.settings = {

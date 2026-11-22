@@ -82,7 +82,7 @@ class CalendarManager {
     }
 
     _getTasksForDay(date) {
-        return (appData.tasks || []).filter(t => t.date === date && t.status !== 'done');
+        return (appData && appData.tasks || []).filter(t => t.date === date && t.status !== 'done');
     }
 
     _renderMiniTasks(tasks) {

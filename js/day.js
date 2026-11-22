@@ -130,7 +130,7 @@ class DayManager {
         if (!pool) return;
 
         // 从练习中获取今日任务
-        const exerciseTasks = (appData.exercises || []).filter(e => e.date === this.today && e.status !== 'done');
+        const exerciseTasks = (appData && appData.exercises || []).filter(e => e.date === this.today && e.status !== 'done');
         
         if (exerciseTasks.length === 0) {
             pool.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--text-muted);font-size:var(--font-hint);">📭 练习池为空</div>`;

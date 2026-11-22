@@ -1,6 +1,8 @@
 // ===== RPG 系统模块 =====
 // 精力管理、经验系统、属性成长
 
+import { appData } from './core.js';
+
 class RPGManager {
     constructor() {
         this.level = 1;
@@ -20,9 +22,9 @@ class RPGManager {
         this.current = { ...this.attributes };
         
         // 能量相关
-        this.energyMax = appData.energyMax || 200;
+        this.energyMax = (appData && appData.energyMax) ? appData.energyMax : 200;
         this.energy = this.energyMax;
-        this.energyWarnThreshold = appData.energyWarnThreshold || 30;
+        this.energyWarnThreshold = (appData && appData.energyWarnThreshold) ? appData.energyWarnThreshold : 30;
         
         // 技能树
         this.skills = {

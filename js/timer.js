@@ -74,7 +74,7 @@ class TimerManager {
         this.stop();
         
         // 通知用户
-        if (appData.settings && appData.settings.notifications) {
+        if (appData && appData.settings && appData.settings.notifications) {
             // 可以播放声音或显示通知
             console.log('计时器完成！');
         }

@@ -1,6 +1,8 @@
 // ===== 任务管理模块 =====
 // 任务 CRUD、渲染、拖拽
 
+import { appData } from './core.js';
+
 class TaskManager {
     constructor() {
         this.tasks = (appData && appData.tasks) ? appData.tasks : [];

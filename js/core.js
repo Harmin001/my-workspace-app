@@ -14,7 +14,7 @@ const MODULES = {
 };
 
 // ============ 全局状态 ============
-let appData = {};
+let appData = null;
 let isInitComplete = false;
 
 // ============ 工具函数 ============
@@ -152,15 +152,15 @@ async function initApp() {
     // 加载数据
     appData = loadData();
     
-    // 初始化各模块
-    tasks.init();
-    calendar.init();
-    day.init();
-    methods.init();
-    settings.init();
-    peer.init();
-    rpg.init();
-    timer.init();
+    // 初始化各模块 - 增加空对象判断兜底
+    if (tasks && typeof tasks.init === 'function') tasks.init();
+    if (calendar && typeof calendar.init === 'function') calendar.init();
+    if (day && typeof day.init === 'function') day.init();
+    if (methods && typeof methods.init === 'function') methods.init();
+    if (settings && typeof settings.init === 'function') settings.init();
+    if (peer && typeof peer.init === 'function') peer.init();
+    if (rpg && typeof rpg.init === 'function') rpg.init();
+    if (timer && typeof timer.init === 'function') timer.init();
     
     // 渲染主视图
     renderMainView();
@@ -293,6 +293,7 @@ window.initApp = initApp;
 window.getTodayString = getTodayString;
 window.escapeHtml = escapeHtml;
 window.eventBus = eventBus;
+window.appData = appData; // 导出 appData
 
 // 自动初始化
 if (document.readyState === 'loading') {

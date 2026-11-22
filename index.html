@@ -6,11 +6,17 @@
     <meta name="description" content="个人工作台 - 全年总览、月计划、周计划、日计划、笔记、P2P 同步、RPG 系统、计时器">
     <title>🚀 个人工作台</title>
     
-    <!-- 预加载关键资源 -->
-    <link rel="preload" href="js/core.js" as="script">
-    
-    <!-- 核心模块 -->
+    <!-- 核心模块（必须最先加载） -->
     <script type="module" src="js/core.js"></script>
+    <script type="module" src="js/rpg.js"></script>
+    <script type="module" src="js/tasks.js"></script>
+    <script type="module" src="js/settings.js"></script>
+    <script type="module" src="js/calendar.js"></script>
+    <script type="module" src="js/day.js"></script>
+    <script type="module" src="js/methods.js"></script>
+    <script type="module" src="js/peer.js"></script>
+    <script type="module" src="js/timer.js"></script>
+    <script type="module" src="js/util.js"></script>
     
     <!-- 样式 -->
     <link rel="stylesheet" href="styles/app.css">
