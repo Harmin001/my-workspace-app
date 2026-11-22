@@ -2,6 +2,7 @@
 // 任务 CRUD、渲染、拖拽
 
 import { appData } from './core.js';
+import { renderCalendarView } from './calendar.js';
 
 class TaskManager {
     constructor() {
