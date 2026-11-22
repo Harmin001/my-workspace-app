@@ -118,8 +118,8 @@ class RPGManager {
         });
         
         // 技能升级
-        Object.keys(this.skills).forEach(skill => {
-            const skill = this.skills[skill];
+        Object.keys(this.skills).forEach(skillKey => {
+            const skill = this.skills[skillKey];
             if (skill.exp >= skill.level * 100) {
                 skill.level++;
                 skill.exp = 0;

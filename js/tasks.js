@@ -3,7 +3,7 @@
 
 class TaskManager {
     constructor() {
-        this.tasks = appData.tasks || [];
+        this.tasks = (appData && appData.tasks) ? appData.tasks : [];
         this.currentView = 'all'; // 'all' | 'today' | 'overdue' | 'learning' | 'other'
     }
 

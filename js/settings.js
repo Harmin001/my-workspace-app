@@ -9,14 +9,14 @@ class SettingsManager {
             autoSave: true,
             notifications: true,
             soundEffects: true,
-            energyMax: appData.energyMax || 200,
-            energyWarnThreshold: appData.energyWarnThreshold || 30,
-            expRatio: appData.expRatio || 0.6,
-            napEnergy: appData.napEnergy || 50,
-            breakEnergy: appData.breakEnergy || 20,
-            maxVisible: appData.maxVisible || 5,
-            animationEnabled: appData.animationEnabled || true,
-            supplementYesterdayEnabled: appData.supplementYesterdayEnabled || true
+            energyMax: (appData && appData.energyMax) ? appData.energyMax : 200,
+            energyWarnThreshold: (appData && appData.energyWarnThreshold) ? appData.energyWarnThreshold : 30,
+            expRatio: (appData && appData.expRatio) ? appData.expRatio : 0.6,
+            napEnergy: (appData && appData.napEnergy) ? appData.napEnergy : 50,
+            breakEnergy: (appData && appData.breakEnergy) ? appData.breakEnergy : 20,
+            maxVisible: (appData && appData.maxVisible) ? appData.maxVisible : 5,
+            animationEnabled: (appData && appData.animationEnabled) ? appData.animationEnabled : true,
+            supplementYesterdayEnabled: (appData && appData.supplementYesterdayEnabled) ? appData.supplementYesterdayEnabled : true
         };
     }
 
@@ -90,31 +90,31 @@ class SettingsManager {
     // ============ 能量设置 ============
     setEnergyMax(value) {
         this.settings.energyMax = parseInt(value) || 200;
-        appData.energyMax = this.settings.energyMax;
+        (appData && appData.energyMax) && (appData.energyMax = this.settings.energyMax);
         this.save();
     }
 
     setEnergyWarnThreshold(value) {
         this.settings.energyWarnThreshold = parseInt(value) || 30;
-        appData.energyWarnThreshold = this.settings.energyWarnThreshold;
+        (appData && appData.energyWarnThreshold) && (appData.energyWarnThreshold = this.settings.energyWarnThreshold);
         this.save();
     }
 
     setExpRatio(value) {
         this.settings.expRatio = parseFloat(value) || 0.6;
-        appData.expRatio = this.settings.expRatio;
+        (appData && appData.expRatio) && (appData.expRatio = this.settings.expRatio);
         this.save();
     }
 
     setNapEnergy(value) {
         this.settings.napEnergy = parseInt(value) || 50;
-        appData.napEnergy = this.settings.napEnergy;
+        (appData && appData.napEnergy) && (appData.napEnergy = this.settings.napEnergy);
         this.save();
     }
 
     setBreakEnergy(value) {
         this.settings.breakEnergy = parseInt(value) || 20;
-        appData.breakEnergy = this.settings.breakEnergy;
+        (appData && appData.breakEnergy) && (appData.breakEnergy = this.settings.breakEnergy);
         this.save();
     }
 
