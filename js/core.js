@@ -180,15 +180,22 @@ async function initApp() {
 function renderDefaultView() {
     console.log('[renderDefaultView] 渲染默认视图：月计划');
     
-    // 重新加载模块（因为变量作用域限制）
-    const calendar = loadModule('calendar');
+    // 从 calendar.js 导入 renderCalendarView 函数
+    import('./calendar.js').then(module => {
+        if (module.renderCalendarView && typeof module.renderCalendarView === 'function') {
+            module.renderCalendarView();
+        } else {
+            console.warn('[renderDefaultView] renderCalendarView 不存在，跳过月计划渲染');
+        }
+    }).catch(err => {
+        console.warn('[renderDefaultView] 导入 calendar.js 失败:', err);
+    });
+    
+    // 加载 day 和 methods 模块（同步调用）
     const day = loadModule('day');
     const methods = loadModule('methods');
     
     // 确保各视图模块已加载并调用其渲染函数
-    if (calendar && typeof calendar.renderCalendar === 'function') {
-        calendar.renderCalendar();
-    }
     if (day && typeof day.renderDay === 'function') {
         day.renderDay();
     }

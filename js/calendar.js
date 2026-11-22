@@ -215,4 +215,13 @@ class CalendarManager {
 
 // 导出
 window.CalendarManager = CalendarManager;
-window.calendarManager = new CalendarManager();
+window.calendarManager = new CalendarManager;
+
+// 渲染函数别名（供 core.js 调用）
+function renderCalendarView() {
+    const calendarManager = new CalendarManager();
+    if (typeof calendarManager.renderCalendar === 'function') {
+        calendarManager.renderCalendar();
+    }
+}
+window.renderCalendarView = renderCalendarView;
