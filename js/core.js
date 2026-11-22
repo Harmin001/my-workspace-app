@@ -18,6 +18,31 @@ import { renderCalendarView, renderWeekView } from './calendar.js';
 import { renderDayView } from './day.js';
 import { renderNoteView } from './methods.js';
 
+// ============ 全局工具函数 ============
+// 工作区标题相关函数（从原始 HTML 迁移）
+function selectAllTitle(el) {
+    if (!el) return;
+    try {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } catch (e) {}
+}
+
+function saveWorkspaceTitle(el) {
+    if (!el) return;
+    const v = (el.innerText || '').replace(/\s+/g, ' ').trim() || '🚀 我的工作台';
+    el.innerText = v;
+    appData.workspaceTitle = v;
+    saveDataToFile(appData);
+}
+
+// 挂载到 window（全局调用方式）
+window.selectAllTitle = selectAllTitle;
+window.saveWorkspaceTitle = saveWorkspaceTitle;
+
 // ============ 全局状态 ============
 let appData = null;
 let isInitComplete = false;
