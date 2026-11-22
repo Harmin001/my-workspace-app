@@ -183,15 +183,15 @@ async function initApp() {
 function renderDefaultView() {
     console.log('[renderDefaultView] 渲染默认视图：月计划');
     
-    // 从 calendar.js 导入 renderCalendarView 函数
-    import('./calendar.js').then(module => {
+    // 从 tasks.js 导入 renderCalendarView 函数
+    import('./tasks.js').then(module => {
         if (module.renderCalendarView && typeof module.renderCalendarView === 'function') {
             module.renderCalendarView();
         } else {
             console.warn('[renderDefaultView] renderCalendarView 不存在，跳过月计划渲染');
         }
     }).catch(err => {
-        console.warn('[renderDefaultView] 导入 calendar.js 失败:', err);
+        console.warn('[renderDefaultView] 导入 tasks.js 失败:', err);
     });
     
     // 加载 day 和 methods 模块（同步调用）

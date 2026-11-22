@@ -186,4 +186,7 @@ class TaskManager {
 
 // 导出
 window.TaskManager = TaskManager;
-window.taskManager = new TaskManager();
+window.taskManager = new TaskManager;
+
+// 导出 renderCalendarView（供 core.js 调用）
+window.renderCalendarView = renderCalendarView;
