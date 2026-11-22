@@ -165,12 +165,32 @@ async function initApp() {
     // 渲染主视图
     renderMainView();
     
+    // 自动渲染默认视图（月计划）
+    renderDefaultView();
+    
     // 标记完成
     isInitComplete = true;
     console.log('[initApp] 初始化完成');
     
     // 派发初始化完成事件
     eventBus.emit('app:init-complete', { appData });
+}
+
+// ============ 默认视图渲染 ============
+function renderDefaultView() {
+    console.log('[renderDefaultView] 渲染默认视图：月计划');
+    
+    // 确保各视图模块已加载并调用其渲染函数
+    if (calendar && typeof calendar.renderCalendar === 'function') {
+        calendar.renderCalendar();
+    }
+    if (day && typeof day.renderDay === 'function') {
+        day.renderDay();
+    }
+    if (methods && typeof methods.renderNotes === 'function') {
+        methods.renderNotes();
+    }
+    // 其他视图按需渲染...
 }
 
 // ============ 主视图渲染 ============
