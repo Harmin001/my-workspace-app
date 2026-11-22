@@ -168,6 +168,9 @@ async function initApp() {
     // 自动渲染默认视图（月计划）
     renderDefaultView();
     
+    // 绑定侧边栏点击事件
+    bindNavClickEvents();
+    
     // 标记完成
     isInitComplete = true;
     console.log('[initApp] 初始化完成');
@@ -203,6 +206,58 @@ function renderDefaultView() {
         methods.renderNotes();
     }
     // 其他视图按需渲染...
+}
+
+// ============ 视图切换 ============
+function switchView(target) {
+    console.log('[switchView] 切换到视图:', target);
+    
+    // 移除当前视图的 active 类
+    document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+    
+    // 添加新视图的 active 类
+    const viewEl = document.getElementById(`view-${target}`);
+    if (viewEl) viewEl.classList.add('active');
+    
+    // 根据目标视图调用相应的渲染函数
+    switch (target) {
+        case 'year':
+            console.log('[switchView] 渲染全年总览');
+            break;
+        case 'month':
+            console.log('[switchView] 渲染月计划');
+            import('./calendar.js').then(module => {
+                if (module.renderCalendarView) module.renderCalendarView();
+            }).catch(err => console.warn('[switchView] 导入失败:', err));
+            break;
+        case 'week':
+            console.log('[switchView] 渲染周计划');
+            break;
+        case 'day':
+            console.log('[switchView] 渲染日计划');
+            if (day && typeof day.renderDay === 'function') day.renderDay();
+            break;
+        case 'methods':
+            console.log('[switchView] 渲染笔记');
+            if (methods && typeof methods.renderNotes === 'function') methods.renderNotes();
+            break;
+        case 'settings':
+            console.log('[switchView] 渲染设置');
+            break;
+        default:
+            console.warn('[switchView] 未知视图:', target);
+    }
+}
+
+// 绑定侧边栏点击事件
+function bindNavClickEvents() {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            const target = item.dataset.target;
+            if (target) switchView(target);
+        });
+    });
 }
 
 // ============ 主视图渲染 ============
