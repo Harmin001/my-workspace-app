@@ -180,6 +180,11 @@ async function initApp() {
 function renderDefaultView() {
     console.log('[renderDefaultView] 渲染默认视图：月计划');
     
+    // 重新加载模块（因为变量作用域限制）
+    const calendar = loadModule('calendar');
+    const day = loadModule('day');
+    const methods = loadModule('methods');
+    
     // 确保各视图模块已加载并调用其渲染函数
     if (calendar && typeof calendar.renderCalendar === 'function') {
         calendar.renderCalendar();
